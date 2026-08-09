@@ -7,11 +7,16 @@ import {
   Marker,
   NavigationControl,
   Popup,
+  setWorkerUrl,
 } from "maplibre-gl";
 import type { ScoredSite } from "@/lib/types";
 
 /** Free OpenFreeMap style — no API key, no credit card. */
 const FREE_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+
+// MapLibre v6 needs an explicit worker URL under Next/Turbopack bundling,
+// otherwise the map canvas mounts but never fetches vector tiles.
+setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 type Props = {
   sites: ScoredSite[];
