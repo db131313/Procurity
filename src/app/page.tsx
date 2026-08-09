@@ -52,7 +52,8 @@ export default async function WelcomePage() {
         <div className="relative z-10 mt-auto space-y-4 pt-16 animate-pc-pop">
           <Link
             href={ctaHref}
-            className="pc-gradient-bg flex h-14 items-center justify-center rounded-full text-[16px] font-bold text-white shadow-[0_16px_30px_rgba(124,58,237,0.28)] transition active:scale-[0.98]"
+            className="pc-gradient-bg flex h-14 items-center justify-center rounded-full text-[16px] font-bold shadow-[0_16px_30px_rgba(124,58,237,0.28)] transition active:scale-[0.98]"
+            style={{ color: "#ffffff" }}
           >
             Find My Opportunities
           </Link>

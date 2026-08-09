@@ -80,8 +80,8 @@ export function MapScreen({ initial }: Props) {
         </div>
 
         {/* top chrome */}
-        <div className="absolute inset-x-0 top-0 z-20 px-4 pt-4">
-          <div className="flex items-center gap-2 rounded-2xl bg-white/95 p-2 shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur">
+        <div className="absolute inset-x-0 top-0 z-30 px-4 pt-4">
+          <div className="flex items-center gap-2 rounded-2xl bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.14)]">
             <button
               type="button"
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-pc-mist text-pc-ink"

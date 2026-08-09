@@ -79,7 +79,7 @@ export function BottomNav() {
               <Link
                 href={item.href}
                 className={`flex flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] font-semibold tracking-wide ${
-                  isActive ? "text-pc-purple" : "text-pc-slate"
+                  isActive ? "text-[#7C3AED]" : "text-[#64748B]"
                 }`}
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
