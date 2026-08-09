@@ -26,16 +26,21 @@ function parseDate(value?: string | null) {
   }
 }
 
-function clamp(n: number, min = 0, max = 100) {
+function clamp(n: number, min = 0, max = 99) {
   return Math.max(min, Math.min(max, n));
 }
 
+function isNoiseDescription(desc: string) {
+  return (
+    /temporary (8'|8’|construction )?fence|plywood fence|sidewalk shed only|scaffold only|tax abatement|solar tax|no work under this|in conjunction with (nb|demo)/i.test(
+      desc,
+    ) && !/sign|storefront|awning|canopy|marquee|facade sign/i.test(desc)
+  );
+}
+
 /**
- * Signage procurement window heuristics for NYC construction:
- * - Exterior identity / wayfinding / tenant / building signs are typically
- *   bought after structure advances and before final CO / late fit-out closeout.
- * - New buildings & major CO alterations dominate; explicit SIGN work is a spike.
- * - Tiny 1-family / fence-only / withdrawn / already signed-off jobs are demoted.
+ * Signage procurement window score (0–99).
+ * Components are capped so the Top 20 differentiates instead of stacking to 100.
  */
 export function scoreFiling(
   filing: DobNowFiling,
@@ -48,7 +53,8 @@ export function scoreFiling(
   const status = filing.filing_status ?? "Unknown";
   const jobType = filing.job_type ?? "Unknown";
   const buildingType = filing.building_type ?? null;
-  const desc = (filing.job_description ?? "").toLowerCase();
+  const desc = (filing.job_description ?? "").trim();
+  const descLower = desc.toLowerCase();
   const cost = num(filing.initial_cost);
   const floorArea = num(filing.total_construction_floor_area) || null;
   const stories =
@@ -56,109 +62,132 @@ export function scoreFiling(
     num(filing.existing_stories) ||
     null;
 
-  // Hard filters for noise
-  if (/fence|scaffolding|sidewalk shed only|temp(orary)? fence/.test(desc) && !yes(filing.sign)) {
-    if (cost < 25000 && !/sign|storefront|facade|awning|canopy/.test(desc)) {
-      return null;
-    }
-  }
   if (status === "Filing Withdrawn" || status === "Incomplete") return null;
   if (jobType === "Full Demolition" || jobType === "No Work") return null;
+  if (isNoiseDescription(descLower)) return null;
 
-  let score = 28;
+  // Thin / secondary filings with no economic signal and no sign flag
+  const meaningfulCost = cost >= 100000;
+  const meaningfulScale =
+    floorArea !== null &&
+    floorArea >= 12000 &&
+    stories !== null &&
+    stories >= 4 &&
+    cost >= 25000;
+  if (!yes(filing.sign) && !meaningfulCost && !meaningfulScale) {
+    return null;
+  }
+  // Cost-less or token-cost secondary filings are noisy even on large sites
+  if (!yes(filing.sign) && cost < 25000) {
+    return null;
+  }
+
+  let jobPts = 0;
+  let statusPts = 0;
+  let timingPts = 0;
+  let scalePts = 0;
+  let signPts = 0;
+  let contactPts = 0;
   const reasons: string[] = [];
 
-  // Job type relevance
   if (jobType === "New Building") {
-    score += 22;
+    jobPts = 18;
     reasons.push("New Building — primary exterior/identity sign opportunity");
   } else if (jobType.includes("Alteration CO") || jobType.includes("ALT-CO")) {
-    score += 18;
+    jobPts = 15;
     reasons.push("CO-triggering alteration — occupancy branding often follows");
   } else if (jobType === "Alteration") {
-    score += 8;
+    jobPts = 7;
   }
 
-  // Explicit sign work
-  if (yes(filing.sign)) {
-    score += 24;
-    reasons.push("DOB filing flags SIGN work type");
-  }
-  if (/sign|storefront|awning|canopy|facade|marquee|wayfinding/.test(desc)) {
-    score += 10;
-    reasons.push("Job description mentions signage-adjacent scope");
-  }
-
-  // Construction progress / status window
-  const activeWindow = ["Permit Entire", "Permit Issued", "Approved", "Plan Examiner Review"];
-  const lateWindow = ["CO Issued", "LOC Issued", "TA Certificate of Operation Issued", "PA Certificate of Operation Issued"];
+  const activeWindow = [
+    "Permit Entire",
+    "Permit Issued",
+    "Approved",
+    "Plan Examiner Review",
+  ];
+  const lateWindow = [
+    "CO Issued",
+    "LOC Issued",
+    "TA Certificate of Operation Issued",
+    "PA Certificate of Operation Issued",
+  ];
   if (activeWindow.includes(status)) {
-    score += 16;
+    statusPts = status === "Permit Entire" || status === "Permit Issued" ? 16 : 11;
     reasons.push(`${status} — active procurement window`);
   } else if (lateWindow.includes(status)) {
-    score -= 18;
+    statusPts = -16;
     reasons.push(`${status} — late / closing window`);
   } else if (status.includes("Objections") || status.includes("On Hold")) {
-    score -= 6;
+    statusPts = -5;
   }
 
-  // Building scale & use
-  if (buildingType && /other|commercial|mixed|office|hotel|retail/i.test(buildingType)) {
-    score += 10;
-    reasons.push(`${buildingType} typology favors permanent sign packages`);
-  }
-  if (buildingType && /1 family|1-2-3/i.test(buildingType)) {
-    score -= 14;
-  }
-  if (stories && stories >= 6) {
-    score += 8;
-    reasons.push(`${stories}-story scale supports multi-sign package`);
-  } else if (stories && stories >= 3) {
-    score += 4;
-  }
-  if (floorArea && floorArea >= 20000) {
-    score += 8;
-  } else if (floorArea && floorArea >= 5000) {
-    score += 4;
-  }
-  if (cost >= 1_000_000) {
-    score += 8;
-    reasons.push("High construction value increases sign budget likelihood");
-  } else if (cost >= 250_000) {
-    score += 4;
-  } else if (cost > 0 && cost < 15000) {
-    score -= 10;
-  }
-
-  // Timing sweet spot: ~90–540 days from first permit / filing
   const anchor =
     parseDate(filing.first_permit_date) ||
     parseDate(filing.filing_date) ||
     parseDate(filing.approved_date);
   if (anchor) {
     const ageDays = differenceInCalendarDays(new Date(), anchor);
-    if (ageDays >= 90 && ageDays <= 540) {
-      score += 12;
+    if (ageDays >= 120 && ageDays <= 480) {
+      timingPts = 14;
       reasons.push(`Project age ${ageDays}d — mid-construction buy window`);
-    } else if (ageDays > 540 && ageDays <= 900) {
-      score += 4;
+    } else if (ageDays >= 60 && ageDays < 120) {
+      timingPts = 8;
+      reasons.push(`Project age ${ageDays}d — approaching buy window`);
+    } else if (ageDays > 480 && ageDays <= 840) {
+      timingPts = 5;
       reasons.push(`Mature project (${ageDays}d) — late exterior / tenant signs`);
     } else if (ageDays < 45) {
-      score -= 8;
+      timingPts = -8;
       reasons.push("Very early filing — too soon for most sign buys");
-    } else if (ageDays > 1200) {
-      score -= 12;
+    } else if (ageDays > 1100) {
+      timingPts = -12;
+    } else {
+      timingPts = 1;
     }
   }
 
-  // Work-type signals that exterior package is underway
-  if (yes(filing.general_construction_work_type_) || yes(filing.structural_work_type_)) {
-    score += 4;
+  if (buildingType && /other|commercial|mixed|office|hotel|retail/i.test(buildingType)) {
+    scalePts += 6;
+    reasons.push(`${buildingType} typology favors permanent sign packages`);
+  }
+  if (buildingType && /1 family|1-2-3/i.test(buildingType)) {
+    scalePts -= 10;
+  }
+  if (stories && stories >= 10) scalePts += 7;
+  else if (stories && stories >= 5) scalePts += 4;
+  else if (stories && stories >= 3) scalePts += 2;
+
+  if (floorArea && floorArea >= 50000) scalePts += 7;
+  else if (floorArea && floorArea >= 15000) scalePts += 5;
+  else if (floorArea && floorArea >= 5000) scalePts += 3;
+
+  if (cost >= 5_000_000) {
+    scalePts += 8;
+    reasons.push("High construction value increases sign budget likelihood");
+  } else if (cost >= 1_000_000) {
+    scalePts += 5;
+  } else if (cost >= 250_000) {
+    scalePts += 3;
+  } else if (cost > 0 && cost < 25000) {
+    scalePts -= 6;
+  } else if (cost === 0) {
+    scalePts -= 10;
+  }
+  scalePts = Math.max(-14, Math.min(16, scalePts));
+
+  if (yes(filing.sign)) {
+    signPts += 12;
+    reasons.push("DOB filing flags SIGN work type");
+  }
+  if (/sign|storefront|awning|canopy|facade|marquee|wayfinding/.test(descLower)) {
+    signPts += 6;
+    reasons.push("Job description mentions signage-adjacent scope");
   }
   if (yes(filing.curb_cut) || yes(filing.shed) || yes(filing.scaffold)) {
-    score += 3;
-    reasons.push("Site logistics active (shed/scaffold/curb) — exterior phase");
+    signPts += 2;
   }
+  signPts = Math.min(16, signPts);
 
   const ownerName = fullName(filing.owner_first_name, filing.owner_last_name);
   const applicantName = fullName(
@@ -171,24 +200,29 @@ export function scoreFiling(
   );
   const phone = filing.bin ? phoneByBin.get(filing.bin) ?? null : null;
 
-  if (ownerName || filing.owner_s_business_name) {
-    score += 4;
-  }
+  const ownerBusiness = filing.owner_s_business_name || null;
+  const weakOwner =
+    !ownerBusiness ||
+    /^(n\/a|na|none|not applicable|pr|tbd|unknown)$/i.test(ownerBusiness.trim());
+  if ((ownerName || ownerBusiness) && !weakOwner) contactPts += 3;
+  else if (ownerName) contactPts += 1;
   if (phone) {
-    score += 6;
+    contactPts += 6;
     reasons.push("Permittee phone available for outreach");
   } else if (applicantName || filingRepName) {
-    score += 2;
+    contactPts += 2;
     reasons.push("Applicant / expeditor contact available");
   }
 
-  score = clamp(Math.round(score));
+  const raw =
+    12 + jobPts + statusPts + timingPts + scalePts + signPts + contactPts;
+  const score = clamp(Math.round(raw));
 
   let windowLabel = "Watchlist";
-  if (score >= 80) windowLabel = "Hot — visit today";
-  else if (score >= 65) windowLabel = "Open procurement window";
-  else if (score >= 50) windowLabel = "Warming — qualify this week";
-  else if (score >= 35) windowLabel = "Early / nurture";
+  if (score >= 82) windowLabel = "Hot — visit today";
+  else if (score >= 68) windowLabel = "Open procurement window";
+  else if (score >= 52) windowLabel = "Warming — qualify this week";
+  else if (score >= 38) windowLabel = "Early / nurture";
   else windowLabel = "Low priority";
 
   const house = filing.house_no?.trim() ?? "";
@@ -205,7 +239,7 @@ export function scoreFiling(
     jobType,
     filingStatus: status,
     buildingType,
-    jobDescription: filing.job_description?.trim() || "No description filed.",
+    jobDescription: desc || "No description filed.",
     initialCost: cost,
     floorArea,
     stories,
@@ -246,11 +280,24 @@ export function rankTopSites(sites: ScoredSite[], limit = 20): ScoredSite[] {
     const prev = byKey.get(key);
     if (!prev || site.probabilityScore > prev.probabilityScore) {
       byKey.set(key, site);
+    } else if (
+      prev &&
+      site.probabilityScore === prev.probabilityScore &&
+      site.initialCost > prev.initialCost
+    ) {
+      byKey.set(key, site);
     }
   }
 
   return [...byKey.values()]
-    .sort((a, b) => b.probabilityScore - a.probabilityScore)
+    .sort((a, b) => {
+      if (b.probabilityScore !== a.probabilityScore) {
+        return b.probabilityScore - a.probabilityScore;
+      }
+      const phoneBoost = (s: ScoredSite) => (s.contact.phone ? 1 : 0);
+      if (phoneBoost(b) !== phoneBoost(a)) return phoneBoost(b) - phoneBoost(a);
+      return b.initialCost - a.initialCost;
+    })
     .slice(0, limit)
     .map((site, index) => ({ ...site, rank: index + 1 }));
 }

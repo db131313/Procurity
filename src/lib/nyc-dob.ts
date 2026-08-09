@@ -70,11 +70,11 @@ function soql(parts: string[]) {
   return parts.filter(Boolean).join(" AND ");
 }
 
-export async function fetchDobNowCandidates(limit = 400): Promise<DobNowFiling[]> {
+export async function fetchDobNowCandidates(limit = 600): Promise<DobNowFiling[]> {
   const where = soql([
     "latitude IS NOT NULL",
     "longitude IS NOT NULL",
-    "filing_status NOT IN ('Filing Withdrawn','Incomplete')",
+    "filing_status NOT IN ('Filing Withdrawn','Incomplete','LOC Issued')",
     "(job_type IN ('New Building','Alteration CO','ALT-CO - New Building with Existing Elements to Remain') OR sign = 'YES')",
   ]);
 
