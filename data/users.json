@@ -1,0 +1,12 @@
+[
+  {
+    "id": "usr_demo_procurity",
+    "name": "Demo Rep",
+    "email": "demo@procurity.pro",
+    "passwordHash": "$2b$10$AmmEued3eym2p.R.ARxhrO8mPewkgKRjdl5me8/9GzQ52ELujHtLa",
+    "plan": "pro",
+    "stripeCustomerId": null,
+    "stripeSubscriptionId": null,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  }
+]
