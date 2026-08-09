@@ -1,6 +1,6 @@
 # Procurity.Pro
 
-Construction project intel for signage sales teams. Answer **“Who is ready to buy signage?”** with a daily **Top 20 sites to visit**, buy-probability scores, contact intel, and a Mapbox 3D field map — powered by open NYC Department of Buildings data.
+Construction project intel for signage sales teams. Answer **“Who is ready to buy signage?”** with a daily **Top 20 sites to visit**, buy-probability scores, contact intel, and a free 3D field map — powered by open NYC Department of Buildings data.
 
 ## What it does
 
@@ -8,14 +8,14 @@ Construction project intel for signage sales teams. Answer **“Who is ready to 
 - Scores each site for **signage procurement window** readiness
 - Enriches contacts with permittee phones from **DOB Permit Issuance** when available
 - Ranks a **Top 20 visit list** with probability %, window labels, and outreach contacts
-- Renders targets on a **Mapbox 3D** buildings map
+- Renders targets on a **free 3D map** (MapLibre + OpenFreeMap — no API key / no credit card)
 - Includes **sign-in** (Auth.js) and **Stripe** subscriptions (with demo upgrade fallback)
 
 ## Stack
 
 - Next.js (App Router) + TypeScript
 - Tailwind CSS v4
-- Mapbox GL JS
+- MapLibre GL + OpenFreeMap tiles (no Mapbox billing)
 - NextAuth (Auth.js) credentials
 - Stripe Checkout + webhooks
 - NYC Open Data (Socrata)
@@ -42,13 +42,12 @@ Open [http://localhost:3000](http://localhost:3000).
 | --- | --- |
 | `NEXTAUTH_URL` | App URL (e.g. `http://localhost:3000`) |
 | `NEXTAUTH_SECRET` / `AUTH_SECRET` | Session encryption |
-| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox 3D map |
-| `STRIPE_SECRET_KEY` | Stripe server |
-| `STRIPE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe client |
-| `STRIPE_PRICE_ID` | Subscription price |
-| `STRIPE_WEBHOOK_SECRET` | Billing webhooks |
+| `STRIPE_SECRET_KEY` | Stripe server (optional) |
+| `STRIPE_PUBLISHABLE_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe client (optional) |
+| `STRIPE_PRICE_ID` | Subscription price (optional) |
+| `STRIPE_WEBHOOK_SECRET` | Billing webhooks (optional) |
 
-Without Mapbox/Stripe keys the app still runs: maps show a skyline fallback, and checkout upgrades the user in **demo mode**.
+Maps work out of the box via OpenFreeMap (no key). Without Stripe keys, checkout upgrades the account in **demo mode**.
 
 ## Scripts
 

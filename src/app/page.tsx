@@ -60,7 +60,7 @@ export default function HomePage() {
                 body: "Each site gets a buy-probability score from status, scale, timing, and contactability so you prioritize the open window.",
               },
               {
-                title: "Mapbox 3D field map",
+                title: "3D field map",
                 body: "Walk the city with extruded buildings and pinned Top 20 targets — owner, applicant, and permittee intel in one brief.",
               },
             ].map((item) => (

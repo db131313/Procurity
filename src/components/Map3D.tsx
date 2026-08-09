@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
+import { useEffect, useRef } from "react";
+import {
+  LngLatBounds,
+  Map as MapLibreMap,
+  Marker,
+  NavigationControl,
+  Popup,
+} from "maplibre-gl";
 import type { ScoredSite } from "@/lib/types";
+
+const FREE_STYLE = "https://tiles.openfreemap.org/styles/dark";
 
 type Props = {
   sites: ScoredSite[];
@@ -12,22 +20,15 @@ type Props = {
 
 export function Map3D({ sites, selectedId, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const [tokenMissing, setTokenMissing] = useState(false);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const markersRef = useRef<Marker[]>([]);
 
   useEffect(() => {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token || !containerRef.current) {
-      setTokenMissing(true);
-      return;
-    }
+    if (!containerRef.current) return;
 
-    mapboxgl.accessToken = token;
-
-    const map = new mapboxgl.Map({
+    const map = new MapLibreMap({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: FREE_STYLE,
       center: [-73.98, 40.74],
       zoom: 11.2,
       pitch: 60,
@@ -35,44 +36,43 @@ export function Map3D({ sites, selectedId, onSelect }: Props) {
       antialias: true,
     });
 
-    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.addControl(
+      new NavigationControl({ visualizePitch: true }),
+      "top-right",
+    );
 
-    map.on("style.load", () => {
-      const layers = map.getStyle()?.layers;
+    map.on("load", () => {
+      const layers = map.getStyle().layers;
       const labelLayerId = layers?.find(
         (layer) => layer.type === "symbol" && layer.layout?.["text-field"],
       )?.id;
 
-      if (!map.getLayer("add-3d-buildings")) {
+      if (!map.getLayer("procurity-3d-buildings")) {
         map.addLayer(
           {
-            id: "add-3d-buildings",
-            source: "composite",
+            id: "procurity-3d-buildings",
+            source: "openmaptiles",
             "source-layer": "building",
-            filter: ["==", "extrude", "true"],
             type: "fill-extrusion",
-            minzoom: 14,
+            minzoom: 13,
             paint: {
               "fill-extrusion-color": "#1a3a44",
               "fill-extrusion-height": [
                 "interpolate",
                 ["linear"],
                 ["zoom"],
-                14,
+                13,
                 0,
-                14.05,
-                ["get", "height"],
+                13.5,
+                ["coalesce", ["get", "render_height"], ["get", "height"], 12],
               ],
               "fill-extrusion-base": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                14,
-                0,
-                14.05,
+                "coalesce",
+                ["get", "render_min_height"],
                 ["get", "min_height"],
+                0,
               ],
-              "fill-extrusion-opacity": 0.85,
+              "fill-extrusion-opacity": 0.88,
             },
           },
           labelLayerId,
@@ -94,41 +94,54 @@ export function Map3D({ sites, selectedId, onSelect }: Props) {
     const map = mapRef.current;
     if (!map) return;
 
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
+    const paintMarkers = () => {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
 
-    sites.forEach((site) => {
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = "site-marker";
-      el.style.cssText = `
-        width: 28px; height: 28px; border-radius: 999px;
-        border: 2px solid ${site.id === selectedId ? "#f2ebe0" : "#2ec4b6"};
-        background: ${site.probabilityScore >= 80 ? "#d4a017" : "#1f9e8f"};
-        color: #0b1a22; font: 700 11px/1 Syne, sans-serif;
-        box-shadow: 0 0 0 4px rgba(46,196,182,0.18);
-        cursor: pointer;
-      `;
-      el.textContent = String(site.rank);
-      el.addEventListener("click", () => onSelect?.(site.id));
+      sites.forEach((site) => {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "site-marker";
+        el.style.cssText = `
+          width: 28px; height: 28px; border-radius: 999px;
+          border: 2px solid ${site.id === selectedId ? "#f2ebe0" : "#2ec4b6"};
+          background: ${site.probabilityScore >= 80 ? "#d4a017" : "#1f9e8f"};
+          color: #0b1a22; font: 700 11px/1 Syne, sans-serif;
+          box-shadow: 0 0 0 4px rgba(46,196,182,0.18);
+          cursor: pointer;
+        `;
+        el.textContent = String(site.rank);
+        el.addEventListener("click", () => onSelect?.(site.id));
 
-      const popup = new mapboxgl.Popup({ offset: 18, closeButton: false }).setHTML(
-        `<strong>#${site.rank} · ${site.probabilityScore}%</strong><br/>${site.address}<br/><span style="opacity:.75">${site.borough} · ${site.windowLabel}</span>`,
-      );
+        const popup = new Popup({
+          offset: 18,
+          closeButton: false,
+        }).setHTML(
+          `<strong>#${site.rank} · ${site.probabilityScore}%</strong><br/>${site.address}<br/><span style="opacity:.75">${site.borough} · ${site.windowLabel}</span>`,
+        );
 
-      const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat([site.longitude, site.latitude])
-        .setPopup(popup)
-        .addTo(map);
+        const marker = new Marker({ element: el })
+          .setLngLat([site.longitude, site.latitude])
+          .setPopup(popup)
+          .addTo(map);
 
-      markersRef.current.push(marker);
-    });
+        markersRef.current.push(marker);
+      });
 
-    if (sites.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      sites.forEach((s) => bounds.extend([s.longitude, s.latitude]));
-      map.fitBounds(bounds, { padding: 60, maxZoom: 14, pitch: 55, duration: 900 });
-    }
+      if (sites.length > 0) {
+        const bounds = new LngLatBounds();
+        sites.forEach((s) => bounds.extend([s.longitude, s.latitude]));
+        map.fitBounds(bounds, {
+          padding: 60,
+          maxZoom: 14,
+          pitch: 55,
+          duration: 900,
+        });
+      }
+    };
+
+    if (map.isStyleLoaded()) paintMarkers();
+    else map.once("load", paintMarkers);
   }, [sites, selectedId, onSelect]);
 
   useEffect(() => {
@@ -145,34 +158,6 @@ export function Map3D({ sites, selectedId, onSelect }: Props) {
       duration: 1200,
     });
   }, [selectedId, sites]);
-
-  if (tokenMissing) {
-    return (
-      <div className="relative flex h-full min-h-[360px] items-end overflow-hidden rounded-xl border border-[var(--line)] bg-ink-soft">
-        <div className="hero-skyline opacity-80" />
-        <div className="relative z-10 w-full p-6">
-          <p className="brand-mark text-xl font-semibold">3D field map</p>
-          <p className="mt-2 max-w-md text-sm text-sand/70">
-            Add <code className="text-teal-bright">NEXT_PUBLIC_MAPBOX_TOKEN</code> to
-            unlock Mapbox 3D buildings and live site pins. Ranked sites still load from
-            NYC DOB intel.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {sites.slice(0, 8).map((site) => (
-              <button
-                key={site.id}
-                type="button"
-                onClick={() => onSelect?.(site.id)}
-                className="rounded-md border border-[var(--line)] bg-ink/50 px-2.5 py-1 text-xs hover:border-teal-bright/50"
-              >
-                #{site.rank} {site.borough}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div

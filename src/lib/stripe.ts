@@ -23,7 +23,7 @@ export const PRO_PRICE_DISPLAY = {
   features: [
     "Daily Top 20 visit list with probability scores",
     "Owner, applicant & permittee contact intel",
-    "3D Mapbox field routing map",
+    "3D field routing map (MapLibre / OpenFreeMap)",
     "Borough filters & procurement window labels",
     "Live NYC DOB NOW refresh",
   ],
