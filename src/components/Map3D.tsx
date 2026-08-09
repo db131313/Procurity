@@ -33,7 +33,6 @@ export function Map3D({ sites, selectedId, onSelect }: Props) {
       zoom: 11.2,
       pitch: 60,
       bearing: -17,
-      antialias: true,
     });
 
     map.addControl(
