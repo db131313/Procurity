@@ -35,7 +35,7 @@ export type ScoredSite = {
   windowLabel: string;
   windowReason: string[];
   contact: ContactInfo;
-  source: "nyc-dob-now";
+  source: "nyc-dob-now" | "nyc-dob-jobs";
 };
 
 export type UserRecord = {

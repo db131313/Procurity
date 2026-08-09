@@ -96,17 +96,23 @@ export function DashboardClient({ initial, userName }: Props) {
               Live intel
             </span>
           </div>
-          <ul className="max-h-[640px] space-y-2 overflow-y-auto pr-1">
-            {data.sites.map((site) => (
-              <SiteRow
-                key={site.id}
-                site={site}
-                active={site.id === selected?.id}
-                isPro={isPro}
-                onSelect={() => setSelectedId(site.id)}
-              />
-            ))}
-          </ul>
+          {data.sites.length === 0 ? (
+            <p className="rounded-lg border border-[var(--line)] bg-ink/35 px-4 py-6 text-sm text-sand/65">
+              {data.note || "No sites matched this filter."}
+            </p>
+          ) : (
+            <ul className="max-h-[640px] space-y-2 overflow-y-auto pr-1">
+              {data.sites.map((site) => (
+                <SiteRow
+                  key={site.id}
+                  site={site}
+                  active={site.id === selected?.id}
+                  isPro={isPro}
+                  onSelect={() => setSelectedId(site.id)}
+                />
+              ))}
+            </ul>
+          )}
         </section>
       </div>
 

@@ -1,4 +1,8 @@
-import { fetchDobNowCandidates, fetchPhonesByBins } from "./nyc-dob";
+import {
+  fetchClassicJobCandidates,
+  fetchDobNowCandidates,
+  fetchPhonesByBins,
+} from "./nyc-dob";
 import { rankTopSites, scoreFiling } from "./scoring";
 import type { ScoredSite, Top20Response } from "./types";
 
@@ -55,18 +59,36 @@ export async function getTop20Sites(options?: {
   const borough = options?.borough?.trim() || null;
 
   try {
-    const filings = await fetchDobNowCandidates(500);
-    const filtered = borough
-      ? filings.filter(
-          (f) => f.borough?.toLowerCase() === borough.toLowerCase(),
-        )
-      : filings;
+    const [dobNow, classic] = await Promise.all([
+      fetchDobNowCandidates({ limit: 500, borough }).catch(() => []),
+      fetchClassicJobCandidates({ limit: 500, borough }).catch(() => []),
+    ]);
 
-    const bins = filtered.map((f) => f.bin ?? "").filter(Boolean);
+    // Prefer DOB NOW rows when BINs collide — fresher modern filings.
+    const byBin = new Map<string, (typeof dobNow)[number]>();
+    for (const row of classic) {
+      const key = row.bin || row.job_filing_number || "";
+      if (key) byBin.set(key, row);
+    }
+    for (const row of dobNow) {
+      const key = row.bin || row.job_filing_number || "";
+      if (key) byBin.set(key, row);
+    }
+    const filings = byBin.size > 0 ? [...byBin.values()] : [...dobNow, ...classic];
+
+    const bins = filings.map((f) => f.bin ?? "").filter(Boolean);
     const phones = await fetchPhonesByBins(bins);
 
-    const scored = filtered
-      .map((f) => scoreFiling(f, phones))
+    const scored = filings
+      .map((f) => {
+        const site = scoreFiling(f, phones);
+        if (!site) return null;
+        const fromClassic = String(f.job_filing_number || "").startsWith("BIS-");
+        return {
+          ...site,
+          source: fromClassic ? ("nyc-dob-jobs" as const) : ("nyc-dob-now" as const),
+        };
+      })
       .filter((s): s is ScoredSite => Boolean(s));
 
     const sites = rankTopSites(scored, limit);
@@ -74,21 +96,32 @@ export async function getTop20Sites(options?: {
     if (sites.length === 0) {
       return {
         generatedAt: new Date().toISOString(),
-        count: FALLBACK_SITES.length,
+        count: 0,
         boroughFilter: borough,
-        sites: FALLBACK_SITES,
-        dataSource: "NYC DOB NOW (fallback sample)",
-        note: "Live filings returned no scored matches for this filter.",
+        sites: [],
+        dataSource:
+          "NYC Open Data — DOB NOW (w9ak-ipjd) + DOB Job Application Filings (ic3t-wcy2)",
+        note: borough
+          ? `No scored procurement-window matches in ${borough} right now. Try All NYC.`
+          : "Live filings returned no scored matches.",
       };
     }
+
+    const usedNow = sites.some((s) => s.source === "nyc-dob-now");
+    const usedClassic = sites.some((s) => s.source === "nyc-dob-jobs");
+    const dataSource = [
+      usedNow ? "DOB NOW Build Job Filings (w9ak-ipjd)" : null,
+      usedClassic ? "DOB Job Application Filings (ic3t-wcy2)" : null,
+    ]
+      .filter(Boolean)
+      .join(" + ");
 
     return {
       generatedAt: new Date().toISOString(),
       count: sites.length,
       boroughFilter: borough,
       sites,
-      dataSource:
-        "NYC Open Data — DOB NOW: Build Job Application Filings (w9ak-ipjd)",
+      dataSource: `NYC Open Data — ${dataSource}`,
     };
   } catch (error) {
     console.error("Intel fetch failed", error);
