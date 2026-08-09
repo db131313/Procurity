@@ -32,7 +32,7 @@ export default async function PricingPage() {
             <ul className="mt-5 space-y-2 text-sm text-sand/65">
               <li>• Top 20 ranked sites</li>
               <li>• Probability scores & window labels</li>
-              <li>• 3D map (with Mapbox token)</li>
+              <li>• Free 3D field map</li>
               <li>• Contacts masked</li>
             </ul>
             <Link
