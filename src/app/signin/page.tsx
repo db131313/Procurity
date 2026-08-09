@@ -1,23 +1,28 @@
-import { Nav } from "@/components/Nav";
+import Link from "next/link";
 import { AuthForm } from "@/components/AuthForm";
+import { LogoWordmark } from "@/components/mobile/Logo";
+import { PhoneShell } from "@/components/mobile/PhoneShell";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen">
-      <Nav solid />
-      <main className="px-5 py-16 md:px-10">
-        <div className="mx-auto max-w-lg text-center">
-          <h1 className="brand-mark text-4xl font-bold tracking-tight">
-            Sign in to Procurity<span className="text-teal-bright">.Pro</span>
-          </h1>
-          <p className="mt-3 text-sand/65">
-            Pull today&apos;s Top 20 procurement windows and hit the street.
-          </p>
-        </div>
-        <div className="mt-10">
+    <PhoneShell showNav={false}>
+      <main className="min-h-[100dvh] bg-white px-6 pb-10 pt-8">
+        <LogoWordmark />
+        <h1 className="mt-8 text-3xl font-bold tracking-tight text-pc-ink">
+          Welcome back
+        </h1>
+        <p className="mt-2 text-sm text-pc-slate">
+          Sign in to save pipeline deals and unlock Pro contacts.
+        </p>
+        <div className="mt-8">
           <AuthForm mode="signin" />
         </div>
+        <p className="mt-6 text-center text-sm text-pc-slate">
+          <Link href="/" className="font-semibold text-pc-purple">
+            Back to welcome
+          </Link>
+        </p>
       </main>
-    </div>
+    </PhoneShell>
   );
 }

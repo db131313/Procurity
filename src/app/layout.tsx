@@ -1,31 +1,40 @@
-import type { Metadata } from "next";
-import { Manrope, Syne } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import { SiteProviders } from "@/components/SiteProviders";
 import "./globals.css";
 
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
-
-const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Procurity.Pro — Construction signage procurement intel",
+  title: "Procurity — Find the next job before they need you",
   description:
-    "Know who is ready to buy signage. Daily Top 20 NYC construction sites ranked by procurement-window probability, with contacts and 3D maps.",
+    "Mobile construction intel for signage sales. Top opportunities ranked by buy-probability with contacts and a free 3D map.",
+  applicationName: "Procurity",
+  appleWebApp: {
+    capable: true,
+    title: "Procurity",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#7C3AED",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} ${syne.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col font-sans">
+    <html lang="en" className="h-full antialiased">
+      <head>
+        <link
+          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body
+        className="min-h-full font-sans"
+        style={{ ["--font-satoshi" as string]: "'Satoshi', ui-sans-serif, system-ui, sans-serif" }}
+      >
         <SiteProviders>{children}</SiteProviders>
       </body>
     </html>

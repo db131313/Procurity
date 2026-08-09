@@ -1,24 +1,28 @@
-import { Nav } from "@/components/Nav";
+import Link from "next/link";
 import { AuthForm } from "@/components/AuthForm";
+import { LogoWordmark } from "@/components/mobile/Logo";
+import { PhoneShell } from "@/components/mobile/PhoneShell";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen">
-      <Nav solid />
-      <main className="px-5 py-16 md:px-10">
-        <div className="mx-auto max-w-lg text-center">
-          <h1 className="brand-mark text-4xl font-bold tracking-tight">
-            Get Procurity<span className="text-teal-bright">.Pro</span>
-          </h1>
-          <p className="mt-3 text-sand/65">
-            Create an account to unlock the daily visit brief for NYC signage
-            sales.
-          </p>
-        </div>
-        <div className="mt-10">
+    <PhoneShell showNav={false}>
+      <main className="min-h-[100dvh] bg-white px-6 pb-10 pt-8">
+        <LogoWordmark />
+        <h1 className="mt-8 text-3xl font-bold tracking-tight text-pc-ink">
+          Create your account
+        </h1>
+        <p className="mt-2 text-sm text-pc-slate">
+          Start finding signage jobs before your competitors.
+        </p>
+        <div className="mt-8">
           <AuthForm mode="signup" />
         </div>
+        <p className="mt-6 text-center text-sm text-pc-slate">
+          <Link href="/" className="font-semibold text-pc-purple">
+            Back to welcome
+          </Link>
+        </p>
       </main>
-    </div>
+    </PhoneShell>
   );
 }

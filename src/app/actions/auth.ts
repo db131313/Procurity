@@ -37,7 +37,7 @@ export async function loginAction(
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/dashboard",
+      redirectTo: "/map",
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -80,7 +80,7 @@ export async function signupAction(
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/dashboard",
+      redirectTo: "/map",
     });
   } catch (error) {
     if (error instanceof AuthError) {

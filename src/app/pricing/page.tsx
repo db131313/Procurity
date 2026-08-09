@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Nav } from "@/components/Nav";
+import { LogoWordmark } from "@/components/mobile/Logo";
+import { PhoneShell } from "@/components/mobile/PhoneShell";
 import { UpgradeButton } from "@/components/UpgradeButton";
 import { auth } from "@/lib/auth";
 import { PRO_PRICE_DISPLAY, stripeConfigured } from "@/lib/stripe";
@@ -9,82 +10,71 @@ export default async function PricingPage() {
   const configured = stripeConfigured();
 
   return (
-    <div className="min-h-screen">
-      <Nav solid />
-      <main className="mx-auto max-w-5xl px-5 py-16 md:px-10">
-        <div className="max-w-2xl">
-          <p className="text-sm uppercase tracking-[0.22em] text-teal-bright/80">
-            Pricing
-          </p>
-          <h1 className="brand-mark mt-3 text-4xl font-bold tracking-tight md:text-5xl">
-            One seat. One daily weapon.
-          </h1>
-          <p className="mt-4 text-sand/65">
-            Procurity.Pro is built for signage reps who need the procurement
-            window — not a CRM full of cold names.
-          </p>
-        </div>
+    <PhoneShell>
+      <main className="min-h-[100dvh] bg-white px-5 pb-10 pt-6">
+        <LogoWordmark />
+        <h1 className="mt-6 text-3xl font-bold tracking-tight text-pc-ink">
+          One seat. One daily weapon.
+        </h1>
+        <p className="mt-2 text-sm text-pc-slate">
+          Mobile intel for signage reps who need the procurement window.
+        </p>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-[var(--line)] p-6">
-            <h2 className="brand-mark text-2xl font-semibold">Free</h2>
-            <p className="mt-2 text-3xl font-bold">$0</p>
-            <ul className="mt-5 space-y-2 text-sm text-sand/65">
-              <li>• Top 20 ranked sites</li>
-              <li>• Probability scores & window labels</li>
-              <li>• Free 3D field map</li>
-              <li>• Contacts masked</li>
+        <div className="mt-6 space-y-4">
+          <div className="rounded-3xl border border-pc-line p-5">
+            <h2 className="text-xl font-bold">Free</h2>
+            <p className="mt-1 text-3xl font-bold">$0</p>
+            <ul className="mt-4 space-y-2 text-sm text-pc-slate">
+              <li>• Top opportunities + scores</li>
+              <li>• Free 3D map</li>
+              <li>• Pipeline on this device</li>
             </ul>
             <Link
-              href={session ? "/dashboard" : "/signup"}
-              className="mt-8 inline-block rounded-md border border-sand/25 px-4 py-2 text-sm font-medium hover:border-teal-bright/50"
+              href="/map"
+              className="mt-5 inline-flex h-11 items-center rounded-full border border-pc-line px-4 text-sm font-bold"
             >
-              {session ? "Open dashboard" : "Start free"}
+              Open map
             </Link>
           </div>
 
-          <div className="rounded-xl border border-teal-bright/40 bg-teal/10 p-6">
-            <h2 className="brand-mark text-2xl font-semibold">
-              {PRO_PRICE_DISPLAY.name}
-            </h2>
-            <p className="mt-2 text-3xl font-bold">
+          <div className="rounded-3xl border border-violet-200 bg-violet-50/50 p-5">
+            <h2 className="text-xl font-bold">{PRO_PRICE_DISPLAY.name}</h2>
+            <p className="mt-1 text-3xl font-bold">
               ${PRO_PRICE_DISPLAY.amount}
-              <span className="text-base font-normal text-sand/60">/mo</span>
+              <span className="text-base font-medium text-pc-slate">/mo</span>
             </p>
-            <ul className="mt-5 space-y-2 text-sm text-sand/75">
+            <ul className="mt-4 space-y-2 text-sm text-pc-ink/80">
               {PRO_PRICE_DISPLAY.features.map((f) => (
                 <li key={f}>• {f}</li>
               ))}
             </ul>
-            <div className="mt-8">
+            <div className="mt-5">
               {session ? (
                 session.user.plan === "pro" ? (
                   <Link
-                    href="/dashboard"
-                    className="inline-block rounded-md bg-teal px-4 py-2 text-sm font-semibold text-ink"
+                    href="/map"
+                    className="pc-gradient-bg inline-flex h-11 items-center rounded-full px-4 text-sm font-bold text-white"
                   >
-                    You&apos;re on Pro — go to brief
+                    You&apos;re on Pro
                   </Link>
                 ) : (
-                  <UpgradeButton label={configured ? "Subscribe with Stripe" : "Activate Pro (demo)"} />
+                  <UpgradeButton
+                    label={configured ? "Subscribe with Stripe" : "Activate Pro (demo)"}
+                    className="pc-gradient-bg inline-flex h-11 items-center rounded-full px-4 text-sm font-bold text-white"
+                  />
                 )
               ) : (
                 <Link
                   href="/signup"
-                  className="inline-block rounded-md bg-amber px-4 py-2 text-sm font-semibold text-ink"
+                  className="pc-gradient-bg inline-flex h-11 items-center rounded-full px-4 text-sm font-bold text-white"
                 >
-                  Create account to upgrade
+                  Create account
                 </Link>
               )}
             </div>
-            {!configured && (
-              <p className="mt-3 text-xs text-sand/45">
-                Stripe keys not set — checkout upgrades the account in demo mode.
-              </p>
-            )}
           </div>
         </div>
       </main>
-    </div>
+    </PhoneShell>
   );
 }
