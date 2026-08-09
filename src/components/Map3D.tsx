@@ -133,11 +133,11 @@ export function Map3D({ sites, selectedId, onSelect }: Props) {
         button.className = "site-marker";
         button.setAttribute("aria-label", `Site ${site.rank} ${site.address}`);
         button.style.cssText = `
-          width: 28px; height: 28px; border-radius: 999px;
-          border: 2px solid ${site.id === selectedId ? "#0b1a22" : "#2ec4b6"};
+          width: 30px; height: 30px; border-radius: 999px;
+          border: 2px solid ${site.id === selectedId ? "#f2ebe0" : "#0b1a22"};
           background: ${site.probabilityScore >= 80 ? "#d4a017" : "#1f9e8f"};
-          color: #0b1a22; font: 700 11px/1 Syne, sans-serif;
-          box-shadow: 0 0 0 4px rgba(46,196,182,0.22);
+          color: #ffffff; font: 800 12px/1 Syne, sans-serif;
+          box-shadow: 0 0 0 3px rgba(11,26,34,0.28);
           cursor: pointer;
         `;
         button.textContent = String(site.rank);
