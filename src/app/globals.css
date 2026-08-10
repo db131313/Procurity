@@ -86,6 +86,10 @@ a {
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04);
 }
 
+.pc-phone-shell--wide {
+  max-width: 920px;
+}
+
 @media (min-width: 768px) {
   body {
     background:
@@ -95,12 +99,26 @@ a {
   }
 
   .pc-phone-shell {
-    min-height: min(920px, 100dvh);
+    min-height: min(920px, calc(100dvh - 48px));
     margin-top: 24px;
     margin-bottom: 24px;
     border-radius: 32px;
     overflow: hidden;
     box-shadow: var(--pc-shadow-lg);
+  }
+
+  .pc-phone-shell--wide {
+    max-width: min(980px, calc(100vw - 48px));
+  }
+}
+
+@keyframes pc-pin-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
   }
 }
 
