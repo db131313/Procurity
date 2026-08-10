@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { PhoneShell } from "@/components/mobile/PhoneShell";
 import {
   markDealWon,
@@ -10,14 +9,34 @@ import {
   type PipelineDeal,
 } from "@/lib/pipeline";
 
+let pipelineListeners = new Set<() => void>();
+function subscribePipeline(cb: () => void) {
+  pipelineListeners.add(cb);
+  return () => {
+    pipelineListeners.delete(cb);
+  };
+}
+function emitPipeline() {
+  pipelineListeners.forEach((cb) => cb());
+}
+function getPipelineSnapshot(): PipelineDeal[] {
+  return readPipeline();
+}
+function getServerPipelineSnapshot(): PipelineDeal[] {
+  return [];
+}
+
 export function PipelineScreen() {
-  const [deals, setDeals] = useState<PipelineDeal[]>([]);
+  const deals = useSyncExternalStore(
+    subscribePipeline,
+    getPipelineSnapshot,
+    getServerPipelineSnapshot,
+  );
   const [wonId, setWonId] = useState<string | null>(null);
-  const params = useSearchParams();
 
   useEffect(() => {
-    setDeals(readPipeline());
-  }, [params]);
+    emitPipeline();
+  }, []);
 
   const wonDeal = useMemo(
     () => deals.find((d) => d.id === wonId && d.status === "won") || null,
@@ -93,8 +112,8 @@ export function PipelineScreen() {
                     <button
                       type="button"
                       onClick={() => {
-                        const next = markDealWon(deal.id, 18500);
-                        setDeals(next);
+                        markDealWon(deal.id, 18500);
+                        emitPipeline();
                         setWonId(deal.id);
                       }}
                       className="rounded-full bg-pc-ink px-3 py-1.5 text-xs font-bold text-white"
