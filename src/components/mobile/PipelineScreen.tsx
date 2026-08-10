@@ -9,7 +9,7 @@ import {
   type PipelineDeal,
 } from "@/lib/pipeline";
 
-let pipelineListeners = new Set<() => void>();
+const pipelineListeners = new Set<() => void>();
 function subscribePipeline(cb: () => void) {
   pipelineListeners.add(cb);
   return () => {
