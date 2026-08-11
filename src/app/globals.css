@@ -42,11 +42,13 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 html,
 body {
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
