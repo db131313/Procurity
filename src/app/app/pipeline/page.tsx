@@ -35,7 +35,7 @@ export default async function PipelinePage() {
         Pipeline
       </h1>
       <p className="mt-1 text-sm text-slate">
-        Drag deals across stages — or use stage buttons on mobile.
+        Track deals by status — change stage on each card.
       </p>
 
       {!cards.length ? (

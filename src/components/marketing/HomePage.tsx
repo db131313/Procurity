@@ -11,11 +11,12 @@ import {
 } from "./ProductPreviews";
 import { Logo } from "@/components/brand/Logo";
 import { AnimatedCounters } from "./AnimatedCounters";
+import { HeroRouteMap } from "./HeroRouteMap";
 
 const STEPS = [
   {
     title: "Ingest",
-    body: "Nightly sync of NYC DOB permits, filings, and CO activity — city-agnostic under the hood.",
+    body: "Nightly sync of public permit filings and construction activity — city-agnostic under the hood.",
   },
   {
     title: "Score",
@@ -84,7 +85,7 @@ export function HomePage() {
           }}
         />
         <MarketingNav />
-        <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-6xl flex-col justify-end px-5 pb-16 pt-28 md:justify-center md:px-8 md:pb-24 md:pt-24">
+        <div className="relative z-10 mx-auto grid min-h-[100dvh] max-w-6xl items-end gap-10 px-5 pb-16 pt-28 md:grid-cols-2 md:items-center md:px-8 md:pb-24 md:pt-24">
           <div className="max-w-2xl animate-pc-rise">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-teal">
               Construction project intelligence
@@ -94,7 +95,7 @@ export function HomePage() {
               <span className="pc-gradient-text">Before</span> they need you.
             </h1>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70 md:text-lg">
-              Procurity turns NYC DOB construction activity into high-probability
+              Procurity turns live construction permit activity into high-probability
               signage opportunities — so you know where to go today, who to talk
               to, and what the deal could be worth.
             </p>
@@ -115,6 +116,9 @@ export function HomePage() {
                 See how it works
               </Link>
             </div>
+          </div>
+          <div className="animate-pc-pop pb-2 md:pb-0">
+            <HeroRouteMap />
           </div>
         </div>
       </section>

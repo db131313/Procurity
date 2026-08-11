@@ -5,11 +5,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Procurity.Pro — Find the next job before they need you",
   description:
-    "Construction project intelligence for signage sales. NYC DOB data scored into Buy Scores, maps, and pipeline — mobile-first.",
+    "Construction project intelligence for signage sales. Live permit activity scored into Buy Scores, maps, and pipeline — mobile-first.",
   applicationName: "Procurity",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],

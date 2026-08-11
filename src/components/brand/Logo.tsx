@@ -1,13 +1,12 @@
+import Image from "next/image";
 import { cn } from "@/lib/cn";
 
-const LOGO_SRC = {
-  gradient: "/brand/logo-gradient.svg",
-  dark: "/brand/logo-dark.svg",
-  light: "/brand/logo-light.svg",
-  icon: "/brand/logo-icon.svg",
-} as const;
-
-export type LogoVariant = keyof typeof LOGO_SRC;
+/**
+ * Brand logo.
+ * Uses /public/brand/logo.png (full mark) and logo-icon.png (icon only).
+ * // TODO: swap in light/dark variants when available
+ */
+export type LogoVariant = "gradient" | "dark" | "light" | "icon";
 
 type LogoProps = {
   variant?: LogoVariant;
@@ -22,6 +21,7 @@ export function Logo({
   showWordmark = true,
   size = 36,
 }: LogoProps) {
+  const iconOnly = variant === "icon" || !showWordmark;
   const wordmarkClass =
     variant === "light" || variant === "gradient"
       ? "text-white"
@@ -29,13 +29,13 @@ export function Logo({
 
   return (
     <div className={cn("inline-flex items-center gap-2.5", className)}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- local brand SVGs */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- local brand PNG */}
       <img
-        src={LOGO_SRC[variant === "icon" ? "icon" : variant]}
+        src={iconOnly ? "/brand/logo-icon.png" : "/brand/logo.png"}
         alt="Procurity"
         width={size}
         height={size}
-        className="shrink-0"
+        className="shrink-0 object-contain"
       />
       {showWordmark && variant !== "icon" && (
         <span
@@ -48,5 +48,25 @@ export function Logo({
         </span>
       )}
     </div>
+  );
+}
+
+/** Compact icon-only mark for favicons / app chrome. */
+export function LogoIcon({
+  className,
+  size = 32,
+}: {
+  className?: string;
+  size?: number;
+}) {
+  return (
+    <Image
+      src="/brand/logo-icon.png"
+      alt="Procurity"
+      width={size}
+      height={size}
+      className={cn("object-contain", className)}
+      priority
+    />
   );
 }

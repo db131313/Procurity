@@ -6,7 +6,7 @@ import { Logo } from "@/components/brand/Logo";
 const STEPS = [
   {
     title: "Ingest open construction data",
-    body: "Nightly sync of NYC DOB filings, permits, and CO activity into city-agnostic project records.",
+    body: "Nightly sync of public permit filings and construction activity into city-agnostic project records.",
   },
   {
     title: "Score the buying window",

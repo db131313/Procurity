@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 const FEATURES = {
   starter: [
     "Live map + Buy Score",
-    "Daily DOB data refresh",
+    "Daily permit data refresh",
     "Pipeline tracking",
     "Email alerts",
     "Up to 3 zip codes",

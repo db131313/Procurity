@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/cn";
 
 const PHASES = [
@@ -38,6 +38,9 @@ const PHASES = [
 ] as const;
 
 function Diorama({ phaseId, accent }: { phaseId: string; accent: boolean }) {
+  const reduce = useReducedMotion();
+  const loop = reduce ? undefined : { repeat: Infinity, ease: "easeInOut" as const };
+
   return (
     <div
       className={cn(
@@ -61,24 +64,38 @@ function Diorama({ phaseId, accent }: { phaseId: string; accent: boolean }) {
         <motion.div
           className="relative h-[150px] w-[180px]"
           style={{ transformStyle: "preserve-3d", transform: "rotateX(52deg) rotateZ(-32deg)" }}
-          animate={{ rotateZ: [-32, -28, -32] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          animate={reduce ? undefined : { rotateZ: [-32, -28, -32] }}
+          transition={{ duration: 8, ...loop }}
         >
-          {/* Ground */}
           <div className="absolute left-1/2 top-1/2 h-[120px] w-[160px] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-[#2a3348]/70" />
 
           {phaseId === "foundation" && (
             <>
               <div className="absolute left-[40px] top-[50px] h-[18px] w-[100px] rounded bg-[#3d465c]" />
               <div className="absolute left-[50px] top-[40px] h-[10px] w-[80px] rounded bg-[#5b6478]" />
-              <div className="absolute left-[120px] top-[10px] h-[70px] w-[6px] rounded bg-[#94a3b8]" />
-              <div className="absolute left-[100px] top-[8px] h-[6px] w-[40px] rounded bg-[#38d9c9]/80" />
+              <motion.div
+                className="absolute left-[120px] top-[10px] h-[70px] w-[6px] origin-bottom rounded bg-[#94a3b8]"
+                animate={reduce ? undefined : { rotate: [-8, 10, -8] }}
+                transition={{ duration: 3.2, ...loop }}
+              />
+              <motion.div
+                className="absolute left-[100px] top-[8px] h-[6px] w-[40px] origin-left rounded bg-[#38d9c9]/80"
+                animate={reduce ? undefined : { rotate: [-12, 18, -12] }}
+                transition={{ duration: 3.2, ...loop }}
+              />
+              {!reduce && (
+                <motion.div
+                  className="absolute left-[70px] top-[45px] h-2 w-2 rounded-full bg-[#cbd5e1]/40"
+                  animate={{ y: [0, 10, 0], opacity: [0.2, 0.7, 0.2] }}
+                  transition={{ duration: 2.4, repeat: Infinity }}
+                />
+              )}
             </>
           )}
           {phaseId === "framing" && (
             <>
               {[0, 1, 2, 3].map((i) => (
-                <div
+                <motion.div
                   key={i}
                   className="absolute rounded-sm bg-[#8b93a7]"
                   style={{
@@ -88,22 +105,54 @@ function Diorama({ phaseId, accent }: { phaseId: string; accent: boolean }) {
                     height: 70 + i * 8,
                     opacity: 0.85,
                   }}
+                  animate={reduce ? undefined : { y: [6, 0, 0], opacity: [0.3, 0.85, 0.85] }}
+                  transition={{ duration: 2.8, delay: i * 0.35, ...loop }}
                 />
               ))}
+              <motion.div
+                className="absolute left-[130px] top-[0px] h-[90px] w-[5px] origin-bottom rounded bg-[#38d9c9]/70"
+                animate={reduce ? undefined : { rotate: [-15, 12, -15] }}
+                transition={{ duration: 4, ...loop }}
+              />
             </>
           )}
           {phaseId === "mep" && (
             <>
               <div className="absolute left-[48px] top-[18px] h-[100px] w-[90px] rounded-md bg-[#6b7288]" />
-              <div className="absolute left-[54px] top-[28px] h-[80px] w-[78px] rounded-sm border border-[#38d9c9]/40 bg-[#38d9c9]/10" />
+              <motion.div
+                className="absolute left-[54px] top-[28px] h-[80px] w-[78px] rounded-sm border border-[#38d9c9]/40 bg-[#38d9c9]/10"
+                animate={reduce ? undefined : { opacity: [0.25, 0.7, 0.25] }}
+                transition={{ duration: 2.2, ...loop }}
+              />
               <div className="absolute left-[40px] top-[30px] h-[90px] w-[8px] rounded bg-[#94a3b8]/50" />
+              <motion.div
+                className="absolute left-[36px] top-[20px] h-[100px] w-[4px] rounded bg-white/20"
+                animate={reduce ? undefined : { x: [0, 4, 0] }}
+                transition={{ duration: 2.6, ...loop }}
+              />
             </>
           )}
           {phaseId === "finishing" && (
             <>
               <div className="absolute left-[48px] top-[12px] h-[110px] w-[95px] rounded-md bg-[#7c6cf6]/40" />
-              <div className="absolute left-[56px] top-[28px] h-[70px] w-[78px] rounded-sm bg-[#fbbf24]/35 shadow-[0_0_24px_rgba(251,191,36,0.35)]" />
-              <div className="absolute left-[64px] top-[40px] h-[18px] w-[28px] rounded-sm bg-[#38d9c9]/50" />
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="absolute h-[14px] w-[18px] rounded-sm bg-[#fbbf24]/50"
+                  style={{ left: 64 + i * 22, top: 40 + (i % 2) * 16 }}
+                  animate={
+                    reduce
+                      ? undefined
+                      : { opacity: [0.15, 1, 0.15], boxShadow: ["0 0 0px #fbbf24", "0 0 14px #fbbf24", "0 0 0px #fbbf24"] }
+                  }
+                  transition={{ duration: 2.4, delay: i * 0.4, ...loop }}
+                />
+              ))}
+              <motion.div
+                className="absolute left-[56px] top-[28px] h-[70px] w-[78px] rounded-sm bg-[#fbbf24]/20"
+                animate={reduce ? undefined : { opacity: [0.2, 0.55, 0.2] }}
+                transition={{ duration: 3, ...loop }}
+              />
             </>
           )}
           {phaseId === "signready" && (
@@ -113,8 +162,19 @@ function Diorama({ phaseId, accent }: { phaseId: string; accent: boolean }) {
               <motion.div
                 className="absolute left-[62px] top-[38px] h-[28px] w-[72px] rounded-sm"
                 style={{ background: "var(--pc-gradient)" }}
-                animate={{ opacity: [0.55, 1, 0.55], boxShadow: ["0 0 8px #7c6cf6", "0 0 22px #38d9c9", "0 0 8px #7c6cf6"] }}
-                transition={{ duration: 2.4, repeat: Infinity }}
+                animate={
+                  reduce
+                    ? undefined
+                    : {
+                        opacity: [0.55, 1, 0.55],
+                        boxShadow: [
+                          "0 0 8px #7c6cf6",
+                          "0 0 28px #38d9c9",
+                          "0 0 8px #7c6cf6",
+                        ],
+                      }
+                }
+                transition={{ duration: 2.4, ...loop }}
               />
             </>
           )}
