@@ -1,26 +1,32 @@
-export function formatCurrency(value: number) {
-  if (!value) return "—";
+import { formatDistanceToNow } from "date-fns";
+
+export function formatMoney(n: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(n);
 }
 
-export function formatShortDate(value?: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+export function formatMoneyRange(low: number, high: number) {
+  const fmt = (n: number) => {
+    if (n >= 1000) return `$${Math.round(n / 1000)}K`;
+    return formatMoney(n);
+  };
+  return `${fmt(low)}–${fmt(high)}`;
 }
 
-export function scoreTone(score: number) {
-  if (score >= 80) return "hot";
-  if (score >= 65) return "open";
-  if (score >= 50) return "warm";
-  return "cool";
+export function relativeTime(iso: string) {
+  try {
+    return formatDistanceToNow(new Date(iso), { addSuffix: true });
+  } catch {
+    return iso;
+  }
+}
+
+export function scoreBandLabel(score: number) {
+  if (score >= 90) return "HOT OPPORTUNITY";
+  if (score >= 80) return "STRONG FIT";
+  if (score >= 60) return "WORTH A LOOK";
+  return "MONITOR";
 }

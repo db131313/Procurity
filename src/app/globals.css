@@ -2,56 +2,58 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
 
 :root {
-  --pc-purple: #7c3aed;
-  --pc-purple-bright: #8b5cf6;
-  --pc-violet: #6d28d9;
-  --pc-teal: #2dd4bf;
-  --pc-cyan: #22d3ee;
-  --pc-ink: #0b1220;
-  --pc-navy: #111827;
-  --pc-slate: #64748b;
-  --pc-mist: #f1f5f9;
+  --pc-purple: #7c6cf6;
+  --pc-teal: #38d9c9;
+  --pc-ink: #0b0f19;
+  --pc-slate: #6b7280;
+  --pc-line: #e5e7eb;
+  --pc-offwhite: #f7f8fa;
+  --pc-success: #22c55e;
+  --pc-warning: #f59e0b;
+  --pc-hot: #f97316;
   --pc-white: #ffffff;
-  --pc-card: #ffffff;
-  --pc-line: #e2e8f0;
-  --background: #f8fafc;
-  --foreground: #0b1220;
-  --pc-gradient: linear-gradient(135deg, #7c3aed 0%, #6366f1 48%, #2dd4bf 100%);
-  --pc-gradient-soft: linear-gradient(160deg, rgba(124, 58, 237, 0.12), rgba(45, 212, 191, 0.12));
-  --pc-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
-  --pc-shadow-lg: 0 20px 50px rgba(91, 33, 182, 0.18);
+  --pc-gradient: linear-gradient(135deg, #7c6cf6 0%, #4f9cf8 48%, #38d9c9 100%);
+  --pc-shadow: 0 12px 40px rgba(11, 15, 25, 0.08);
+  --pc-shadow-lg: 0 20px 50px rgba(124, 108, 246, 0.18);
+  --background: #f7f8fa;
+  --foreground: #0b0f19;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --font-satoshi: "Satoshi", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-pc-purple: var(--pc-purple);
-  --color-pc-purple-bright: var(--pc-purple-bright);
-  --color-pc-teal: var(--pc-teal);
-  --color-pc-cyan: var(--pc-cyan);
-  --color-pc-ink: var(--pc-ink);
-  --color-pc-navy: var(--pc-navy);
-  --color-pc-slate: var(--pc-slate);
-  --color-pc-mist: var(--pc-mist);
-  --color-pc-line: var(--pc-line);
-  --font-sans: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+  --color-ink: var(--pc-ink);
+  --color-slate: var(--pc-slate);
+  --color-line: var(--pc-line);
+  --color-offwhite: var(--pc-offwhite);
+  --color-purple: var(--pc-purple);
+  --color-teal: var(--pc-teal);
+  --color-hot: var(--pc-hot);
+  --color-success: var(--pc-success);
+  --color-warning: var(--pc-warning);
+  --font-sans: var(--font-satoshi);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-satoshi);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -62,7 +64,7 @@ a {
 }
 
 ::selection {
-  background: rgba(124, 58, 237, 0.22);
+  background: rgba(124, 108, 246, 0.22);
 }
 
 .pc-gradient-text {
@@ -76,54 +78,26 @@ a {
   background: var(--pc-gradient);
 }
 
-.pc-phone-shell {
-  width: 100%;
-  max-width: 430px;
-  margin: 0 auto;
-  min-height: 100dvh;
-  position: relative;
-  background: var(--background);
-  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04);
+.pc-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: var(--pc-shadow);
+  border: 1px solid rgba(229, 231, 235, 0.8);
 }
 
-.pc-phone-shell--wide {
-  max-width: 920px;
+.pc-hot-glow {
+  filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.45));
+  animation: pc-pulse 2.2s ease-in-out infinite;
 }
 
-@media (min-width: 768px) {
-  body {
-    background:
-      radial-gradient(900px 500px at 20% -10%, rgba(124, 58, 237, 0.18), transparent 55%),
-      radial-gradient(700px 400px at 90% 10%, rgba(45, 212, 191, 0.16), transparent 50%),
-      #0b1220;
-  }
-
-  .pc-phone-shell {
-    min-height: min(920px, calc(100dvh - 48px));
-    margin-top: 24px;
-    margin-bottom: 24px;
-    border-radius: 32px;
-    overflow: hidden;
-    box-shadow: var(--pc-shadow-lg);
-  }
-
-  .pc-phone-shell--wide {
-    max-width: min(980px, calc(100vw - 48px));
-  }
-}
-
-@keyframes pc-pin-bob {
+@keyframes pc-pulse {
   0%,
   100% {
-    transform: translateY(0);
+    filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.35));
   }
   50% {
-    transform: translateY(-6px);
+    filter: drop-shadow(0 0 14px rgba(249, 115, 22, 0.55));
   }
-}
-
-.pc-bottom-pad {
-  padding-bottom: calc(88px + var(--safe-bottom));
 }
 
 @keyframes pc-rise {
@@ -137,59 +111,27 @@ a {
   }
 }
 
-@keyframes pc-pop {
-  0% {
-    transform: scale(0.92);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes pc-confetti {
-  0% {
-    transform: translateY(-8px) rotate(0deg);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(120px) rotate(180deg);
-    opacity: 0;
-  }
-}
-
 .animate-pc-rise {
-  animation: pc-rise 0.55s ease-out both;
+  animation: pc-rise 0.7s ease-out both;
 }
 
 .animate-pc-rise-delay {
-  animation: pc-rise 0.65s ease-out 0.12s both;
+  animation: pc-rise 0.8s ease-out 0.12s both;
 }
 
 .animate-pc-pop {
-  animation: pc-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: pc-rise 0.75s ease-out 0.2s both;
 }
 
-.maplibregl-popup-content {
-  background: #fff !important;
-  color: #0b1220 !important;
-  border-radius: 14px !important;
-  box-shadow: var(--pc-shadow) !important;
-  padding: 10px 12px !important;
-  font-family: var(--font-satoshi), sans-serif;
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-logo {
+  opacity: 0.65;
 }
 
-.maplibregl-ctrl-attrib {
-  font-size: 10px !important;
-  opacity: 0.75;
-}
-
-.pc-score-ring {
-  background:
-    radial-gradient(circle at center, #fff 58%, transparent 59%),
-    conic-gradient(from 220deg, #7c3aed, #2dd4bf, #7c3aed);
+/* Hide map attribution crowding on tiny screens */
+@media (max-width: 430px) {
+  .maplibregl-ctrl-bottom-right {
+    transform: scale(0.85);
+    transform-origin: bottom right;
+  }
 }

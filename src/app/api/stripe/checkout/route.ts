@@ -1,53 +1,79 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { getStripe, stripeConfigured } from "@/lib/stripe";
-import { findUserByEmail, updateUserPlan } from "@/lib/users";
+import { getCurrentUser } from "@/lib/auth/session";
+import {
+  getStripe,
+  priceIdForTier,
+  stripeConfigured,
+  type CheckoutTier,
+} from "@/lib/stripe";
+import { updateUserPlan, upsertUser } from "@/lib/db/store";
 
-export async function POST() {
-  const session = await auth();
-  if (!session?.user?.email) {
+const TIERS: CheckoutTier[] = ["starter", "growth", "pro"];
+
+export async function POST(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let tier: CheckoutTier = "growth";
+  try {
+    const body = (await request.json()) as { tier?: string };
+    if (body.tier && TIERS.includes(body.tier as CheckoutTier)) {
+      tier = body.tier as CheckoutTier;
+    }
+  } catch {
+    // default growth
+  }
+
   if (!stripeConfigured()) {
-    // Demo upgrade path when Stripe keys are absent
-    await updateUserPlan(session.user.email, { plan: "pro" });
+    await updateUserPlan(user.id, tier);
     return NextResponse.json({
       demo: true,
-      url: "/dashboard?upgraded=1",
+      url: `/app/billing?upgraded=${tier}`,
     });
   }
 
   const stripe = getStripe();
-  const priceId = process.env.STRIPE_PRICE_ID;
+  const priceId = priceIdForTier(tier);
   if (!stripe || !priceId) {
-    return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
-  }
-
-  const user = await findUserByEmail(session.user.email);
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: `Stripe price not configured for ${tier}` },
+      { status: 500 },
+    );
   }
 
   let customerId = user.stripeCustomerId ?? undefined;
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: user.email,
-      name: user.name,
+      name: user.name ?? undefined,
       metadata: { userId: user.id },
     });
     customerId = customer.id;
-    await updateUserPlan(user.email, { stripeCustomerId: customerId });
+    await upsertUser({
+      firebaseUid: user.firebaseUid,
+      email: user.email,
+      stripeCustomerId: customerId,
+    });
   }
 
-  const origin = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXTAUTH_URL ||
+    "http://localhost:3000";
+
   const checkout = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/dashboard?checkout=success`,
+    success_url: `${origin}/app/billing?checkout=success&tier=${tier}`,
     cancel_url: `${origin}/pricing?checkout=cancel`,
-    metadata: { userId: user.id, email: user.email },
+    metadata: {
+      userId: user.id,
+      email: user.email,
+      tier,
+    },
   });
 
   return NextResponse.json({ url: checkout.url });
