@@ -45,7 +45,8 @@ export type ScoringResult = {
   phaseConfidence: number;
 };
 
-const PHASE_BASE: Record<ProjectPhase, number> = {
+/** Default signage phase-fit (interior_finishing + sign_ready highest). */
+export const SIGNAGE_PHASE_FIT: Record<ProjectPhase, number> = {
   pre_construction: 38,
   foundation_structure: 48,
   mep: 72,
@@ -146,15 +147,25 @@ export function detectPhase(signals: {
   return { phase: "pre_construction", confidence: 0.55, reasons };
 }
 
-export function scoreProject(
+/**
+ * Shared scorer. Pass phaseFitOverride for trade-specific phase curves;
+ * omit for default signage Buy Score.
+ */
+export function scoreProjectWithPhaseFit(
   input: ScoringInput,
+  phaseFitOverride: Record<ProjectPhase, number> = SIGNAGE_PHASE_FIT,
   weights: ScoringWeights = DEFAULT_WEIGHTS,
+  opts: { collectReasons?: boolean; applySignageFloors?: boolean } = {},
 ): ScoringResult {
+  const collectReasons = opts.collectReasons ?? true;
+  const applySignageFloors = opts.applySignageFloors ?? phaseFitOverride === SIGNAGE_PHASE_FIT;
   const reasons: string[] = [];
-  const phaseScore = PHASE_BASE[input.phase];
-  reasons.push(
-    `Phase fit: ${input.phase.replace(/_/g, " ")} (+${phaseScore} base)`,
-  );
+  const phaseScore = phaseFitOverride[input.phase];
+  if (collectReasons) {
+    reasons.push(
+      `Phase fit: ${input.phase.replace(/_/g, " ")} (+${phaseScore} base)`,
+    );
+  }
 
   const activity = parseDate(input.lastActivityAt);
   const days = activity
@@ -163,28 +174,30 @@ export function scoreProject(
   let recencyScore = 40;
   if (days <= 7) {
     recencyScore = 95;
-    reasons.push("Permit activity in the last 7 days");
+    if (collectReasons) reasons.push("Permit activity in the last 7 days");
   } else if (days <= 14) {
     recencyScore = 85;
-    reasons.push("Permit activity in the last 14 days");
+    if (collectReasons) reasons.push("Permit activity in the last 14 days");
   } else if (days <= 30) {
     recencyScore = 70;
-    reasons.push("Activity within 30 days");
+    if (collectReasons) reasons.push("Activity within 30 days");
   } else if (days <= 60) {
     recencyScore = 50;
   } else {
     recencyScore = 28;
-    reasons.push("No recent activity (>60 days) — score decayed");
+    if (collectReasons) reasons.push("No recent activity (>60 days) — score decayed");
   }
 
   const cost = input.estimatedJobCost ?? 0;
   let sizeScore = 35;
   if (cost >= 10_000_000) {
     sizeScore = 95;
-    reasons.push("Large project ($10M+) — earlier / bigger signage budgets");
+    if (collectReasons) {
+      reasons.push("Large project ($10M+) — earlier / bigger signage budgets");
+    }
   } else if (cost >= 2_000_000) {
     sizeScore = 80;
-    reasons.push("Substantial job cost ($2M+)");
+    if (collectReasons) reasons.push("Substantial job cost ($2M+)");
   } else if (cost >= 500_000) {
     sizeScore = 65;
   } else if (cost >= 100_000) {
@@ -193,30 +206,36 @@ export function scoreProject(
 
   const commercial = isCommercial(input.occupancy, input.buildingType);
   const occupancyScore = commercial ? 82 : 45;
-  reasons.push(
-    commercial
-      ? "Commercial / retail / mixed-use classification"
-      : "Primarily residential — lower base priority",
-  );
+  if (collectReasons) {
+    reasons.push(
+      commercial
+        ? "Commercial / retail / mixed-use classification"
+        : "Primarily residential — lower base priority",
+    );
+  }
 
   let filerScore = 35;
   if (input.gcName) {
     filerScore += 35;
-    reasons.push(`GC identified: ${input.gcName}`);
+    if (collectReasons) reasons.push(`GC identified: ${input.gcName}`);
   }
   if (input.architectName) {
     filerScore += 25;
-    reasons.push(`Architect of record: ${input.architectName}`);
+    if (collectReasons) {
+      reasons.push(`Architect of record: ${input.architectName}`);
+    }
   }
   filerScore = Math.min(100, filerScore);
 
   let competitiveScore = 90;
   if (input.hasSignPermit) {
     competitiveScore = 35;
-    reasons.push(
-      "Sign permit already filed — lower new-opportunity score; check uncovered scope",
-    );
-  } else {
+    if (collectReasons) {
+      reasons.push(
+        "Sign permit already filed — lower new-opportunity score; check uncovered scope",
+      );
+    }
+  } else if (collectReasons) {
     reasons.push("No competing sign permit detected");
   }
 
@@ -228,21 +247,31 @@ export function scoreProject(
     filerScore * weights.filerSignal +
     competitiveScore * weights.competitive;
 
-  // Soft floors so peak buying windows land in the green 90+ band
+  // Soft floors so peak buying windows land in the green 90+ band (signage)
   let score = clamp(raw);
-  const peakPhase =
-    input.phase === "interior_finishing" || input.phase === "sign_ready";
-  if (peakPhase && commercial && days <= 14 && (input.gcName || input.architectName)) {
-    score = Math.max(score, 92);
-  } else if (peakPhase && commercial && days <= 21) {
-    score = Math.max(score, 90);
-  } else if (peakPhase && commercial && days <= 45) {
-    score = Math.max(score, 82);
-  } else if (peakPhase && days <= 30) {
-    score = Math.max(score, 78);
+  if (applySignageFloors) {
+    const peakPhase =
+      input.phase === "interior_finishing" || input.phase === "sign_ready";
+    if (
+      peakPhase &&
+      commercial &&
+      days <= 14 &&
+      (input.gcName || input.architectName)
+    ) {
+      score = Math.max(score, 92);
+    } else if (peakPhase && commercial && days <= 21) {
+      score = Math.max(score, 90);
+    } else if (peakPhase && commercial && days <= 45) {
+      score = Math.max(score, 82);
+    } else if (peakPhase && days <= 30) {
+      score = Math.max(score, 78);
+    }
   }
 
-  const [estValueLow, estValueHigh] = valueBand(input.estimatedJobCost, input.phase);
+  const [estValueLow, estValueHigh] = valueBand(
+    input.estimatedJobCost,
+    input.phase,
+  );
 
   return {
     score,
@@ -255,6 +284,13 @@ export function scoreProject(
         ? 0.8
         : 0.65,
   };
+}
+
+export function scoreProject(
+  input: ScoringInput,
+  weights: ScoringWeights = DEFAULT_WEIGHTS,
+): ScoringResult {
+  return scoreProjectWithPhaseFit(input, SIGNAGE_PHASE_FIT, weights);
 }
 
 /** Heuristic product recommendations — not literal DOB data. */

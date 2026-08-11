@@ -14,6 +14,75 @@ import { recommendSolutions } from "@/lib/scoring/engine";
 import { addAndMaybeRedirect } from "@/app/actions/pipeline";
 import { WhyScore } from "./WhyScore";
 
+function ContactCard({
+  role,
+  name,
+  firm,
+  phone,
+  email,
+  website,
+  lookupSuffix,
+}: {
+  role: string;
+  name: string | null;
+  firm: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  lookupSuffix: string;
+}) {
+  const display = name || firm;
+  // Prefer firm for Google lookup: `${firm} architect NY`
+  const lookupQ = firm || name;
+  const lookupHref = lookupQ
+    ? `https://www.google.com/search?q=${encodeURIComponent(`${lookupQ} ${lookupSuffix}`)}`
+    : null;
+
+  return (
+    <div className="pc-card p-4">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-slate">
+        {role}
+      </p>
+      <p className="mt-1 font-bold text-ink">{display}</p>
+      {firm && name && firm !== name && (
+        <p className="text-sm text-slate">{firm}</p>
+      )}
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold text-purple">
+        {phone && (
+          <a href={`tel:${phone.replace(/\s+/g, "")}`} className="hover:underline">
+            {phone}
+          </a>
+        )}
+        {email && (
+          <a href={`mailto:${email}`} className="hover:underline">
+            {email}
+          </a>
+        )}
+        {website && (
+          <a
+            href={website.startsWith("http") ? website : `https://${website}`}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:underline"
+          >
+            Website
+          </a>
+        )}
+        {!phone && !email && lookupHref && (
+          <a
+            href={lookupHref}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:underline"
+          >
+            Look up firm
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default async function ProjectDetailPage({
   params,
 }: {
@@ -71,6 +140,34 @@ export default async function ProjectDetailPage({
         Last activity {relativeTime(project.lastActivityAt)}
       </div>
 
+      <section className="mt-6">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-slate">
+          Trade scores
+        </h2>
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          {(
+            [
+              ["signage", project.tradeScores.signage, true],
+              ["lighting", project.tradeScores.lighting, false],
+              ["glass", project.tradeScores.glass, false],
+              ["security", project.tradeScores.security, false],
+              ["flooring", project.tradeScores.flooring, false],
+            ] as const
+          ).map(([label, value, primary]) => (
+            <span
+              key={label}
+              className={
+                primary
+                  ? "rounded-full bg-purple px-3.5 py-2 text-sm font-bold capitalize text-white shadow-sm"
+                  : "rounded-full bg-white px-3 py-1.5 text-xs font-bold capitalize text-ink shadow-sm ring-1 ring-line"
+              }
+            >
+              {label} {value}
+            </span>
+          ))}
+        </div>
+      </section>
+
       <section className="mt-8">
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate">
           Checklist
@@ -91,6 +188,41 @@ export default async function ProjectDetailPage({
           </StatusChip>
         </div>
       </section>
+
+      {(project.architectName ||
+        project.architectFirm ||
+        project.engineerName ||
+        project.engineerFirm) && (
+        <section className="mt-8">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate">
+            Contacts
+          </h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {(project.architectName || project.architectFirm) && (
+              <ContactCard
+                role="Architect"
+                name={project.architectName}
+                firm={project.architectFirm}
+                phone={project.architectPhone}
+                email={project.architectEmail}
+                website={project.architectWebsite}
+                lookupSuffix="architect NY"
+              />
+            )}
+            {(project.engineerName || project.engineerFirm) && (
+              <ContactCard
+                role="Engineer"
+                name={project.engineerName}
+                firm={project.engineerFirm}
+                phone={project.engineerPhone}
+                email={project.engineerEmail}
+                website={project.engineerWebsite}
+                lookupSuffix="engineer NY"
+              />
+            )}
+          </div>
+        </section>
+      )}
 
       <form action={addAndMaybeRedirect} className="mt-6">
         <input type="hidden" name="projectId" value={project.id} />

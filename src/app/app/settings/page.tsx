@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signOutAction, saveOnboardingZips } from "@/app/actions/session";
 import { PLAN_PRICING } from "@/lib/db/types";
+import { CoverageSelector } from "@/components/app/CoverageSelector";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -47,6 +48,10 @@ export default async function SettingsPage() {
             Save zips
           </button>
         </form>
+      </section>
+
+      <section className="pc-card mt-4 p-5">
+        <CoverageSelector />
       </section>
 
       <div className="mt-4 grid gap-3">

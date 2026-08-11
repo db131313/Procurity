@@ -41,6 +41,10 @@ export type DobNowFiling = {
   applicant_last_name?: string;
   applicant_business_name?: string;
   applicant_professional_title?: string;
+  /** Rarely present in open data — mapped when available. */
+  applicant_phone?: string;
+  applicant_email?: string;
+  applicant_website?: string;
   filing_representative_business_name?: string;
   general_construction_work_type_?: string;
   structural_work_type_?: string;

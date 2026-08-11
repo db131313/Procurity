@@ -7,6 +7,7 @@ import type {
   PlanTier,
   Project,
   ProjectEvent,
+  TradeScores,
   UserRecord,
 } from "./types";
 import { PLAN_LIMITS } from "./types";
@@ -21,10 +22,37 @@ type DbShape = {
 
 const DATA_PATH = path.join(process.cwd(), "data", "store.json");
 
+/** Backfill tradeScores + contact fields for older store rows. */
+function hydrateProject(raw: Project): Project {
+  const score = raw.score ?? 0;
+  const tradeScores: TradeScores = raw.tradeScores ?? {
+    signage: score,
+    lighting: score,
+    glass: score,
+    security: score,
+    flooring: score,
+  };
+  return {
+    ...raw,
+    tradeScores,
+    architectFirm: raw.architectFirm ?? null,
+    architectPhone: raw.architectPhone ?? null,
+    architectEmail: raw.architectEmail ?? null,
+    architectWebsite: raw.architectWebsite ?? null,
+    engineerName: raw.engineerName ?? null,
+    engineerFirm: raw.engineerFirm ?? null,
+    engineerPhone: raw.engineerPhone ?? null,
+    engineerEmail: raw.engineerEmail ?? null,
+    engineerWebsite: raw.engineerWebsite ?? null,
+  };
+}
+
 async function ensureDb(): Promise<DbShape> {
   try {
     const raw = await fs.readFile(DATA_PATH, "utf8");
-    return JSON.parse(raw) as DbShape;
+    const db = JSON.parse(raw) as DbShape;
+    db.projects = (db.projects ?? []).map(hydrateProject);
+    return db;
   } catch {
     const initial: DbShape = {
       projects: SEED_PROJECTS,

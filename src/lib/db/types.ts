@@ -14,6 +14,14 @@ export type PipelineStage = "new" | "contacted" | "quoted" | "won" | "lost";
 
 export type PlanTier = "trial" | "starter" | "growth" | "pro";
 
+export type TradeScores = {
+  signage: number;
+  lighting: number;
+  glass: number;
+  security: number;
+  flooring: number;
+};
+
 export type Project = {
   id: string;
   city: CityCode;
@@ -33,11 +41,21 @@ export type Project = {
   phaseConfidence: number;
   score: number;
   scoreReasons: string[];
+  tradeScores: TradeScores;
   estValueLow: number;
   estValueHigh: number;
   buyingWindowEstimate: string;
   gcName: string | null;
   architectName: string | null;
+  architectFirm: string | null;
+  architectPhone: string | null;
+  architectEmail: string | null;
+  architectWebsite: string | null;
+  engineerName: string | null;
+  engineerFirm: string | null;
+  engineerPhone: string | null;
+  engineerEmail: string | null;
+  engineerWebsite: string | null;
   ownerName: string | null;
   hasSignPermit: boolean;
   lastActivityAt: string;

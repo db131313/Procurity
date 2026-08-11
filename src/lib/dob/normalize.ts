@@ -1,4 +1,5 @@
 import { detectPhase, scoreProject } from "@/lib/scoring/engine";
+import { scoreAllTrades } from "@/lib/scoring/trades";
 import type { Project, ProjectEvent } from "@/lib/db/types";
 import type {
   DobApprovedPermit,
@@ -37,6 +38,65 @@ function workTypesFromFiling(f: DobNowFiling): string[] {
   if (yes(f.sign)) types.push("SG");
   if (yes(f.general_construction_work_type_)) types.push("GC");
   return types;
+}
+
+const NULL_CONTACTS = {
+  architectFirm: null as string | null,
+  architectPhone: null as string | null,
+  architectEmail: null as string | null,
+  architectWebsite: null as string | null,
+  engineerName: null as string | null,
+  engineerFirm: null as string | null,
+  engineerPhone: null as string | null,
+  engineerEmail: null as string | null,
+  engineerWebsite: null as string | null,
+};
+
+/** Map applicant / professional fields onto architect or engineer contacts. */
+function contactsFromApplicant(opts: {
+  firstName?: string | null;
+  lastName?: string | null;
+  businessName?: string | null;
+  title?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+}) {
+  const person = name(opts.firstName, opts.lastName);
+  const firm = opts.businessName?.trim() || null;
+  const title = opts.title ?? "";
+  const phone = opts.phone?.trim() || null;
+  const email = opts.email?.trim() || null;
+  const website = opts.website?.trim() || null;
+  const isEngineer = /engineer|p\.?e\.?\b|professional engineer/i.test(title);
+  const isArchitect = /architect|ra\b|a\.i\.a/i.test(title);
+
+  if (isEngineer && !isArchitect) {
+    return {
+      architectName: null as string | null,
+      ...NULL_CONTACTS,
+      engineerName: person,
+      engineerFirm: firm,
+      engineerPhone: phone,
+      engineerEmail: email,
+      engineerWebsite: website,
+    };
+  }
+
+  // Default: treat applicant as architect / design professional of record
+  const architectName =
+    isArchitect || !isEngineer
+      ? person || firm
+      : null;
+
+  return {
+    architectName,
+    ...NULL_CONTACTS,
+    architectFirm: firm,
+    architectPhone: phone,
+    architectEmail: email,
+    architectWebsite: website,
+  };
 }
 
 export type NormalizeBundle = {
@@ -121,11 +181,15 @@ export function normalizeProjects(
       (bin ? gcByBin.get(bin) : null) ||
       f.filing_representative_business_name ||
       null;
-    const architectName =
-      (/architect|ra\b|a\.i\.a/i.test(f.applicant_professional_title ?? "")
-        ? name(f.applicant_first_name, f.applicant_last_name) ||
-          f.applicant_business_name
-        : f.applicant_business_name) ?? null;
+    const contacts = contactsFromApplicant({
+      firstName: f.applicant_first_name,
+      lastName: f.applicant_last_name,
+      businessName: f.applicant_business_name,
+      title: f.applicant_professional_title,
+      phone: f.applicant_phone,
+      email: f.applicant_email,
+      website: f.applicant_website,
+    });
 
     const lastActivityAt =
       f.current_status_date ||
@@ -134,17 +198,19 @@ export function normalizeProjects(
       f.filing_date ||
       new Date().toISOString();
 
-    const scored = scoreProject({
+    const scoringInput = {
       phase: phaseInfo.phase,
       lastActivityAt,
       estimatedJobCost: num(f.initial_cost),
       occupancy: f.building_type ?? null,
       buildingType: f.building_type ?? null,
       gcName,
-      architectName,
+      architectName: contacts.architectName,
       hasSignPermit: hasSign,
       jobType: f.job_type ?? null,
-    });
+    };
+    const scored = scoreProject(scoringInput);
+    const tradeScores = scoreAllTrades(scoringInput);
 
     const project: Project = {
       id,
@@ -165,11 +231,21 @@ export function normalizeProjects(
       phaseConfidence: phaseInfo.confidence,
       score: scored.score,
       scoreReasons: [...phaseInfo.reasons, ...scored.scoreReasons],
+      tradeScores,
       estValueLow: scored.estValueLow,
       estValueHigh: scored.estValueHigh,
       buyingWindowEstimate: scored.buyingWindowEstimate,
       gcName,
-      architectName: architectName ?? null,
+      architectName: contacts.architectName,
+      architectFirm: contacts.architectFirm,
+      architectPhone: contacts.architectPhone,
+      architectEmail: contacts.architectEmail,
+      architectWebsite: contacts.architectWebsite,
+      engineerName: contacts.engineerName,
+      engineerFirm: contacts.engineerFirm,
+      engineerPhone: contacts.engineerPhone,
+      engineerEmail: contacts.engineerEmail,
+      engineerWebsite: contacts.engineerWebsite,
       ownerName:
         f.owner_s_business_name ||
         name(f.owner_first_name, f.owner_last_name),
@@ -239,17 +315,23 @@ export function normalizeProjects(
     });
     const lastActivityAt =
       f.latest_action_date || f.pre__filing_date || new Date().toISOString();
-    const scored = scoreProject({
+    const architectName = name(
+      f.applicant_s_first_name,
+      f.applicant_s_last_name,
+    );
+    const scoringInput = {
       phase: phaseInfo.phase,
       lastActivityAt,
       estimatedJobCost: num(f.initial_cost),
       occupancy: null,
       buildingType: null,
       gcName: null,
-      architectName: name(f.applicant_s_first_name, f.applicant_s_last_name),
+      architectName,
       hasSignPermit: bin ? signBins.has(bin) : false,
       jobType: f.job_type ?? null,
-    });
+    };
+    const scored = scoreProject(scoringInput);
+    const tradeScores = scoreAllTrades(scoringInput);
 
     projects.push({
       id,
@@ -270,11 +352,21 @@ export function normalizeProjects(
       phaseConfidence: phaseInfo.confidence,
       score: scored.score,
       scoreReasons: [...phaseInfo.reasons, ...scored.scoreReasons],
+      tradeScores,
       estValueLow: scored.estValueLow,
       estValueHigh: scored.estValueHigh,
       buyingWindowEstimate: scored.buyingWindowEstimate,
       gcName: null,
-      architectName: name(f.applicant_s_first_name, f.applicant_s_last_name),
+      architectName,
+      architectFirm: null,
+      architectPhone: null,
+      architectEmail: null,
+      architectWebsite: null,
+      engineerName: null,
+      engineerFirm: null,
+      engineerPhone: null,
+      engineerEmail: null,
+      engineerWebsite: null,
       ownerName: f.owner_s_business_name ?? null,
       hasSignPermit: bin ? signBins.has(bin) : false,
       lastActivityAt,
