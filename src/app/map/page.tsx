@@ -1,7 +1,5 @@
-import { MapScreen } from "@/components/mobile/MapScreen";
-import { getTop20Sites } from "@/lib/intel";
+import { redirect } from "next/navigation";
 
-export default async function MapPage() {
-  const intel = await getTop20Sites();
-  return <MapScreen initial={intel} />;
+export default function MapRedirect() {
+  redirect("/app/map");
 }

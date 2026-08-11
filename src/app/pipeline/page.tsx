@@ -1,5 +1,5 @@
-import { PipelineScreen } from "@/components/mobile/PipelineScreen";
+import { redirect } from "next/navigation";
 
-export default function PipelinePage() {
-  return <PipelineScreen />;
+export default function PipelineRedirect() {
+  redirect("/app/pipeline");
 }

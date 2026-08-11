@@ -3,9 +3,9 @@ import { SiteProviders } from "@/components/SiteProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Procurity — Find the next job before they need you",
+  title: "Procurity.Pro — Find the next job before they need you",
   description:
-    "Mobile construction intel for signage sales. Top opportunities ranked by buy-probability with contacts and a free 3D map.",
+    "Construction project intelligence for signage sales. NYC DOB data scored into Buy Scores, maps, and pipeline — mobile-first.",
   applicationName: "Procurity",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -27,7 +27,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#7C3AED",
+  themeColor: "#0B0F19",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

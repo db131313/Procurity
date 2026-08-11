@@ -116,7 +116,11 @@ export type LegacyFiling = {
 };
 
 function appToken() {
-  return process.env.NYC_OPEN_DATA_APP_TOKEN?.trim() || undefined;
+  return (
+    process.env.NYC_OPEN_DATA_APP_TOKEN?.trim() ||
+    process.env.NYC_OPENDATA_APP_TOKEN?.trim() ||
+    undefined
+  );
 }
 
 async function sodaFetch<T>(

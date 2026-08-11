@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 const LOGO_SRC = {
@@ -30,13 +29,13 @@ export function Logo({
 
   return (
     <div className={cn("inline-flex items-center gap-2.5", className)}>
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element -- local brand SVGs */}
+      <img
         src={LOGO_SRC[variant === "icon" ? "icon" : variant]}
         alt="Procurity"
         width={size}
         height={size}
         className="shrink-0"
-        priority
       />
       {showWordmark && variant !== "icon" && (
         <span

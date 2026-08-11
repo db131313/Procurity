@@ -13,9 +13,13 @@ export type CheckoutTier = "starter" | "growth" | "pro";
 
 export function priceIdForTier(tier: CheckoutTier): string | undefined {
   const map: Record<CheckoutTier, string | undefined> = {
-    starter: process.env.STRIPE_PRICE_STARTER || process.env.STRIPE_PRICE_ID,
-    growth: process.env.STRIPE_PRICE_GROWTH,
-    pro: process.env.STRIPE_PRICE_PRO,
+    starter:
+      process.env.STRIPE_PRICE_ID_STARTER ||
+      process.env.STRIPE_PRICE_STARTER ||
+      process.env.STRIPE_PRICE_ID,
+    growth:
+      process.env.STRIPE_PRICE_ID_GROWTH || process.env.STRIPE_PRICE_GROWTH,
+    pro: process.env.STRIPE_PRICE_ID_PRO || process.env.STRIPE_PRICE_PRO,
   };
   return map[tier];
 }
@@ -23,8 +27,11 @@ export function priceIdForTier(tier: CheckoutTier): string | undefined {
 export function stripeConfigured() {
   return Boolean(
     process.env.STRIPE_SECRET_KEY &&
-      (process.env.STRIPE_PRICE_STARTER ||
+      (process.env.STRIPE_PRICE_ID_STARTER ||
+        process.env.STRIPE_PRICE_STARTER ||
+        process.env.STRIPE_PRICE_ID_GROWTH ||
         process.env.STRIPE_PRICE_GROWTH ||
+        process.env.STRIPE_PRICE_ID_PRO ||
         process.env.STRIPE_PRICE_PRO ||
         process.env.STRIPE_PRICE_ID) &&
       (process.env.STRIPE_PUBLISHABLE_KEY ||

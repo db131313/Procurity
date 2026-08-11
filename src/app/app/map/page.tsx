@@ -1,4 +1,4 @@
-import { MapView } from "@/components/app/MapView";
+import { MapViewLazy } from "@/components/app/MapViewLazy";
 import { getCurrentUser } from "@/lib/auth/session";
 import { listProjects } from "@/lib/db/store";
 
@@ -32,7 +32,7 @@ export default async function MapPage() {
             : "All seed zips · set yours in Settings"}
         </p>
       </div>
-      <MapView projects={mapProjects} zipCodes={zipCodes} />
+      <MapViewLazy projects={mapProjects} zipCodes={zipCodes} />
     </main>
   );
 }
