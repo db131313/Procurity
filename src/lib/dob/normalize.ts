@@ -117,10 +117,10 @@ export function normalizeProjects(
       f.filing_representative_business_name ||
       null;
     const architectName =
-      /architect|ra\b|a\.i\.a/i.test(f.applicant_professional_title ?? "")
+      (/architect|ra\b|a\.i\.a/i.test(f.applicant_professional_title ?? "")
         ? name(f.applicant_first_name, f.applicant_last_name) ||
           f.applicant_business_name
-        : f.applicant_business_name;
+        : f.applicant_business_name) ?? null;
 
     const lastActivityAt =
       f.current_status_date ||
@@ -133,12 +133,12 @@ export function normalizeProjects(
       phase: phaseInfo.phase,
       lastActivityAt,
       estimatedJobCost: num(f.initial_cost),
-      occupancy: f.building_type,
-      buildingType: f.building_type,
+      occupancy: f.building_type ?? null,
+      buildingType: f.building_type ?? null,
       gcName,
       architectName,
       hasSignPermit: hasSign,
-      jobType: f.job_type,
+      jobType: f.job_type ?? null,
     });
 
     const project: Project = {
@@ -243,7 +243,7 @@ export function normalizeProjects(
       gcName: null,
       architectName: name(f.applicant_s_first_name, f.applicant_s_last_name),
       hasSignPermit: bin ? signBins.has(bin) : false,
-      jobType: f.job_type,
+      jobType: f.job_type ?? null,
     });
 
     projects.push({
