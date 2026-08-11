@@ -6,16 +6,20 @@ import {
   fetchPermitIssuance,
 } from "./client";
 import { normalizeProjects } from "./normalize";
-import { listProjects, replaceProjects } from "@/lib/db/store";
+import {
+  expandDemoCoverage,
+  listProjects,
+  replaceProjects,
+} from "@/lib/db/store";
 
 export async function syncDobData(days = 45) {
   const previous = await listProjects();
 
   const [filings, permits, approved, cos, legacy] = await Promise.all([
-    fetchDobNowFilings({ days, limit: 1500 }),
+    fetchDobNowFilings({ days, limit: 2500 }),
     fetchPermitIssuance({ days, limit: 2000 }),
-    fetchApprovedPermits({ days, limit: 1500 }),
-    fetchCertificatesOfOccupancy({ days: Math.max(days, 90), limit: 800 }),
+    fetchApprovedPermits({ days, limit: 2500 }),
+    fetchCertificatesOfOccupancy({ days: Math.max(days, 90), limit: 1200 }),
     fetchLegacyFilings({ days, limit: 1000 }),
   ]);
 
@@ -24,18 +28,15 @@ export async function syncDobData(days = 45) {
     previous,
   );
 
-  // Keep seed showcase projects if live pull is thin
-  const merged =
-    projects.length >= 8
-      ? projects
-      : [
-          ...projects,
-          ...previous.filter((p) => !projects.some((x) => x.id === p.id)),
-        ];
+  // Live pull replaces the store once we have real NYC rows
+  const merged = projects.length ? projects : previous;
 
   const db = await replaceProjects(merged, events);
+  await expandDemoCoverage(25);
+
   return {
     ok: true,
+    source: "nyc-open-data",
     counts: {
       filings: filings.length,
       permits: permits.length,

@@ -80,7 +80,8 @@ function pinStyle(score: number) {
 
 function matchesFilter(p: MapProject, filter: FilterKey) {
   if (filter === "all") return true;
-  if (filter === "hot") return p.score >= 90;
+  // Real DOB scores rarely hit 90+; treat 85+ as hot opportunity band
+  if (filter === "hot") return p.score >= 85;
   if (filter === "buying") {
     return (
       p.phase === "interior_finishing" ||
@@ -109,10 +110,12 @@ export function MapView({ projects, zipCodes = [] }: Props) {
   const [zipFilter, setZipFilter] = useState<string>("all");
 
   const visible = useMemo(() => {
-    return projects.filter((p) => {
+    const filtered = projects.filter((p) => {
       if (zipFilter !== "all" && p.zip !== zipFilter) return false;
       return matchesFilter(p, filter);
     });
+    // Cap DOM markers for mobile performance on large live feeds
+    return [...filtered].sort((a, b) => b.score - a.score).slice(0, 200);
   }, [projects, filter, zipFilter]);
 
   const selected = visible.find((p) => p.id === selectedId) ?? null;

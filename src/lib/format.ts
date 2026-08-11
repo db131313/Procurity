@@ -25,8 +25,8 @@ export function relativeTime(iso: string) {
 }
 
 export function scoreBandLabel(score: number) {
-  if (score >= 90) return "HOT OPPORTUNITY";
-  if (score >= 80) return "STRONG FIT";
+  if (score >= 85) return "HOT OPPORTUNITY";
+  if (score >= 75) return "STRONG FIT";
   if (score >= 60) return "WORTH A LOOK";
   return "MONITOR";
 }

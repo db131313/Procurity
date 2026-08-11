@@ -1,10 +1,13 @@
 import { MapViewLazy } from "@/components/app/MapViewLazy";
 import { getCurrentUser } from "@/lib/auth/session";
-import { listProjects } from "@/lib/db/store";
+import { getSyncMeta, listProjects } from "@/lib/db/store";
+import { relativeTime } from "@/lib/format";
 
 export default async function MapPage() {
   const user = await getCurrentUser();
+  const sync = await getSyncMeta();
   const zipCodes = user?.zipCodes ?? [];
+  // Show subscribed zips when set; otherwise citywide live feed
   const projects = await listProjects({
     zipCodes: zipCodes.length ? zipCodes : undefined,
   });
@@ -27,9 +30,11 @@ export default async function MapPage() {
     <main className="relative flex min-h-[100dvh] flex-1 flex-col md:min-h-0">
       <div className="pointer-events-none absolute left-3 top-[4.5rem] z-20 md:left-5 md:top-[5.5rem]">
         <p className="pointer-events-auto rounded-full border border-line bg-white/95 px-3 py-1 text-[11px] font-bold text-slate shadow-sm backdrop-blur">
-          {zipCodes.length
-            ? `Zips: ${zipCodes.join(", ")}`
-            : "All seed zips · set yours in Settings"}
+          {sync.lastSyncAt
+            ? `Live NYC DOB · ${projects.length} sites · ${relativeTime(sync.lastSyncAt)}`
+            : zipCodes.length
+              ? `Zips: ${zipCodes.slice(0, 4).join(", ")}${zipCodes.length > 4 ? "…" : ""}`
+              : "Citywide · run DOB sync"}
         </p>
       </div>
       <MapViewLazy projects={mapProjects} zipCodes={zipCodes} />

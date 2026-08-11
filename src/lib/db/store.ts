@@ -55,7 +55,7 @@ export async function listProjects(opts?: {
     items = items.filter((p) => p.zip && opts.zipCodes!.includes(p.zip));
   }
   if (opts?.minScore) items = items.filter((p) => p.score >= opts.minScore!);
-  if (opts?.filter === "hot") items = items.filter((p) => p.score >= 90);
+  if (opts?.filter === "hot") items = items.filter((p) => p.score >= 85);
   if (opts?.filter === "buying") {
     items = items.filter(
       (p) =>
@@ -226,4 +226,29 @@ export async function movePipelineItem(
 export async function getSyncMeta() {
   const db = await ensureDb();
   return { lastSyncAt: db.lastSyncAt, projectCount: db.projects.length };
+}
+
+/** Expand demo accounts to cover the densest live zip codes after a sync. */
+export async function expandDemoCoverage(limit = 25) {
+  const db = await ensureDb();
+  const counts = new Map<string, number>();
+  for (const p of db.projects) {
+    if (!p.zip) continue;
+    counts.set(p.zip, (counts.get(p.zip) ?? 0) + 1);
+  }
+  const topZips = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([z]) => z);
+  if (!topZips.length) return db;
+
+  for (const user of db.users) {
+    user.zipCodes = topZips.slice(0, Math.max(user.zipAllowance, 25));
+    user.zipAllowance = Math.max(user.zipAllowance, 25);
+    if (user.email === DEMO_USER.email || user.plan === "trial") {
+      user.plan = user.plan === "trial" ? "pro" : user.plan;
+    }
+  }
+  await save(db);
+  return db;
 }

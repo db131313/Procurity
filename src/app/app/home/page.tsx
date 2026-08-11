@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { ProjectCard } from "@/components/app/ProjectCard";
 import { getCurrentUser } from "@/lib/auth/session";
-import { listPipeline, listProjects } from "@/lib/db/store";
+import { getSyncMeta, listPipeline, listProjects } from "@/lib/db/store";
+import { relativeTime } from "@/lib/format";
 
 export default async function AppHomePage() {
   const user = await getCurrentUser();
+  const sync = await getSyncMeta();
   const projects = await listProjects({
     zipCodes: user?.zipCodes.length ? user.zipCodes : undefined,
   });
-  const top = projects.slice(0, 8);
+  const top = projects.slice(0, 12);
   const pipeline = user ? await listPipeline(user.id) : [];
   const won = pipeline.filter((p) => p.stage === "won");
   const winRate =
     pipeline.length > 0 ? Math.round((won.length / pipeline.length) * 100) : 0;
+  const live = Boolean(sync.lastSyncAt);
 
   return (
     <main className="px-5 py-6 md:px-8 md:py-8">
@@ -23,12 +26,20 @@ export default async function AppHomePage() {
         Today&apos;s opportunities
       </h1>
       <p className="mt-1 text-sm text-slate">
-        Ranked by Buy Score in your subscribed zips.
+        Ranked by Buy Score from live NYC DOB filings
+        {user?.zipCodes?.length ? ` in ${user.zipCodes.length} zips` : ""}.
       </p>
+      {live && (
+        <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          Live data · {sync.projectCount.toLocaleString()} projects · synced{" "}
+          {relativeTime(sync.lastSyncAt!)}
+        </p>
+      )}
 
       <div className="mt-5 grid grid-cols-3 gap-3">
         {[
-          { label: "Opps today", value: String(top.length) },
+          { label: "In your zips", value: String(projects.length) },
           { label: "Pipeline", value: String(pipeline.length) },
           { label: "Win rate", value: `${winRate}%` },
         ].map((s) => (

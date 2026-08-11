@@ -75,6 +75,11 @@ export function normalizeProjects(
       const key = bin;
       workByKey.set(key, [...(workByKey.get(key) ?? []), a.work_type]);
     }
+    const gc =
+      a.applicant_business_name || a.filing_representative_business_name;
+    if (bin && gc && !gcByBin.has(bin)) {
+      gcByBin.set(bin, gc);
+    }
   }
 
   const projects: Project[] = [];

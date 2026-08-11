@@ -78,22 +78,32 @@ export type DobApprovedPermit = {
   work_type?: string;
   permit_status?: string;
   issued_date?: string;
+  applicant_business_name?: string;
+  filing_representative_business_name?: string;
+  owner_business_name?: string;
+  estimated_job_costs?: string;
   latitude?: string;
   longitude?: string;
   postcode?: string;
+  zip_code?: string;
 };
 
 export type DobCO = {
   job_filing_number?: string;
+  job_filing_name?: string;
+  application_number?: string;
   bin?: string;
   house_no?: string;
   street_name?: string;
   borough?: string;
   c_of_o_status?: string;
   issue_date?: string;
+  c_of_o_issuance_date?: string;
+  submitted_date?: string;
   latitude?: string;
   longitude?: string;
   postcode?: string;
+  zip_code?: string;
 };
 
 export type LegacyFiling = {
@@ -172,25 +182,38 @@ export async function fetchPermitIssuance(opts: SyncWindowOptions = {}) {
   const days = opts.days ?? 45;
   const limit = opts.limit ?? 3000;
   const since = daysAgoIso(days);
-  return sodaFetch<DobPermitIssuance>(NYC_DATASETS.permitIssuance, {
-    $where: `issuance_date >= '${since}'`,
-    $order: "issuance_date DESC",
-    $limit: String(limit),
-  });
+  try {
+    const recent = await sodaFetch<DobPermitIssuance>(NYC_DATASETS.permitIssuance, {
+      $where: `issuance_date >= '${since}'`,
+      $order: "issuance_date DESC",
+      $limit: String(limit),
+    });
+    if (recent.length) return recent;
+  } catch {
+    // fall through — classic BIS permit feed can lag / stall
+  }
+  // Fallback: pull latest available rows for GC / phone enrichment
+  try {
+    return await sodaFetch<DobPermitIssuance>(NYC_DATASETS.permitIssuance, {
+      $where: "gis_latitude IS NOT NULL",
+      $order: "issuance_date DESC",
+      $limit: String(Math.min(limit, 1500)),
+    });
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchApprovedPermits(opts: SyncWindowOptions = {}) {
-  const days = opts.days ?? 45;
-  const limit = opts.limit ?? 2000;
-  const since = daysAgoIso(days);
+  const limit = opts.limit ?? 2500;
   try {
+    // rbx6-tga4 has no reliable issued_date column — pull latest signed/active rows
     return await sodaFetch<DobApprovedPermit>(NYC_DATASETS.approvedPermits, {
-      $where: `issued_date >= '${since}'`,
-      $order: "issued_date DESC",
+      $where: "latitude IS NOT NULL AND longitude IS NOT NULL",
+      $order: "job_filing_number DESC",
       $limit: String(limit),
     });
   } catch {
-    // Dataset schema variants — soft-fail so cron still completes
     return [];
   }
 }
@@ -201,12 +224,20 @@ export async function fetchCertificatesOfOccupancy(opts: SyncWindowOptions = {})
   const since = daysAgoIso(days);
   try {
     return await sodaFetch<DobCO>(NYC_DATASETS.certificateOfOccupancy, {
-      $where: `issue_date >= '${since}'`,
-      $order: "issue_date DESC",
+      $where: `submitted_date >= '${since}' AND latitude IS NOT NULL`,
+      $order: "submitted_date DESC",
       $limit: String(limit),
     });
   } catch {
-    return [];
+    try {
+      return await sodaFetch<DobCO>(NYC_DATASETS.certificateOfOccupancy, {
+        $where: "latitude IS NOT NULL",
+        $order: "submitted_date DESC",
+        $limit: String(limit),
+      });
+    } catch {
+      return [];
+    }
   }
 }
 
@@ -214,9 +245,15 @@ export async function fetchLegacyFilings(opts: SyncWindowOptions = {}) {
   const days = opts.days ?? 45;
   const limit = opts.limit ?? 1500;
   const since = daysAgoIso(days);
-  return sodaFetch<LegacyFiling>(NYC_DATASETS.legacyFilings, {
-    $where: `latest_action_date >= '${since}' AND gis_latitude IS NOT NULL`,
-    $order: "latest_action_date DESC",
-    $limit: String(limit),
-  });
+  try {
+    const recent = await sodaFetch<LegacyFiling>(NYC_DATASETS.legacyFilings, {
+      $where: `latest_action_date >= '${since}' AND gis_latitude IS NOT NULL`,
+      $order: "latest_action_date DESC",
+      $limit: String(limit),
+    });
+    if (recent.length) return recent;
+  } catch {
+    // classic BIS feed is largely historical
+  }
+  return [];
 }

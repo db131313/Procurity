@@ -249,17 +249,34 @@ export const SEED_EVENTS: ProjectEvent[] = [
   },
 ];
 
+/** Top NYC coverage for demo — replaced at sync time with live hot zips when available. */
 export const DEMO_USER: UserRecord = {
   id: "user-demo",
   firebaseUid: "demo-uid",
   email: "demo@procurity.pro",
   name: "Demo Rep",
-  plan: "trial",
-  zipCodes: ["10001", "10019", "10118"],
+  plan: "pro",
+  zipCodes: [
+    "10001",
+    "10003",
+    "10011",
+    "10013",
+    "10014",
+    "10016",
+    "10019",
+    "10022",
+    "10025",
+    "10036",
+    "10118",
+    "11201",
+    "11215",
+    "11238",
+    "11101",
+  ],
   trialEndsAt: new Date(Date.now() + 7 * 86400000).toISOString(),
   stripeCustomerId: null,
   stripeSubscriptionId: null,
-  zipAllowance: 3,
+  zipAllowance: 25,
   notificationPrefs: {
     email: true,
     hotOpportunities: true,
