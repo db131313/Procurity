@@ -46,12 +46,12 @@ export type ScoringResult = {
 };
 
 const PHASE_BASE: Record<ProjectPhase, number> = {
-  pre_construction: 42,
+  pre_construction: 38,
   foundation_structure: 48,
-  mep: 68,
-  interior_finishing: 92,
-  sign_ready: 88,
-  signage_filed: 55,
+  mep: 72,
+  interior_finishing: 96,
+  sign_ready: 94,
+  signage_filed: 52,
 };
 
 const PHASE_WINDOW: Record<ProjectPhase, string> = {
@@ -228,13 +228,17 @@ export function scoreProject(
     filerScore * weights.filerSignal +
     competitiveScore * weights.competitive;
 
-  // Interior finishing / sign-ready get a soft floor when signals are strong
+  // Soft floors so peak buying windows land in the green 90+ band
   let score = clamp(raw);
-  if (
-    (input.phase === "interior_finishing" || input.phase === "sign_ready") &&
-    commercial &&
-    days <= 30
-  ) {
+  const peakPhase =
+    input.phase === "interior_finishing" || input.phase === "sign_ready";
+  if (peakPhase && commercial && days <= 14 && (input.gcName || input.architectName)) {
+    score = Math.max(score, 92);
+  } else if (peakPhase && commercial && days <= 21) {
+    score = Math.max(score, 90);
+  } else if (peakPhase && commercial && days <= 45) {
+    score = Math.max(score, 82);
+  } else if (peakPhase && days <= 30) {
     score = Math.max(score, 78);
   }
 

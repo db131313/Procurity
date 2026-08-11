@@ -22,9 +22,16 @@ const TABS = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isMap = pathname.startsWith("/app/map");
 
   return (
-    <div className="min-h-[100dvh] bg-offwhite md:flex">
+    <div
+      className={
+        isMap
+          ? "flex h-[100dvh] overflow-hidden bg-offwhite md:flex-row"
+          : "min-h-[100dvh] bg-offwhite md:flex"
+      }
+    >
       <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-white px-4 py-6 md:flex">
         <Logo variant="dark" size={32} />
         <nav className="mt-8 flex flex-col gap-1">
@@ -50,7 +57,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
       </aside>
 
-      <div className="flex min-h-[100dvh] flex-1 flex-col pb-[calc(64px+var(--safe-bottom))] md:pb-0">
+      <div
+        className={
+          isMap
+            ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-[calc(64px+var(--safe-bottom))] md:pb-0"
+            : "flex min-h-[100dvh] flex-1 flex-col pb-[calc(64px+var(--safe-bottom))] md:pb-0"
+        }
+      >
         {children}
       </div>
 

@@ -4,13 +4,10 @@ import { getSyncMeta, listProjects } from "@/lib/db/store";
 import { relativeTime } from "@/lib/format";
 
 export default async function MapPage() {
-  const user = await getCurrentUser();
+  // Always citywide — all five boroughs from live DOB store
+  await getCurrentUser();
   const sync = await getSyncMeta();
-  const zipCodes = user?.zipCodes ?? [];
-  // Show subscribed zips when set; otherwise citywide live feed
-  const projects = await listProjects({
-    zipCodes: zipCodes.length ? zipCodes : undefined,
-  });
+  const projects = await listProjects();
 
   const mapProjects = projects.map((p) => ({
     id: p.id,
@@ -22,20 +19,25 @@ export default async function MapPage() {
     estValueHigh: p.estValueHigh,
     buyingWindowEstimate: p.buyingWindowEstimate,
     phase: p.phase,
+    borough: p.borough,
     updatedAt: p.updatedAt,
     zip: p.zip,
   }));
 
+  const boroughs = new Set(
+    projects.map((p) => p.borough).filter(Boolean) as string[],
+  );
+
   return (
-    <main className="relative flex min-h-[100dvh] flex-1 flex-col md:min-h-0">
-      <div className="pointer-events-none absolute left-3 top-[4.5rem] z-20 md:left-5 md:top-[5.5rem]">
-        <p className="pointer-events-auto rounded-full border border-line bg-white/95 px-3 py-1 text-[11px] font-bold text-slate shadow-sm backdrop-blur">
+    <main className="relative h-[100dvh] w-full overflow-hidden md:h-full md:min-h-0 md:flex-1">
+      <div className="pointer-events-none absolute left-3 top-3 z-20 md:left-5 md:top-4">
+        <p className="pointer-events-auto rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-slate shadow-sm backdrop-blur">
           {sync.lastSyncAt
-            ? `Live · all 5 boroughs · ${projects.length.toLocaleString()} sites · ${relativeTime(sync.lastSyncAt)}`
+            ? `Live · ${boroughs.size} boroughs · ${projects.length.toLocaleString()} sites · ${relativeTime(sync.lastSyncAt)}`
             : "Citywide · run DOB sync"}
         </p>
       </div>
-      <MapViewLazy projects={mapProjects} zipCodes={zipCodes} />
+      <MapViewLazy projects={mapProjects} />
     </main>
   );
 }

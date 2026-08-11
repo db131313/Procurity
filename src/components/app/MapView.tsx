@@ -5,13 +5,13 @@ import Link from "next/link";
 import {
   LngLatBounds,
   Map as MapLibreMap,
-  Marker,
   NavigationControl,
   setWorkerUrl,
+  type GeoJSONSource,
+  type MapLayerMouseEvent,
 } from "maplibre-gl";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { ScoreRing } from "@/components/ui/ScoreRing";
-import { cn } from "@/lib/cn";
 import { formatMoneyRange } from "@/lib/format";
 import type { ProjectPhase } from "@/lib/db/types";
 
@@ -31,242 +31,277 @@ export type MapProject = {
   estValueHigh: number;
   buyingWindowEstimate: string;
   phase: ProjectPhase;
+  borough?: string | null;
   updatedAt?: string;
   zip?: string | null;
 };
 
-type FilterKey = "all" | "hot" | "buying" | "new";
-
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "hot", label: "Hot" },
-  { key: "buying", label: "Buying Now" },
-  { key: "new", label: "New" },
-];
-
-function pinStyle(score: number) {
-  if (score >= 90) {
-    return {
-      fill: "#F97316",
-      text: "#ffffff",
-      className: "pc-hot-glow",
-      ring: "#FED7AA",
-    };
-  }
-  if (score >= 80) {
-    return {
-      fill: "url(#pinGrad)",
-      text: "#ffffff",
-      className: "",
-      ring: "#E0E7FF",
-      gradient: true,
-    };
-  }
-  if (score >= 60) {
-    return {
-      fill: "#4F9CF8",
-      text: "#ffffff",
-      className: "",
-      ring: "#DBEAFE",
-    };
-  }
-  return {
-    fill: "#9CA3AF",
-    text: "#ffffff",
-    className: "",
-    ring: "#E5E7EB",
-  };
+/**
+ * Buy Score pin colors
+ * 90–100  green   #16A34A  excellent / act now
+ * 80–89   teal    #0D9488  strong fit
+ * 70–79   blue    #2563EB  worth pursuing
+ * 60–69   amber   #D97706  monitor / warm
+ * <60     slate   #64748B  lower priority
+ */
+export function pinColorForScore(score: number): string {
+  if (score >= 90) return "#16A34A";
+  if (score >= 80) return "#0D9488";
+  if (score >= 70) return "#2563EB";
+  if (score >= 60) return "#D97706";
+  return "#64748B";
 }
 
-function matchesFilter(p: MapProject, filter: FilterKey) {
-  if (filter === "all") return true;
-  // Real DOB scores rarely hit 90+; treat 85+ as hot opportunity band
-  if (filter === "hot") return p.score >= 85;
-  if (filter === "buying") {
-    return (
-      p.phase === "interior_finishing" ||
-      p.phase === "sign_ready" ||
-      p.score >= 80
-    );
-  }
-  if (filter === "new") {
-    if (!p.updatedAt) return true;
-    return new Date(p.updatedAt).getTime() >= Date.now() - 7 * 86400000;
-  }
-  return true;
+function scoreBand(score: number) {
+  if (score >= 90) return "Hot · 90+";
+  if (score >= 80) return "Strong · 80–89";
+  if (score >= 70) return "Solid · 70–79";
+  if (score >= 60) return "Warm · 60–69";
+  return "Watch · <60";
 }
 
 type Props = {
   projects: MapProject[];
-  zipCodes?: string[];
 };
 
-export function MapView({ projects, zipCodes = [] }: Props) {
+export function MapView({ projects }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const markersRef = useRef<Marker[]>([]);
-  const [filter, setFilter] = useState<FilterKey>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [zipFilter, setZipFilter] = useState<string>("all");
+  const [mapReady, setMapReady] = useState(false);
 
-  const visible = useMemo(() => {
-    const filtered = projects.filter((p) => {
-      if (zipFilter !== "all" && p.zip !== zipFilter) return false;
-      return matchesFilter(p, filter);
-    });
-    // Cap DOM markers for mobile performance on large live feeds
-    return [...filtered].sort((a, b) => b.score - a.score).slice(0, 350);
-  }, [projects, filter, zipFilter]);
+  const byId = useMemo(() => {
+    const m = new Map<string, MapProject>();
+    for (const p of projects) m.set(p.id, p);
+    return m;
+  }, [projects]);
 
-  const selected = visible.find((p) => p.id === selectedId) ?? null;
+  const selected = selectedId ? byId.get(selectedId) ?? null : null;
 
+  const geojson = useMemo(
+    () =>
+      ({
+        type: "FeatureCollection" as const,
+        features: projects.map((p) => ({
+          type: "Feature" as const,
+          id: p.id,
+          properties: {
+            id: p.id,
+            score: p.score,
+            address: p.address,
+            color: pinColorForScore(p.score),
+            borough: p.borough ?? "",
+          },
+          geometry: {
+            type: "Point" as const,
+            coordinates: [p.longitude, p.latitude],
+          },
+        })),
+      }) satisfies GeoJSON.FeatureCollection,
+    [projects],
+  );
+
+  // Init map once — fill the parent which must have an explicit height
   useEffect(() => {
-    if (!containerRef.current) return;
+    const el = containerRef.current;
+    if (!el) return;
     let cancelled = false;
     let map: MapLibreMap | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
-    const raf = requestAnimationFrame(() => {
+    const init = () => {
       if (cancelled || !containerRef.current) return;
+      // Ensure container has layout size before MapLibre measures it
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      if (width < 2 || height < 2) {
+        requestAnimationFrame(init);
+        return;
+      }
+
       map = new MapLibreMap({
         container: containerRef.current,
         style: STYLE_URL,
-        center: [-73.98, 40.74],
-        zoom: 11.6,
-        pitch: 45,
-        bearing: -12,
-        maxPitch: 70,
+        center: [-73.94, 40.72],
+        zoom: 10.2,
+        pitch: 0,
+        bearing: 0,
+        maxPitch: 60,
       });
-      map.addControl(
-        new NavigationControl({ visualizePitch: true }),
-        "top-right",
-      );
-      map.on("load", () => map?.resize());
+      map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
       mapRef.current = map;
-    });
 
-    const onResize = () => mapRef.current?.resize();
-    window.addEventListener("resize", onResize);
+      map.on("load", () => {
+        if (cancelled || !map) return;
+        map.resize();
+        setMapReady(true);
+      });
+
+      resizeObserver = new ResizeObserver(() => {
+        map?.resize();
+      });
+      resizeObserver.observe(containerRef.current);
+    };
+
+    const raf = requestAnimationFrame(init);
+
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
+      resizeObserver?.disconnect();
+      setMapReady(false);
       map?.remove();
       mapRef.current = null;
     };
   }, []);
 
+  // Push GeoJSON + layers whenever projects change
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapReady) return;
 
-    const paint = () => {
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
+    const sourceId = "projects";
+    const existing = map.getSource(sourceId) as GeoJSONSource | undefined;
+    if (existing) {
+      existing.setData(geojson);
+    } else {
+      map.addSource(sourceId, { type: "geojson", data: geojson });
 
-      visible.forEach((project) => {
-        const style = pinStyle(project.score);
-        const el = document.createElement("button");
-        el.type = "button";
-        el.setAttribute("aria-label", `Score ${project.score} at ${project.address}`);
-        el.className = cn("border-0 bg-transparent cursor-pointer", style.className);
-        el.style.cssText =
-          "width:40px;height:40px;padding:0;filter:drop-shadow(0 6px 10px rgba(15,23,42,.22));";
-        el.innerHTML = `
-          <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">
-            <defs>
-              <linearGradient id="pinGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop stop-color="#7C6CF6"/><stop offset="1" stop-color="#38D9C9"/>
-              </linearGradient>
-            </defs>
-            <circle cx="20" cy="20" r="18" fill="${style.ring}"/>
-            <circle cx="20" cy="20" r="14" fill="${style.fill}"/>
-            <text x="20" y="24" text-anchor="middle" font-size="11" font-weight="800"
-              fill="${style.text}" font-family="Satoshi,sans-serif">${project.score}</text>
-          </svg>`;
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          setSelectedId(project.id);
-        });
-        markersRef.current.push(
-          new Marker({ element: el, anchor: "center" })
-            .setLngLat([project.longitude, project.latitude])
-            .addTo(map),
-        );
+      map.addLayer({
+        id: "project-pins-halo",
+        type: "circle",
+        source: sourceId,
+        paint: {
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            9,
+            6,
+            14,
+            14,
+          ],
+          "circle-color": ["get", "color"],
+          "circle-opacity": 0.22,
+        },
       });
 
-      if (visible.length) {
-        const bounds = new LngLatBounds();
-        visible.forEach((p) => bounds.extend([p.longitude, p.latitude]));
-        map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 700 });
-      }
-      map.resize();
-    };
+      map.addLayer({
+        id: "project-pins",
+        type: "circle",
+        source: sourceId,
+        paint: {
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            9,
+            5,
+            12,
+            8,
+            15,
+            12,
+          ],
+          "circle-color": ["get", "color"],
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+        },
+      });
 
-    if (map.loaded()) paint();
-    else map.once("load", paint);
-  }, [visible]);
+      map.addLayer({
+        id: "project-scores",
+        type: "symbol",
+        source: sourceId,
+        minzoom: 12,
+        layout: {
+          "text-field": ["to-string", ["get", "score"]],
+          "text-size": 10,
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: {
+          "text-color": "#ffffff",
+          "text-halo-color": "rgba(0,0,0,0.25)",
+          "text-halo-width": 0.5,
+        },
+      });
+
+      const onEnter = () => {
+        map.getCanvas().style.cursor = "pointer";
+      };
+      const onLeave = () => {
+        map.getCanvas().style.cursor = "";
+      };
+      const onClick = (e: MapLayerMouseEvent) => {
+        const feature = e.features?.[0];
+        const id = feature?.properties?.id as string | undefined;
+        if (id) setSelectedId(id);
+      };
+
+      map.on("mouseenter", "project-pins", onEnter);
+      map.on("mouseleave", "project-pins", onLeave);
+      map.on("click", "project-pins", onClick);
+      map.on("click", "project-scores", onClick);
+    }
+
+    if (geojson.features.length) {
+      const bounds = new LngLatBounds();
+      for (const f of geojson.features) {
+        const c = f.geometry.coordinates as [number, number];
+        bounds.extend(c);
+      }
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, {
+          padding: { top: 72, bottom: 48, left: 48, right: 48 },
+          maxZoom: 12.2,
+          duration: 600,
+        });
+      }
+    }
+
+    map.resize();
+  }, [geojson, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selected) return;
     map.flyTo({
       center: [selected.longitude, selected.latitude],
-      zoom: 15.2,
-      pitch: 55,
-      duration: 900,
+      zoom: Math.max(map.getZoom(), 14),
+      duration: 700,
       essential: true,
     });
   }, [selected]);
 
   return (
-    <div className="relative h-[calc(100dvh-0px)] min-h-[100dvh] w-full md:min-h-0 md:flex-1">
-      <div ref={containerRef} className="absolute inset-0 h-full w-full" />
+    <div className="relative h-full min-h-0 w-full flex-1">
+      <div
+        ref={containerRef}
+        className="absolute inset-0 h-full w-full bg-[#dfe7ef]"
+        aria-label="NYC construction opportunities map"
+        role="application"
+      />
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-3 pt-3 md:px-5 md:pt-5">
-        <div className="pointer-events-auto flex flex-col gap-2">
-          {zipCodes.length > 0 && (
-            <label className="inline-flex w-fit items-center gap-2 rounded-full border border-line bg-white/95 px-3 py-1.5 text-xs font-semibold text-ink shadow-sm backdrop-blur">
-              <span className="text-slate">Zip</span>
-              <select
-                aria-label="Filter by zip code"
-                className="bg-transparent font-bold outline-none"
-                value={zipFilter}
-                onChange={(e) => setZipFilter(e.target.value)}
-              >
-                <option value="all">All zips</option>
-                {zipCodes.map((z) => (
-                  <option key={z} value={z}>
-                    {z}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <div
-            className="flex gap-2 overflow-x-auto pb-1"
-            role="toolbar"
-            aria-label="Map filters"
-          >
-            {FILTERS.map((f) => (
-              <button
-                key={f.key}
-                type="button"
-                aria-pressed={filter === f.key}
-                aria-label={`Show ${f.label} projects`}
-                onClick={() => setFilter(f.key)}
-                className={cn(
-                  "shrink-0 rounded-full px-3.5 py-2 text-xs font-bold shadow-sm transition",
-                  filter === f.key
-                    ? "pc-gradient-bg text-white"
-                    : "border border-line bg-white/95 text-ink backdrop-blur",
-                )}
-              >
-                {f.label}
-              </button>
+      {/* Score legend */}
+      <div className="pointer-events-none absolute bottom-4 left-3 z-10 md:bottom-6 md:left-5">
+        <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
+          <p className="mb-1.5 font-bold text-ink">Buy Score</p>
+          <ul className="space-y-1 font-semibold text-slate">
+            {[
+              { c: "#16A34A", t: "90+ Act now" },
+              { c: "#0D9488", t: "80–89 Strong" },
+              { c: "#2563EB", t: "70–79 Solid" },
+              { c: "#D97706", t: "60–69 Warm" },
+              { c: "#64748B", t: "<60 Watch" },
+            ].map((row) => (
+              <li key={row.t} className="flex items-center gap-2">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white"
+                  style={{ background: row.c }}
+                />
+                {row.t}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </div>
 
@@ -276,10 +311,16 @@ export function MapView({ projects, zipCodes = [] }: Props) {
             <div className="flex items-start gap-3">
               <ScoreRing score={selected.score} size={64} stroke={5} />
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-purple">
-                  {selected.score >= 90 ? "Hot opportunity" : "Opportunity"}
+                <p
+                  className="text-[11px] font-bold uppercase tracking-wide"
+                  style={{ color: pinColorForScore(selected.score) }}
+                >
+                  {scoreBand(selected.score)}
                 </p>
                 <p className="mt-0.5 text-lg font-bold text-ink">{selected.address}</p>
+                <p className="mt-1 text-sm text-slate">
+                  {[selected.borough, selected.zip].filter(Boolean).join(" · ")}
+                </p>
                 <p className="mt-1 text-sm text-slate">
                   {formatMoneyRange(selected.estValueLow, selected.estValueHigh)} ·{" "}
                   {selected.buyingWindowEstimate}

@@ -16,7 +16,9 @@ export function ProjectCard({ project }: { project: Project }) {
           <p className="text-[11px] font-bold uppercase tracking-wide text-purple">
             {project.score >= 90
               ? "Hot opportunity"
-              : PHASE_LABELS[project.phase]}
+              : project.borough
+                ? project.borough
+                : PHASE_LABELS[project.phase]}
           </p>
           <p className="mt-0.5 truncate text-base font-bold text-ink">
             {project.address}

@@ -7,15 +7,17 @@ import { relativeTime } from "@/lib/format";
 export default async function AppHomePage() {
   const user = await getCurrentUser();
   const sync = await getSyncMeta();
-  const projects = await listProjects({
-    zipCodes: user?.zipCodes.length ? user.zipCodes : undefined,
-  });
+  // Citywide — all five boroughs
+  const projects = await listProjects();
   const top = projects.slice(0, 12);
   const pipeline = user ? await listPipeline(user.id) : [];
   const won = pipeline.filter((p) => p.stage === "won");
   const winRate =
     pipeline.length > 0 ? Math.round((won.length / pipeline.length) * 100) : 0;
   const live = Boolean(sync.lastSyncAt);
+  const boroughCount = new Set(
+    projects.map((p) => p.borough).filter(Boolean),
+  ).size;
 
   return (
     <main className="px-5 py-6 md:px-8 md:py-8">
@@ -26,13 +28,13 @@ export default async function AppHomePage() {
         Today&apos;s opportunities
       </h1>
       <p className="mt-1 text-sm text-slate">
-        Ranked by Buy Score from live NYC DOB filings across all five boroughs.
+        Live NYC DOB projects across all five boroughs, ranked by Buy Score.
       </p>
       {live && (
         <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          Live citywide · {sync.projectCount.toLocaleString()} projects · synced{" "}
-          {relativeTime(sync.lastSyncAt!)}
+          Live · {boroughCount} boroughs · {sync.projectCount.toLocaleString()}{" "}
+          projects · synced {relativeTime(sync.lastSyncAt!)}
         </p>
       )}
 
@@ -68,9 +70,9 @@ export default async function AppHomePage() {
 
       {!top.length && (
         <div className="pc-card mt-6 p-6 text-center">
-          <p className="font-bold text-ink">No projects in your zips yet</p>
+          <p className="font-bold text-ink">No live projects yet</p>
           <p className="mt-1 text-sm text-slate">
-            Sync DOB data or adjust zip codes in settings.
+            Run the DOB sync to pull citywide filings.
           </p>
         </div>
       )}

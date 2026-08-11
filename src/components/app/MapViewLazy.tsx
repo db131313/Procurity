@@ -10,20 +10,14 @@ const MapView = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="min-h-[60vh] w-full flex-1" />
+      <div className="absolute inset-0 flex flex-col gap-3 bg-[#dfe7ef] p-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="min-h-0 w-full flex-1" />
       </div>
     ),
   },
 );
 
-export function MapViewLazy({
-  projects,
-  zipCodes,
-}: {
-  projects: MapProject[];
-  zipCodes?: string[];
-}) {
-  return <MapView projects={projects} zipCodes={zipCodes} />;
+export function MapViewLazy({ projects }: { projects: MapProject[] }) {
+  return <MapView projects={projects} />;
 }

@@ -13,7 +13,10 @@ export async function startDemoSession() {
     email: "demo@procurity.pro",
     name: "Demo Rep",
     onboardingComplete: true,
-    zipCodes: ["10001", "10019", "10118"],
+    // Empty zip list = citywide (all five boroughs) in listProjects
+    zipCodes: [],
+    zipAllowance: 25,
+    plan: "pro",
   });
   await createSession({
     uid: "demo-uid",
