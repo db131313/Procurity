@@ -26,20 +26,19 @@ export default async function AppHomePage() {
         Today&apos;s opportunities
       </h1>
       <p className="mt-1 text-sm text-slate">
-        Ranked by Buy Score from live NYC DOB filings
-        {user?.zipCodes?.length ? ` in ${user.zipCodes.length} zips` : ""}.
+        Ranked by Buy Score from live NYC DOB filings across all five boroughs.
       </p>
       {live && (
         <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          Live data · {sync.projectCount.toLocaleString()} projects · synced{" "}
+          Live citywide · {sync.projectCount.toLocaleString()} projects · synced{" "}
           {relativeTime(sync.lastSyncAt!)}
         </p>
       )}
 
       <div className="mt-5 grid grid-cols-3 gap-3">
         {[
-          { label: "In your zips", value: String(projects.length) },
+          { label: "Citywide", value: String(projects.length) },
           { label: "Pipeline", value: String(pipeline.length) },
           { label: "Win rate", value: `${winRate}%` },
         ].map((s) => (

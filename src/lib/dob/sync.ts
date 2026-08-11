@@ -1,25 +1,26 @@
 import {
   fetchApprovedPermits,
   fetchCertificatesOfOccupancy,
-  fetchDobNowFilings,
+  fetchDobNowFilingsCitywide,
   fetchLegacyFilings,
   fetchPermitIssuance,
 } from "./client";
 import { normalizeProjects } from "./normalize";
 import {
-  expandDemoCoverage,
+  enableCitywideDemo,
   listProjects,
   replaceProjects,
 } from "@/lib/db/store";
 
-export async function syncDobData(days = 45) {
+export async function syncDobData(days = 60) {
   const previous = await listProjects();
 
   const [filings, permits, approved, cos, legacy] = await Promise.all([
-    fetchDobNowFilings({ days, limit: 2500 }),
+    // ~900 filings × 5 boroughs for balanced citywide coverage
+    fetchDobNowFilingsCitywide({ days, perBorough: 900 }),
     fetchPermitIssuance({ days, limit: 2000 }),
-    fetchApprovedPermits({ days, limit: 2500 }),
-    fetchCertificatesOfOccupancy({ days: Math.max(days, 90), limit: 1200 }),
+    fetchApprovedPermits({ days, limit: 3000 }),
+    fetchCertificatesOfOccupancy({ days: Math.max(days, 120), limit: 1500 }),
     fetchLegacyFilings({ days, limit: 1000 }),
   ]);
 
@@ -28,15 +29,21 @@ export async function syncDobData(days = 45) {
     previous,
   );
 
-  // Live pull replaces the store once we have real NYC rows
   const merged = projects.length ? projects : previous;
-
   const db = await replaceProjects(merged, events);
-  await expandDemoCoverage(25);
+  // Demo accounts see all five boroughs (no zip gate)
+  await enableCitywideDemo();
+
+  const byBorough: Record<string, number> = {};
+  for (const p of db.projects) {
+    const b = p.borough || "Unknown";
+    byBorough[b] = (byBorough[b] ?? 0) + 1;
+  }
 
   return {
     ok: true,
     source: "nyc-open-data",
+    coverage: "all-five-boroughs",
     counts: {
       filings: filings.length,
       permits: permits.length,
@@ -45,6 +52,7 @@ export async function syncDobData(days = 45) {
       legacy: legacy.length,
       projects: db.projects.length,
       events: events.length,
+      byBorough,
     },
     lastSyncAt: db.lastSyncAt,
   };

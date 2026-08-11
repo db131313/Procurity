@@ -252,3 +252,19 @@ export async function expandDemoCoverage(limit = 25) {
   await save(db);
   return db;
 }
+
+/**
+ * Citywide demo mode: empty zip list = no filter in listProjects,
+ * so Manhattan / Brooklyn / Queens / Bronx / Staten Island all show.
+ */
+export async function enableCitywideDemo() {
+  const db = await ensureDb();
+  for (const user of db.users) {
+    user.zipCodes = [];
+    user.zipAllowance = Math.max(user.zipAllowance, 25);
+    user.onboardingComplete = true;
+    if (user.plan === "trial") user.plan = "pro";
+  }
+  await save(db);
+  return db;
+}

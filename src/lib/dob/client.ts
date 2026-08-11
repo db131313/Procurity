@@ -165,18 +165,59 @@ export type SyncWindowOptions = {
   /** Rolling window in days (default 45). */
   days?: number;
   limit?: number;
+  borough?: string;
 };
+
+const NYC_BOROUGHS = [
+  "Manhattan",
+  "Brooklyn",
+  "Queens",
+  "Bronx",
+  "Staten Island",
+] as const;
 
 export async function fetchDobNowFilings(opts: SyncWindowOptions = {}) {
   const days = opts.days ?? 45;
   const limit = opts.limit ?? 2000;
   const since = daysAgoIso(days);
+  const boroughClause = opts.borough
+    ? ` AND borough = '${opts.borough.replace(/'/g, "")}'`
+    : "";
   return sodaFetch<DobNowFiling>(NYC_DATASETS.dobNowFilings, {
-    $where: `filing_date >= '${since}' AND latitude IS NOT NULL AND longitude IS NOT NULL`,
+    $where: `filing_date >= '${since}' AND latitude IS NOT NULL AND longitude IS NOT NULL${boroughClause}`,
     $order: "filing_date DESC",
     $limit: String(limit),
   });
 }
+
+/** Balanced pull across all five boroughs so SI/Bronx aren't crowded out. */
+export async function fetchDobNowFilingsCitywide(opts: {
+  days?: number;
+  perBorough?: number;
+} = {}) {
+  const days = opts.days ?? 60;
+  const perBorough = opts.perBorough ?? 900;
+  const batches = await Promise.all(
+    NYC_BOROUGHS.map((borough) =>
+      fetchDobNowFilings({ days, limit: perBorough, borough }),
+    ),
+  );
+  const seen = new Set<string>();
+  const merged: DobNowFiling[] = [];
+  for (const batch of batches) {
+    for (const row of batch) {
+      const key =
+        row.job_filing_number ||
+        `${row.bin}-${row.filing_date}-${row.house_no}-${row.street_name}`;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(row);
+    }
+  }
+  return merged;
+}
+
+export { NYC_BOROUGHS };
 
 export async function fetchPermitIssuance(opts: SyncWindowOptions = {}) {
   const days = opts.days ?? 45;

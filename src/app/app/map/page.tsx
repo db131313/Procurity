@@ -31,10 +31,8 @@ export default async function MapPage() {
       <div className="pointer-events-none absolute left-3 top-[4.5rem] z-20 md:left-5 md:top-[5.5rem]">
         <p className="pointer-events-auto rounded-full border border-line bg-white/95 px-3 py-1 text-[11px] font-bold text-slate shadow-sm backdrop-blur">
           {sync.lastSyncAt
-            ? `Live NYC DOB · ${projects.length} sites · ${relativeTime(sync.lastSyncAt)}`
-            : zipCodes.length
-              ? `Zips: ${zipCodes.slice(0, 4).join(", ")}${zipCodes.length > 4 ? "…" : ""}`
-              : "Citywide · run DOB sync"}
+            ? `Live · all 5 boroughs · ${projects.length.toLocaleString()} sites · ${relativeTime(sync.lastSyncAt)}`
+            : "Citywide · run DOB sync"}
         </p>
       </div>
       <MapViewLazy projects={mapProjects} zipCodes={zipCodes} />

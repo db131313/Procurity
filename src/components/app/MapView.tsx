@@ -115,7 +115,7 @@ export function MapView({ projects, zipCodes = [] }: Props) {
       return matchesFilter(p, filter);
     });
     // Cap DOM markers for mobile performance on large live feeds
-    return [...filtered].sort((a, b) => b.score - a.score).slice(0, 200);
+    return [...filtered].sort((a, b) => b.score - a.score).slice(0, 350);
   }, [projects, filter, zipFilter]);
 
   const selected = visible.find((p) => p.id === selectedId) ?? null;
