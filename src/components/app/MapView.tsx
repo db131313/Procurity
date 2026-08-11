@@ -3,17 +3,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  LngLatBounds,
   Map as MapLibreMap,
   NavigationControl,
   setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,
 } from "maplibre-gl";
+import {
+  DEFAULT_MAP_FILTERS,
+  MapFilters,
+  getMapFilters,
+  setMapFilters,
+  type MapFilterState,
+  type TradeKey,
+} from "@/components/app/MapFilters";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { formatMoneyRange } from "@/lib/format";
-import type { ProjectPhase } from "@/lib/db/types";
+import {
+  DEFAULT_MAP_CAMERA,
+  getMapCamera,
+  setMapCamera,
+} from "@/lib/map/cameraStore";
+import type { ProjectPhase, TradeScores } from "@/lib/db/types";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
@@ -26,6 +38,7 @@ export type MapProject = {
   latitude: number;
   longitude: number;
   score: number;
+  tradeScores?: TradeScores;
   address: string;
   estValueLow: number;
   estValueHigh: number;
@@ -60,6 +73,70 @@ function scoreBand(score: number) {
   return "Watch · <60";
 }
 
+function tradeScoresFor(p: MapProject): TradeScores {
+  if (p.tradeScores) return p.tradeScores;
+  const s = p.score;
+  return {
+    signage: s,
+    lighting: s,
+    glass: s,
+    security: s,
+    flooring: s,
+  };
+}
+
+/** When trades are enabled, pin score = max of those trade scores. */
+export function effectivePinScore(
+  p: MapProject,
+  trades: TradeKey[],
+): number {
+  if (!trades.length) return p.score;
+  const scores = tradeScoresFor(p);
+  return Math.max(...trades.map((t) => scores[t]));
+}
+
+function matchesQuick(
+  p: MapProject,
+  score: number,
+  quick: MapFilterState["quick"],
+): boolean {
+  if (quick === "all") return true;
+  if (quick === "hot") return score >= 85;
+  if (quick === "buying") {
+    return (
+      p.phase === "interior_finishing" ||
+      p.phase === "sign_ready" ||
+      score >= 80
+    );
+  }
+  if (quick === "new") {
+    if (!p.updatedAt) return false;
+    return new Date(p.updatedAt).getTime() >= Date.now() - 7 * 86400000;
+  }
+  return true;
+}
+
+function matchesScorePreset(
+  score: number,
+  preset: MapFilterState["scorePreset"],
+): boolean {
+  if (preset === "all") return true;
+  if (preset === "90+") return score >= 90;
+  if (preset === "70-89") return score >= 70 && score <= 89;
+  if (preset === "50-69") return score >= 50 && score <= 69;
+  return true;
+}
+
+function captureCamera(map: MapLibreMap) {
+  const c = map.getCenter();
+  setMapCamera({
+    center: [c.lng, c.lat],
+    zoom: map.getZoom(),
+    pitch: map.getPitch(),
+    bearing: map.getBearing(),
+  });
+}
+
 type Props = {
   projects: MapProject[];
 };
@@ -69,6 +146,17 @@ export function MapView({ projects }: Props) {
   const mapRef = useRef<MapLibreMap | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [filters, setFilters] = useState<MapFilterState>(DEFAULT_MAP_FILTERS);
+
+  // Restore filter state for this browser session
+  useEffect(() => {
+    setFilters(getMapFilters());
+  }, []);
+
+  function updateFilters(next: MapFilterState) {
+    setFilters(next);
+    setMapFilters(next);
+  }
 
   const byId = useMemo(() => {
     const m = new Map<string, MapProject>();
@@ -77,19 +165,35 @@ export function MapView({ projects }: Props) {
   }, [projects]);
 
   const selected = selectedId ? byId.get(selectedId) ?? null : null;
+  const selectedScore = selected
+    ? effectivePinScore(selected, filters.trades)
+    : 0;
+
+  const visible = useMemo(() => {
+    return projects
+      .map((p) => {
+        const score = effectivePinScore(p, filters.trades);
+        return { p, score };
+      })
+      .filter(
+        ({ p, score }) =>
+          matchesQuick(p, score, filters.quick) &&
+          matchesScorePreset(score, filters.scorePreset),
+      );
+  }, [projects, filters]);
 
   const geojson = useMemo(
     () =>
       ({
         type: "FeatureCollection" as const,
-        features: projects.map((p) => ({
+        features: visible.map(({ p, score }) => ({
           type: "Feature" as const,
           id: p.id,
           properties: {
             id: p.id,
-            score: p.score,
+            score,
             address: p.address,
-            color: pinColorForScore(p.score),
+            color: pinColorForScore(score),
             borough: p.borough ?? "",
           },
           geometry: {
@@ -98,10 +202,10 @@ export function MapView({ projects }: Props) {
           },
         })),
       }) satisfies GeoJSON.FeatureCollection,
-    [projects],
+    [visible],
   );
 
-  // Init map once — fill the parent which must have an explicit height
+  // Init map once — restore session camera or NYC default (no fitBounds)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -118,13 +222,15 @@ export function MapView({ projects }: Props) {
         return;
       }
 
+      const camera = getMapCamera() ?? DEFAULT_MAP_CAMERA;
+
       map = new MapLibreMap({
         container: containerRef.current,
         style: STYLE_URL,
-        center: [-73.94, 40.72],
-        zoom: 10.2,
-        pitch: 0,
-        bearing: 0,
+        center: camera.center,
+        zoom: camera.zoom,
+        pitch: camera.pitch,
+        bearing: camera.bearing,
         maxPitch: 60,
       });
       map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
@@ -132,6 +238,8 @@ export function MapView({ projects }: Props) {
 
       map.on("load", () => {
         if (cancelled || !map) return;
+        // MapLibre 6 inertia options (documented on DragPanHandler.enable)
+        map.dragPan.enable({ deceleration: 2500, linearity: 0.3 });
         map.resize();
         setMapReady(true);
       });
@@ -154,7 +262,7 @@ export function MapView({ projects }: Props) {
     };
   }, []);
 
-  // Push GeoJSON + layers whenever projects change
+  // Push GeoJSON + layers whenever projects / filters change — do not refit camera
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -234,28 +342,16 @@ export function MapView({ projects }: Props) {
       const onClick = (e: MapLayerMouseEvent) => {
         const feature = e.features?.[0];
         const id = feature?.properties?.id as string | undefined;
-        if (id) setSelectedId(id);
+        if (id) {
+          captureCamera(map);
+          setSelectedId(id);
+        }
       };
 
       map.on("mouseenter", "project-pins", onEnter);
       map.on("mouseleave", "project-pins", onLeave);
       map.on("click", "project-pins", onClick);
       map.on("click", "project-scores", onClick);
-    }
-
-    if (geojson.features.length) {
-      const bounds = new LngLatBounds();
-      for (const f of geojson.features) {
-        const c = f.geometry.coordinates as [number, number];
-        bounds.extend(c);
-      }
-      if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, {
-          padding: { top: 72, bottom: 48, left: 48, right: 48 },
-          maxZoom: 12.2,
-          duration: 600,
-        });
-      }
     }
 
     map.resize();
@@ -280,6 +376,8 @@ export function MapView({ projects }: Props) {
         aria-label="NYC construction opportunities map"
         role="application"
       />
+
+      <MapFilters value={filters} onChange={updateFilters} />
 
       {/* Score legend */}
       <div className="pointer-events-none absolute bottom-4 left-3 z-10 md:bottom-6 md:left-5">
@@ -309,13 +407,13 @@ export function MapView({ projects }: Props) {
         {selected && (
           <div className="pb-2">
             <div className="flex items-start gap-3">
-              <ScoreRing score={selected.score} size={64} stroke={5} />
+              <ScoreRing score={selectedScore} size={64} stroke={5} />
               <div className="min-w-0 flex-1">
                 <p
                   className="text-[11px] font-bold uppercase tracking-wide"
-                  style={{ color: pinColorForScore(selected.score) }}
+                  style={{ color: pinColorForScore(selectedScore) }}
                 >
-                  {scoreBand(selected.score)}
+                  {scoreBand(selectedScore)}
                 </p>
                 <p className="mt-0.5 text-lg font-bold text-ink">{selected.address}</p>
                 <p className="mt-1 text-sm text-slate">
@@ -329,6 +427,10 @@ export function MapView({ projects }: Props) {
             </div>
             <Link
               href={`/app/project/${encodeURIComponent(selected.id)}`}
+              onClick={() => {
+                const map = mapRef.current;
+                if (map) captureCamera(map);
+              }}
               className="pc-gradient-bg mt-4 flex h-12 items-center justify-center rounded-full text-sm font-bold text-white"
             >
               View project
