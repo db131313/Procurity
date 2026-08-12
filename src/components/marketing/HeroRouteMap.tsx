@@ -1,24 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 type Pin = {
   id: string;
-  x: number; // % of map layer
+  x: number;
   y: number;
   score: number;
   label: string;
   mobile?: boolean;
 };
 
-/** Anchored to the right/center so they sit clear of hero copy. */
+/** Anchored in the map stage (right side of hero). */
 const PINS: Pin[] = [
-  { id: "a", x: 18, y: 72, score: 92, label: "Hudson Yards", mobile: true },
-  { id: "b", x: 36, y: 54, score: 88, label: "Chelsea", mobile: true },
-  { id: "c", x: 54, y: 38, score: 91, label: "Midtown", mobile: true },
-  { id: "d", x: 72, y: 58, score: 84, label: "Upper East", mobile: false },
-  { id: "e", x: 88, y: 42, score: 96, label: "LIC", mobile: true },
+  { id: "a", x: 14, y: 78, score: 92, label: "Hudson Yards", mobile: true },
+  { id: "b", x: 34, y: 58, score: 88, label: "Chelsea", mobile: true },
+  { id: "c", x: 52, y: 40, score: 91, label: "Midtown", mobile: true },
+  { id: "d", x: 70, y: 62, score: 84, label: "Upper East", mobile: false },
+  { id: "e", x: 86, y: 44, score: 96, label: "LIC", mobile: true },
 ];
 
 function pinFill(score: number) {
@@ -27,7 +27,7 @@ function pinFill(score: number) {
   return { head: "#2563EB", ring: "#93C5FD" };
 }
 
-/** Smooth teardrop map pin — vector, crisp at any DPR. */
+/** Smooth teardrop map pin — pure SVG, crisp at any DPR. */
 function MapPinMark({
   id,
   score,
@@ -55,7 +55,7 @@ function MapPinMark({
             dy="6"
             stdDeviation="4"
             floodColor="#000"
-            floodOpacity="0.4"
+            floodOpacity="0.45"
           />
         </filter>
         <linearGradient id={glossId} x1="0" y1="0" x2="1" y2="1">
@@ -63,7 +63,7 @@ function MapPinMark({
           <stop offset="55%" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <ellipse cx="28" cy="66" rx="12" ry="3.5" fill="#000" opacity="0.28" />
+      <ellipse cx="28" cy="66" rx="12" ry="3.5" fill="#000" opacity="0.3" />
       <path
         d="M28 2C15.3 2 5 12.4 5 25.2c0 9.6 6.1 18.2 14.6 27.3 3.4 3.6 6.9 6.8 8.4 8.2.5.5 1.3.5 1.8 0 1.5-1.4 5-4.6 8.4-8.2C46.9 43.4 53 34.8 53 25.2 53 12.4 42.7 2 28 2z"
         fill={head}
@@ -100,77 +100,54 @@ function MapPinMark({
 function FloatingPin({
   pin,
   index,
-  visible,
   reduce,
 }: {
   pin: Pin;
   index: number;
-  visible: boolean;
   reduce: boolean | null;
 }) {
   return (
-    <motion.div
-      className="absolute z-20 -translate-x-1/2 -translate-y-full"
-      style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-      initial={reduce ? false : { opacity: 0, y: 18, scale: 0.72 }}
-      animate={
-        visible || reduce
-          ? { opacity: 1, y: 0, scale: 1 }
-          : { opacity: 0, y: 18, scale: 0.72 }
-      }
-      transition={{
-        delay: reduce ? 0 : 0.4 + index * 0.14,
-        type: "spring",
-        stiffness: 420,
-        damping: 18,
+    <div
+      className="pointer-events-none absolute z-20 flex flex-col items-center"
+      style={{
+        left: `${pin.x}%`,
+        top: `${pin.y}%`,
+        // Anchor tip of pin to (x,y) without Framer transform fights
+        transform: "translate(-50%, calc(-100% + 4px))",
+        animation: reduce
+          ? undefined
+          : `pc-pin-in 0.55s cubic-bezier(0.22,1.2,0.36,1) ${0.35 + index * 0.12}s both`,
       }}
     >
-      <motion.div
-        className="mb-1.5 flex justify-center"
-        animate={reduce ? undefined : { y: [0, -3, 0] }}
-        transition={{
-          duration: 3.2 + index * 0.25,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: index * 0.2,
-        }}
+      <div
+        className="mb-1.5"
+        style={
+          reduce
+            ? undefined
+            : {
+                animation: `pc-pin-float 3.2s ease-in-out ${index * 0.2}s infinite`,
+              }
+        }
       >
-        <span className="whitespace-nowrap rounded-full border border-white/20 bg-[#0B0F19]/90 px-2.5 py-1 text-[11px] font-bold tracking-wide text-white shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-md sm:px-3 sm:text-xs">
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/25 bg-[#0B0F19]/92 px-2.5 py-1 text-[11px] font-bold tracking-wide text-white shadow-[0_10px_28px_rgba(0,0,0,0.5)] backdrop-blur-md sm:px-3 sm:text-xs">
           {pin.label}
-          <span className="ml-1.5 tabular-nums text-teal">{pin.score}</span>
+          <span className="tabular-nums text-teal">{pin.score}</span>
         </span>
-      </motion.div>
-      <div className="flex justify-center">
-        <MapPinMark
-          id={pin.id}
-          score={pin.score}
-          className="h-14 w-11 sm:h-16 sm:w-12"
-        />
       </div>
-    </motion.div>
+      <MapPinMark
+        id={pin.id}
+        score={pin.score}
+        className="h-14 w-11 sm:h-[4.25rem] sm:w-12"
+      />
+    </div>
   );
 }
 
 /** Full-bleed hero map: route + scored pins with floating labels. */
 export function HeroRouteMap({ className = "" }: { className?: string }) {
   const reduce = useReducedMotion();
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(true); // hero is above the fold — show immediately
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e?.isIntersecting) setInView(true);
-      },
-      { threshold: 0.05 },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -186,8 +163,8 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
   );
 
   const pathD = isMobile
-    ? "M 60 290 C 120 240, 170 220, 210 200 S 290 150, 340 160 S 400 185, 450 175"
-    : "M 50 290 C 120 235, 170 220, 210 200 S 290 145, 340 155 S 390 215, 430 190 S 460 155, 480 160";
+    ? "M 60 310 C 130 250, 180 230, 220 210 S 300 160, 350 170 S 410 195, 460 185"
+    : "M 40 310 C 120 245, 170 230, 220 210 S 300 150, 350 162 S 400 225, 440 200 S 470 165, 490 170";
 
   const mapShift = reduce
     ? undefined
@@ -195,7 +172,6 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
 
   return (
     <div
-      ref={ref}
       className={`absolute inset-0 overflow-hidden ${className}`}
       onMouseMove={(e) => {
         if (reduce) return;
@@ -207,6 +183,20 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
       onMouseLeave={() => setParallax({ x: 0, y: 0 })}
       aria-hidden
     >
+      <style>{`
+        @keyframes pc-pin-in {
+          from { opacity: 0; transform: translate(-50%, calc(-100% + 18px)) scale(0.75); }
+          to { opacity: 1; transform: translate(-50%, calc(-100% + 4px)) scale(1); }
+        }
+        @keyframes pc-pin-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .pc-hero-route path { animation: none !important; }
+        }
+      `}</style>
+
       {/* Atmosphere */}
       <div
         className="absolute inset-0"
@@ -216,9 +206,9 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
         }}
       />
 
-      {/* City diorama — sits under scrim */}
+      {/* City diorama */}
       <div
-        className="absolute inset-y-0 right-0 w-full md:w-[70%]"
+        className="absolute inset-y-0 right-0 w-full md:w-[72%]"
         style={{ transform: mapShift }}
       >
         <svg
@@ -232,7 +222,6 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
               <stop offset="100%" stopColor="#232c42" />
             </linearGradient>
           </defs>
-
           <g opacity="0.4" fill="#1a2236">
             <rect x="20" y="90" width="28" height="160" rx="2" />
             <rect x="56" y="60" width="40" height="190" rx="2" />
@@ -244,7 +233,6 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
             <rect x="376" y="48" width="58" height="202" rx="2" />
             <rect x="444" y="95" width="36" height="155" rx="2" />
           </g>
-
           <g opacity="0.85" transform="translate(18,95)">
             {[0, 1, 2, 3, 4, 5].map((row) =>
               [0, 1, 2, 3, 4, 5, 6, 7].map((col) => {
@@ -284,7 +272,6 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
               }),
             )}
           </g>
-
           <path
             d="M 40 300 Q 180 240 280 250 T 480 210"
             fill="none"
@@ -296,18 +283,18 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
         </svg>
       </div>
 
-      {/* Left/bottom scrim for copy — stops before the pin stage */}
+      {/* Scrim for copy — leaves the right stage clear */}
       <div
         className="pointer-events-none absolute inset-0 z-[5]"
         style={{
           background:
-            "linear-gradient(90deg, rgba(7,10,18,0.94) 0%, rgba(7,10,18,0.72) 32%, rgba(7,10,18,0.2) 55%, transparent 72%), linear-gradient(180deg, rgba(7,10,18,0.5) 0%, transparent 22%, transparent 58%, rgba(7,10,18,0.82) 100%)",
+            "linear-gradient(90deg, rgba(7,10,18,0.95) 0%, rgba(7,10,18,0.78) 30%, rgba(7,10,18,0.25) 52%, transparent 68%), linear-gradient(180deg, rgba(7,10,18,0.45) 0%, transparent 20%, transparent 62%, rgba(7,10,18,0.78) 100%)",
         }}
       />
 
-      {/* Route + pins ABOVE scrim so they stay crisp */}
+      {/* Route + pins ABOVE scrim */}
       <div
-        className="absolute inset-y-[8%] right-[-2%] z-10 w-[108%] sm:inset-y-[10%] sm:w-[95%] md:right-0 md:w-[68%]"
+        className="pc-hero-route absolute inset-y-[6%] right-0 z-20 w-full max-md:left-0 md:left-auto md:w-[64%]"
         style={{ transform: mapShift }}
       >
         <svg
@@ -338,24 +325,14 @@ export function HeroRouteMap({ className = "" }: { className?: string }) {
             strokeLinejoin="round"
             filter="url(#routeGlow)"
             strokeDasharray="11 13"
-            initial={reduce ? false : { pathLength: 0, opacity: 0 }}
-            animate={
-              inView || reduce
-                ? { pathLength: 1, opacity: 1 }
-                : { pathLength: 0, opacity: 0 }
-            }
-            transition={{ duration: reduce ? 0 : 1.55, ease: "easeInOut" }}
+            initial={reduce ? false : { pathLength: 0, opacity: 0.2 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: reduce ? 0 : 1.5, ease: "easeInOut" }}
           />
         </svg>
 
         {pins.map((pin, i) => (
-          <FloatingPin
-            key={pin.id}
-            pin={pin}
-            index={i}
-            visible={inView}
-            reduce={reduce}
-          />
+          <FloatingPin key={pin.id} pin={pin} index={i} reduce={reduce} />
         ))}
       </div>
     </div>
