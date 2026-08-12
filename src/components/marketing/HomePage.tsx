@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Play } from "lucide-react";
 import { MarketingNav } from "./MarketingNav";
 import { PhaseShowcase } from "./PhaseShowcase";
 import { PricingCards } from "./PricingCards";
@@ -11,7 +10,10 @@ import {
 } from "./ProductPreviews";
 import { Logo } from "@/components/brand/Logo";
 import { AnimatedCounters } from "./AnimatedCounters";
-import { HeroRouteMap } from "./HeroRouteMap";
+import {
+  HeroCityBackground,
+  HeroScorePins,
+} from "./HeroRouteMap";
 
 const STEPS = [
   {
@@ -65,37 +67,48 @@ const SOCIAL = [
 export function HomePage() {
   return (
     <div className="bg-offwhite">
-      {/* Hero — one composition: brand + line + CTA over full-bleed route map */}
-      <section className="relative min-h-[100dvh] overflow-hidden bg-ink text-white">
-        <HeroRouteMap />
+      {/* Hero — matches provided mockups (photo bg, exact copy, hamburger nav) */}
+      <section className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-ink text-white">
+        <HeroCityBackground />
         <MarketingNav />
-        <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-6xl flex-col justify-end px-5 pb-14 pt-28 sm:pb-16 md:justify-center md:px-8 md:pb-24 md:pt-28">
-          <div className="max-w-xl animate-pc-rise md:max-w-2xl">
-            {/* Brand as hero-level signal (not just nav) */}
-            <Logo variant="light" size={48} className="mb-6 sm:mb-8" />
-            <h1 className="text-[2.35rem] font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl lg:text-[4.25rem]">
-              Find the next job.{" "}
-              <span className="pc-gradient-text">Before</span> they need you.
+
+        {/* Desktop pins (absolute over photo) */}
+        <div className="pointer-events-none absolute inset-0 z-[12] hidden md:block" aria-hidden>
+          <HeroScorePins variant="desktop" />
+        </div>
+
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 pb-10 pt-[4.75rem] md:justify-center md:px-8 md:pb-24 md:pt-28">
+          {/* Mobile: featured pin centered under nav */}
+          <div className="mb-6 mt-4 flex justify-center md:hidden">
+            <HeroScorePins variant="mobile" />
+          </div>
+
+          <div className="mt-auto max-w-xl animate-pc-rise md:mt-0 md:max-w-2xl">
+            <h1 className="text-[2.05rem] font-bold leading-[1.12] tracking-tight sm:text-[2.5rem] md:text-5xl lg:text-[3.35rem]">
+              Know{" "}
+              <span className="pc-gradient-text font-black tracking-wide">
+                WHO
+              </span>{" "}
+              is buying{" "}
+              <span className="pc-gradient-text font-black tracking-wide">
+                WHAT
+              </span>{" "}
+              and{" "}
+              <span className="pc-gradient-text font-black tracking-wide">
+                WHEN
+              </span>{" "}
+              so you can make more sales.
             </h1>
-            <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/70 sm:mt-5 sm:text-base md:text-lg">
-              Live permit activity, scored into today&apos;s best signage stops —
-              mapped so you know where to go and what each deal could be worth.
+            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/70 sm:mt-5 sm:text-base md:text-lg">
+              Use better data to better predict procurement windows for new
+              construction, and commercial building projects in your area.
             </p>
-            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
+            <div className="mt-7 sm:mt-8">
               <Link
                 href="/signup"
-                className="pc-gradient-bg inline-flex h-12 items-center justify-center rounded-full px-7 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(124,108,246,0.35)] transition hover:brightness-110 active:scale-[0.98] sm:h-14"
+                className="pc-gradient-bg inline-flex h-12 w-full items-center justify-center rounded-full px-7 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(56,217,201,0.28)] transition hover:brightness-110 active:scale-[0.98] sm:h-14 sm:w-auto"
               >
-                Start Free Trial
-              </Link>
-              <Link
-                href="/how-it-works"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold text-white/85 transition hover:text-white sm:h-14 sm:px-5"
-              >
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
-                  <Play className="h-3.5 w-3.5 fill-current" />
-                </span>
-                See how it works
+                Find My Opportunities
               </Link>
             </div>
           </div>
