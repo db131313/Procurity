@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 
 /**
  * Brand logo.
- * Uses /public/brand/logo.png (full mark) and logo-icon.png (icon only).
+ * Uses /public/brand/logo.png + logo-wordmark-dark.png.
  * // TODO: swap in light/dark variants when available
  */
 export type LogoVariant = "gradient" | "dark" | "light" | "icon";
@@ -22,31 +22,50 @@ export function Logo({
   size = 36,
 }: LogoProps) {
   const iconOnly = variant === "icon" || !showWordmark;
-  const wordmarkClass =
-    variant === "light" || variant === "gradient"
-      ? "text-white"
-      : "text-ink";
 
+  if (iconOnly) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- local brand PNG
+      <img
+        src="/brand/logo-icon.png"
+        alt="Procurity"
+        width={size}
+        height={size}
+        className={cn("shrink-0 object-contain", className)}
+      />
+    );
+  }
+
+  // Dark backgrounds: crisp wordmark lockup (icon + white PROCURITY)
+  if (variant === "gradient" || variant === "light") {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- local brand PNG
+      <img
+        src="/brand/logo-wordmark-dark.png"
+        alt="Procurity"
+        height={size}
+        width={Math.round(size * (1400 / 320))}
+        className={cn("w-auto object-contain object-left", className)}
+        style={{ height: size, width: "auto" }}
+      />
+    );
+  }
+
+  // Light backgrounds: icon + dark wordmark text
   return (
     <div className={cn("inline-flex items-center gap-2.5", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element -- local brand PNG */}
       <img
-        src={iconOnly ? "/brand/logo-icon.png" : "/brand/logo.png"}
-        alt="Procurity"
+        src="/brand/logo-icon.png"
+        alt=""
         width={size}
         height={size}
         className="shrink-0 object-contain"
+        aria-hidden
       />
-      {showWordmark && variant !== "icon" && (
-        <span
-          className={cn(
-            "text-[15px] font-bold tracking-[0.22em] sm:text-[17px]",
-            wordmarkClass,
-          )}
-        >
-          PROCURITY
-        </span>
-      )}
+      <span className="text-[15px] font-bold tracking-[0.22em] text-ink sm:text-[17px]">
+        PROCURITY
+      </span>
     </div>
   );
 }

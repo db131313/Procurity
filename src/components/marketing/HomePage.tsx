@@ -65,50 +65,32 @@ const SOCIAL = [
 export function HomePage() {
   return (
     <div className="bg-offwhite">
-      {/* Hero */}
+      {/* Hero — one composition: brand + line + CTA over full-bleed route map */}
       <section className="relative min-h-[100dvh] overflow-hidden bg-ink text-white">
-        <div
-          className="absolute inset-0"
-          aria-hidden
-          style={{
-            background:
-              "radial-gradient(ellipse at 75% 20%, rgba(124,108,246,0.35), transparent 45%), radial-gradient(ellipse at 20% 80%, rgba(56,217,201,0.22), transparent 40%), linear-gradient(180deg,#0B0F19 0%,#121826 55%,#0B0F19 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 h-[45%] opacity-50"
-          aria-hidden
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='400' viewBox='0 0 1200 400'%3E%3Cg fill='%237C6CF6' fill-opacity='0.25'%3E%3Crect x='40' y='180' width='50' height='220'/%3E%3Crect x='110' y='120' width='70' height='280'/%3E%3Crect x='200' y='160' width='45' height='240'/%3E%3Crect x='270' y='80' width='90' height='320'/%3E%3Crect x='390' y='140' width='60' height='260'/%3E%3Crect x='480' y='60' width='100' height='340'/%3E%3Crect x='610' y='110' width='70' height='290'/%3E%3Crect x='710' y='40' width='120' height='360'/%3E%3Crect x='860' y='130' width='80' height='270'/%3E%3Crect x='970' y='90' width='95' height='310'/%3E%3Crect x='1090' y='150' width='70' height='250'/%3E%3C/g%3E%3Cg fill='%2338D9C9' fill-opacity='0.2'%3E%3Ccircle cx='320' cy='90' r='3'/%3E%3Ccircle cx='540' cy='70' r='2'/%3E%3Ccircle cx='780' cy='55' r='3'/%3E%3C/g%3E%3C/svg%3E")`,
-            backgroundSize: "cover",
-            backgroundPosition: "center bottom",
-          }}
-        />
+        <HeroRouteMap />
         <MarketingNav />
-        <div className="relative z-10 mx-auto grid min-h-[100dvh] max-w-6xl items-end gap-10 px-5 pb-16 pt-28 md:grid-cols-2 md:items-center md:px-8 md:pb-24 md:pt-24">
-          <div className="max-w-2xl animate-pc-rise">
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-teal">
-              Construction project intelligence
-            </p>
-            <h1 className="mt-4 text-[2.5rem] font-bold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl">
+        <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-6xl flex-col justify-end px-5 pb-14 pt-28 sm:pb-16 md:justify-center md:px-8 md:pb-24 md:pt-28">
+          <div className="max-w-xl animate-pc-rise md:max-w-2xl">
+            {/* Brand as hero-level signal (not just nav) */}
+            <Logo variant="light" size={48} className="mb-6 sm:mb-8 sm:h-14 md:h-16" />
+            <h1 className="text-[2.35rem] font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl lg:text-[4.25rem]">
               Find the next job.{" "}
               <span className="pc-gradient-text">Before</span> they need you.
             </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-white/70 md:text-lg">
-              Procurity turns live construction permit activity into high-probability
-              signage opportunities — so you know where to go today, who to talk
-              to, and what the deal could be worth.
+            <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/70 sm:mt-5 sm:text-base md:text-lg">
+              Live permit activity, scored into today&apos;s best signage stops —
+              mapped so you know where to go and what each deal could be worth.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
               <Link
                 href="/signup"
-                className="pc-gradient-bg inline-flex h-14 items-center justify-center rounded-full px-7 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(124,108,246,0.35)] transition active:scale-[0.98]"
+                className="pc-gradient-bg inline-flex h-12 items-center justify-center rounded-full px-7 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(124,108,246,0.35)] transition hover:brightness-110 active:scale-[0.98] sm:h-14"
               >
                 Start Free Trial
               </Link>
               <Link
                 href="/how-it-works"
-                className="inline-flex h-14 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white/85 transition hover:text-white"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold text-white/85 transition hover:text-white sm:h-14 sm:px-5"
               >
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
                   <Play className="h-3.5 w-3.5 fill-current" />
@@ -116,9 +98,6 @@ export function HomePage() {
                 See how it works
               </Link>
             </div>
-          </div>
-          <div className="animate-pc-pop pb-2 md:pb-0">
-            <HeroRouteMap />
           </div>
         </div>
       </section>

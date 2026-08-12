@@ -17,7 +17,7 @@ export function MarketingNav() {
     <header className="absolute inset-x-0 top-0 z-30">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
         <Link href="/" aria-label="Procurity home">
-          <Logo variant="gradient" size={34} />
+          <Logo variant="gradient" size={30} />
         </Link>
         <nav className="hidden items-center gap-6 md:flex">
           {links.map((l) => (
