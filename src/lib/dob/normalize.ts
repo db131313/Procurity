@@ -8,6 +8,7 @@ import type {
   DobPermitIssuance,
   LegacyFiling,
 } from "./client";
+import { appendDiscards, type DiscardRecord } from "./discards";
 
 function num(value?: string | null) {
   if (!value) return null;
@@ -45,11 +46,13 @@ const NULL_CONTACTS = {
   architectPhone: null as string | null,
   architectEmail: null as string | null,
   architectWebsite: null as string | null,
+  architectLicense: null as string | null,
   engineerName: null as string | null,
   engineerFirm: null as string | null,
   engineerPhone: null as string | null,
   engineerEmail: null as string | null,
   engineerWebsite: null as string | null,
+  engineerLicense: null as string | null,
 };
 
 /** Map applicant / professional fields onto architect or engineer contacts. */
@@ -61,6 +64,7 @@ function contactsFromApplicant(opts: {
   phone?: string | null;
   email?: string | null;
   website?: string | null;
+  license?: string | null;
 }) {
   const person = name(opts.firstName, opts.lastName);
   const firm = opts.businessName?.trim() || null;
@@ -68,6 +72,7 @@ function contactsFromApplicant(opts: {
   const phone = opts.phone?.trim() || null;
   const email = opts.email?.trim() || null;
   const website = opts.website?.trim() || null;
+  const license = opts.license?.trim() || null;
   const isEngineer = /engineer|p\.?e\.?\b|professional engineer/i.test(title);
   const isArchitect = /architect|ra\b|a\.i\.a/i.test(title);
 
@@ -80,14 +85,12 @@ function contactsFromApplicant(opts: {
       engineerPhone: phone,
       engineerEmail: email,
       engineerWebsite: website,
+      engineerLicense: license,
     };
   }
 
-  // Default: treat applicant as architect / design professional of record
   const architectName =
-    isArchitect || !isEngineer
-      ? person || firm
-      : null;
+    isArchitect || !isEngineer ? person || firm : null;
 
   return {
     architectName,
@@ -96,6 +99,7 @@ function contactsFromApplicant(opts: {
     architectPhone: phone,
     architectEmail: email,
     architectWebsite: website,
+    architectLicense: license,
   };
 }
 
@@ -107,10 +111,20 @@ export type NormalizeBundle = {
   legacy: LegacyFiling[];
 };
 
-export function normalizeProjects(
+type LatLng = { lat: number; lng: number };
+
+function parseCoords(latRaw?: string | null, lngRaw?: string | null): LatLng | null {
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) < 1 || Math.abs(lng) < 1) return null;
+  return { lat, lng };
+}
+
+export async function normalizeProjects(
   bundle: NormalizeBundle,
   previous: Project[] = [],
-): { projects: Project[]; events: ProjectEvent[] } {
+): Promise<{ projects: Project[]; events: ProjectEvent[]; discarded: number }> {
   const prevById = new Map(previous.map((p) => [p.id, p]));
   const coBins = new Set(
     bundle.cos.map((c) => c.bin).filter(Boolean) as string[],
@@ -118,9 +132,18 @@ export function normalizeProjects(
   const signBins = new Set<string>();
   const gcByBin = new Map<string, string>();
   const workByKey = new Map<string, string[]>();
+  /** BIN → lat/lng enrichment from any dataset that has coords. */
+  const coordsByBin = new Map<string, LatLng>();
+  const discards: DiscardRecord[] = [];
+  const now = new Date().toISOString();
+
+  const rememberCoords = (bin: string | null | undefined, c: LatLng | null) => {
+    if (bin && c && !coordsByBin.has(bin)) coordsByBin.set(bin, c);
+  };
 
   for (const p of bundle.permits) {
     const bin = p.bin__ ?? null;
+    rememberCoords(bin, parseCoords(p.gis_latitude, p.gis_longitude));
     if (bin && /SG|SIGN/i.test(`${p.work_type ?? ""} ${p.permit_type ?? ""}`)) {
       signBins.add(bin);
     }
@@ -130,10 +153,10 @@ export function normalizeProjects(
   }
   for (const a of bundle.approved) {
     const bin = a.bin ?? null;
+    rememberCoords(bin, parseCoords(a.latitude, a.longitude));
     if (bin && /SG|SIGN/i.test(a.work_type ?? "")) signBins.add(bin);
     if (bin && a.work_type) {
-      const key = bin;
-      workByKey.set(key, [...(workByKey.get(key) ?? []), a.work_type]);
+      workByKey.set(bin, [...(workByKey.get(bin) ?? []), a.work_type]);
     }
     const gc =
       a.applicant_business_name || a.filing_representative_business_name;
@@ -141,22 +164,159 @@ export function normalizeProjects(
       gcByBin.set(bin, gc);
     }
   }
+  for (const c of bundle.cos) {
+    rememberCoords(c.bin, parseCoords(c.latitude, c.longitude));
+  }
+  for (const f of bundle.filings) {
+    rememberCoords(f.bin, parseCoords(f.latitude, f.longitude));
+  }
+  for (const f of bundle.legacy) {
+    rememberCoords(f.bin__, parseCoords(f.gis_latitude, f.gis_longitude));
+  }
 
   const projects: Project[] = [];
   const events: ProjectEvent[] = [];
   const seen = new Set<string>();
 
-  for (const f of bundle.filings) {
-    const lat = Number(f.latitude);
-    const lng = Number(f.longitude);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-    const job = f.job_filing_number || `${f.bin}-${f.filing_date}`;
-    if (!job) continue;
-    const bin = f.bin ?? null;
-    const id = projectId(bin, job);
-    if (seen.has(id)) continue;
-    seen.add(id);
+  const pushScoredProject = (partial: Omit<
+    Project,
+    | "score"
+    | "scoreConfidence"
+    | "scoreReasons"
+    | "tradeScores"
+    | "estValueLow"
+    | "estValueHigh"
+    | "buyingWindowEstimate"
+    | "phaseConfidence"
+  > & {
+    phaseConfidence: number;
+    phaseReasons: string[];
+  }) => {
+    const scoringInput = {
+      phase: partial.phase,
+      lastActivityAt: partial.lastActivityAt,
+      estimatedJobCost: partial.estimatedJobCost,
+      occupancy: partial.occupancy,
+      buildingType: partial.buildingType,
+      gcName: partial.gcName,
+      architectName: partial.architectName,
+      hasSignPermit: partial.hasSignPermit,
+      jobType: partial.jobType,
+    };
+    const scored = scoreProject(scoringInput);
+    const tradeScores = scoreAllTrades(scoringInput);
+    const project: Project = {
+      ...partial,
+      score: scored.score,
+      scoreConfidence: scored.scoreConfidence,
+      scoreReasons: [...partial.phaseReasons, ...scored.scoreReasons],
+      tradeScores,
+      estValueLow: scored.estValueLow,
+      estValueHigh: scored.estValueHigh,
+      buyingWindowEstimate: scored.buyingWindowEstimate,
+      phaseConfidence: partial.phaseConfidence,
+    };
+    projects.push(project);
 
+    const prev = prevById.get(project.id);
+    if (!prev && project.score >= 90) {
+      events.push({
+        id: `evt:${project.id}:new_hot:${Date.now()}`,
+        projectId: project.id,
+        type: "new_hot",
+        title: "New hot opportunity",
+        body: `${project.address} scored ${project.score}`,
+        createdAt: now,
+      });
+    } else if (prev && prev.phase !== project.phase) {
+      events.push({
+        id: `evt:${project.id}:phase:${Date.now()}`,
+        projectId: project.id,
+        type: "phase_change",
+        title: "Moved into new phase",
+        body: `${project.address}: ${prev.phase} → ${project.phase}`,
+        createdAt: now,
+      });
+    } else if (prev && project.score - prev.score >= 10) {
+      events.push({
+        id: `evt:${project.id}:score:${Date.now()}`,
+        projectId: project.id,
+        type: "score_jump",
+        title: "Score jumped",
+        body: `${project.address}: ${prev.score} → ${project.score}`,
+        createdAt: now,
+      });
+    } else if (!prev?.gcName && project.gcName) {
+      events.push({
+        id: `evt:${project.id}:gc:${Date.now()}`,
+        projectId: project.id,
+        type: "gc_identified",
+        title: "GC identified",
+        body: `${project.gcName} linked to ${project.address}`,
+        createdAt: now,
+      });
+    }
+  };
+
+  // —— DOB NOW filings (primary early-stage source) ——
+  for (const f of bundle.filings) {
+    const job = f.job_filing_number || `${f.bin}-${f.filing_date}`;
+    const bin = f.bin ?? null;
+    const address =
+      [f.house_no, f.street_name].filter(Boolean).join(" ") || null;
+
+    if (!job) {
+      discards.push({
+        at: now,
+        dataset: "w9ak-ipjd",
+        reason: "missing_job_key",
+        jobKey: null,
+        bin,
+        address,
+      });
+      continue;
+    }
+
+    const id = projectId(bin, job);
+    if (seen.has(id)) {
+      discards.push({
+        at: now,
+        dataset: "w9ak-ipjd",
+        reason: "duplicate_id",
+        jobKey: job,
+        bin,
+        address,
+      });
+      continue;
+    }
+
+    let coords = parseCoords(f.latitude, f.longitude);
+    if (!coords && bin) coords = coordsByBin.get(bin) ?? null;
+    if (!coords) {
+      discards.push({
+        at: now,
+        dataset: "w9ak-ipjd",
+        reason: "missing_lat_long",
+        jobKey: job,
+        bin,
+        address,
+        detail: "No lat/lng on filing and no BIN enrichment match",
+      });
+      continue;
+    }
+    if (!address) {
+      discards.push({
+        at: now,
+        dataset: "w9ak-ipjd",
+        reason: "failed_address_parse",
+        jobKey: job,
+        bin,
+        address: null,
+      });
+      continue;
+    }
+
+    seen.add(id);
     const workTypes = [
       ...workTypesFromFiling(f),
       ...(bin ? workByKey.get(bin) ?? [] : []),
@@ -196,32 +356,18 @@ export function normalizeProjects(
       f.approved_date ||
       f.first_permit_date ||
       f.filing_date ||
-      new Date().toISOString();
+      now;
 
-    const scoringInput = {
-      phase: phaseInfo.phase,
-      lastActivityAt,
-      estimatedJobCost: num(f.initial_cost),
-      occupancy: f.building_type ?? null,
-      buildingType: f.building_type ?? null,
-      gcName,
-      architectName: contacts.architectName,
-      hasSignPermit: hasSign,
-      jobType: f.job_type ?? null,
-    };
-    const scored = scoreProject(scoringInput);
-    const tradeScores = scoreAllTrades(scoringInput);
-
-    const project: Project = {
+    pushScoredProject({
       id,
       city: "nyc",
       bin,
       jobNumber: job,
-      address: [f.house_no, f.street_name].filter(Boolean).join(" ") || "Unknown address",
+      address,
       borough: f.borough ?? null,
       zip: f.postcode ?? null,
-      latitude: lat,
-      longitude: lng,
+      latitude: coords.lat,
+      longitude: coords.lng,
       jobType: f.job_type ?? null,
       buildingType: f.building_type ?? null,
       occupancy: f.building_type ?? null,
@@ -229,120 +375,188 @@ export function normalizeProjects(
       estimatedJobCost: num(f.initial_cost),
       phase: phaseInfo.phase,
       phaseConfidence: phaseInfo.confidence,
-      score: scored.score,
-      scoreReasons: [...phaseInfo.reasons, ...scored.scoreReasons],
-      tradeScores,
-      estValueLow: scored.estValueLow,
-      estValueHigh: scored.estValueHigh,
-      buyingWindowEstimate: scored.buyingWindowEstimate,
+      phaseReasons: phaseInfo.reasons,
       gcName,
       architectName: contacts.architectName,
       architectFirm: contacts.architectFirm,
       architectPhone: contacts.architectPhone,
       architectEmail: contacts.architectEmail,
       architectWebsite: contacts.architectWebsite,
+      architectLicense: contacts.architectLicense,
       engineerName: contacts.engineerName,
       engineerFirm: contacts.engineerFirm,
       engineerPhone: contacts.engineerPhone,
       engineerEmail: contacts.engineerEmail,
       engineerWebsite: contacts.engineerWebsite,
+      engineerLicense: contacts.engineerLicense,
       ownerName:
         f.owner_s_business_name ||
         name(f.owner_first_name, f.owner_last_name),
+      filerName: name(f.applicant_first_name, f.applicant_last_name),
+      filerFirm: f.filing_representative_business_name ?? null,
       hasSignPermit: hasSign,
       lastActivityAt,
       filingDate: f.filing_date ?? null,
-      updatedAt: new Date().toISOString(),
-    };
-
-    projects.push(project);
-
-    const prev = prevById.get(id);
-    if (!prev && project.score >= 90) {
-      events.push({
-        id: `evt:${id}:new_hot:${Date.now()}`,
-        projectId: id,
-        type: "new_hot",
-        title: "New hot opportunity",
-        body: `${project.address} scored ${project.score}`,
-        createdAt: new Date().toISOString(),
-      });
-    } else if (prev && prev.phase !== project.phase) {
-      events.push({
-        id: `evt:${id}:phase:${Date.now()}`,
-        projectId: id,
-        type: "phase_change",
-        title: "Moved into new phase",
-        body: `${project.address}: ${prev.phase} → ${project.phase}`,
-        createdAt: new Date().toISOString(),
-      });
-    } else if (prev && project.score - prev.score >= 10) {
-      events.push({
-        id: `evt:${id}:score:${Date.now()}`,
-        projectId: id,
-        type: "score_jump",
-        title: "Score jumped",
-        body: `${project.address}: ${prev.score} → ${project.score}`,
-        createdAt: new Date().toISOString(),
-      });
-    } else if (!prev?.gcName && project.gcName) {
-      events.push({
-        id: `evt:${id}:gc:${Date.now()}`,
-        projectId: id,
-        type: "gc_identified",
-        title: "GC identified",
-        body: `${project.gcName} linked to ${project.address}`,
-        createdAt: new Date().toISOString(),
-      });
-    }
+      sourceDataset: "w9ak-ipjd",
+      updatedAt: now,
+    });
   }
 
-  // Supplement with legacy filings when DOB NOW coverage is thin
-  for (const f of bundle.legacy) {
-    const lat = Number(f.gis_latitude);
-    const lng = Number(f.gis_longitude);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-    const job = f.job__ || `${f.bin__}-legacy`;
-    const bin = f.bin__ ?? null;
+  // —— Approved permits not already covered by a filing (early/active jobs) ——
+  for (const a of bundle.approved) {
+    const job = a.job_filing_number;
+    const bin = a.bin ?? null;
+    const address =
+      [a.house_no, a.street_name].filter(Boolean).join(" ") || null;
+    if (!job) {
+      discards.push({
+        at: now,
+        dataset: "rbx6-tga4",
+        reason: "missing_job_key",
+        jobKey: null,
+        bin,
+        address,
+      });
+      continue;
+    }
     const id = projectId(bin, job);
     if (seen.has(id)) continue;
-    seen.add(id);
 
+    let coords = parseCoords(a.latitude, a.longitude);
+    if (!coords && bin) coords = coordsByBin.get(bin) ?? null;
+    if (!coords) {
+      discards.push({
+        at: now,
+        dataset: "rbx6-tga4",
+        reason: "missing_lat_long",
+        jobKey: job,
+        bin,
+        address,
+      });
+      continue;
+    }
+    if (!address) {
+      discards.push({
+        at: now,
+        dataset: "rbx6-tga4",
+        reason: "failed_address_parse",
+        jobKey: job,
+        bin,
+        address: null,
+      });
+      continue;
+    }
+
+    seen.add(id);
+    const workTypes = [
+      ...(a.work_type ? [a.work_type] : []),
+      ...(bin ? workByKey.get(bin) ?? [] : []),
+    ];
+    const hasSign =
+      /SG|SIGN/i.test(a.work_type ?? "") || (bin ? signBins.has(bin) : false);
+    const phaseInfo = detectPhase({
+      workTypes,
+      hasCO: bin ? coBins.has(bin) : false,
+      hasSignPermit: hasSign,
+      foundation: /FO|FOUND|STRUCT/i.test(a.work_type ?? ""),
+      mep: /PL|MH|EL|SP|FA|MECH|PLUMB|ELECT/i.test(a.work_type ?? ""),
+    });
+    const gcName =
+      (bin ? gcByBin.get(bin) : null) ||
+      a.applicant_business_name ||
+      a.filing_representative_business_name ||
+      null;
+
+    pushScoredProject({
+      id,
+      city: "nyc",
+      bin,
+      jobNumber: job,
+      address,
+      borough: a.borough ?? null,
+      zip: a.postcode || a.zip_code || null,
+      latitude: coords.lat,
+      longitude: coords.lng,
+      jobType: a.work_type ?? null,
+      buildingType: null,
+      occupancy: null,
+      description: a.permit_status
+        ? `Approved permit · ${a.permit_status}`
+        : "Approved permit",
+      estimatedJobCost: num(a.estimated_job_costs),
+      phase: phaseInfo.phase,
+      phaseConfidence: phaseInfo.confidence,
+      phaseReasons: phaseInfo.reasons,
+      gcName,
+      architectName: null,
+      architectFirm: null,
+      architectPhone: null,
+      architectEmail: null,
+      architectWebsite: null,
+      architectLicense: null,
+      engineerName: null,
+      engineerFirm: null,
+      engineerPhone: null,
+      engineerEmail: null,
+      engineerWebsite: null,
+      engineerLicense: null,
+      ownerName: a.owner_business_name ?? null,
+      filerName: null,
+      filerFirm: a.filing_representative_business_name ?? null,
+      hasSignPermit: hasSign,
+      lastActivityAt: a.issued_date || now,
+      filingDate: a.issued_date ?? null,
+      sourceDataset: "rbx6-tga4",
+      updatedAt: now,
+    });
+  }
+
+  // —— Legacy filings when DOB NOW coverage is thin ——
+  for (const f of bundle.legacy) {
+    const job = f.job__ || `${f.bin__}-legacy`;
+    const bin = f.bin__ ?? null;
+    const address =
+      [f.house__, f.street_name].filter(Boolean).join(" ") || null;
+    const id = projectId(bin, job);
+    if (seen.has(id)) continue;
+
+    let coords = parseCoords(f.gis_latitude, f.gis_longitude);
+    if (!coords && bin) coords = coordsByBin.get(bin) ?? null;
+    if (!coords) {
+      discards.push({
+        at: now,
+        dataset: "ic3t-wcy2",
+        reason: "missing_lat_long",
+        jobKey: job,
+        bin,
+        address,
+      });
+      continue;
+    }
+
+    seen.add(id);
     const phaseInfo = detectPhase({
       workTypes: [],
       jobType: f.job_type,
       hasSignPermit: bin ? signBins.has(bin) : false,
     });
     const lastActivityAt =
-      f.latest_action_date || f.pre__filing_date || new Date().toISOString();
+      f.latest_action_date || f.pre__filing_date || now;
     const architectName = name(
       f.applicant_s_first_name,
       f.applicant_s_last_name,
     );
-    const scoringInput = {
-      phase: phaseInfo.phase,
-      lastActivityAt,
-      estimatedJobCost: num(f.initial_cost),
-      occupancy: null,
-      buildingType: null,
-      gcName: null,
-      architectName,
-      hasSignPermit: bin ? signBins.has(bin) : false,
-      jobType: f.job_type ?? null,
-    };
-    const scored = scoreProject(scoringInput);
-    const tradeScores = scoreAllTrades(scoringInput);
 
-    projects.push({
+    pushScoredProject({
       id,
       city: "nyc",
       bin,
       jobNumber: job,
-      address: [f.house__, f.street_name].filter(Boolean).join(" ") || "Unknown",
+      address: address || "Unknown",
       borough: f.borough ?? null,
       zip: null,
-      latitude: lat,
-      longitude: lng,
+      latitude: coords.lat,
+      longitude: coords.lng,
       jobType: f.job_type ?? null,
       buildingType: null,
       occupancy: null,
@@ -350,31 +564,32 @@ export function normalizeProjects(
       estimatedJobCost: num(f.initial_cost),
       phase: phaseInfo.phase,
       phaseConfidence: phaseInfo.confidence,
-      score: scored.score,
-      scoreReasons: [...phaseInfo.reasons, ...scored.scoreReasons],
-      tradeScores,
-      estValueLow: scored.estValueLow,
-      estValueHigh: scored.estValueHigh,
-      buyingWindowEstimate: scored.buyingWindowEstimate,
+      phaseReasons: phaseInfo.reasons,
       gcName: null,
       architectName,
       architectFirm: null,
       architectPhone: null,
       architectEmail: null,
       architectWebsite: null,
+      architectLicense: null,
       engineerName: null,
       engineerFirm: null,
       engineerPhone: null,
       engineerEmail: null,
       engineerWebsite: null,
+      engineerLicense: null,
       ownerName: f.owner_s_business_name ?? null,
+      filerName: architectName,
+      filerFirm: null,
       hasSignPermit: bin ? signBins.has(bin) : false,
       lastActivityAt,
       filingDate: f.pre__filing_date ?? null,
-      updatedAt: new Date().toISOString(),
+      sourceDataset: "ic3t-wcy2",
+      updatedAt: now,
     });
   }
 
+  await appendDiscards(discards);
   projects.sort((a, b) => b.score - a.score);
-  return { projects, events };
+  return { projects, events, discarded: discards.length };
 }

@@ -14,6 +14,7 @@ export default async function MapPage() {
     latitude: p.latitude,
     longitude: p.longitude,
     score: p.score,
+    scoreConfidence: p.scoreConfidence,
     tradeScores: p.tradeScores ?? {
       signage: p.score,
       lighting: p.score,

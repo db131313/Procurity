@@ -3,7 +3,7 @@ import type { SourceCoverageStatus } from "@/lib/sources";
 
 const STATUS_LABEL: Record<SourceCoverageStatus, string> = {
   live: "Live",
-  limited: "Limited coverage",
+  limited: "Partial coverage",
   coming_soon: "Coming soon",
 };
 

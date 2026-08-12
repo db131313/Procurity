@@ -1,10 +1,10 @@
 /**
  * Configurable Buy Score rules engine (0–100).
- * Weights can be tuned without rewriting phase/recency logic.
+ * Missing factors are excluded and weights renormalized — never filled with placeholders.
  */
 
 import { differenceInCalendarDays, parseISO } from "date-fns";
-import type { ProjectPhase } from "@/lib/db/types";
+import type { ProjectPhase, ScoreConfidence } from "@/lib/db/types";
 
 export type ScoringWeights = {
   phaseFit: number;
@@ -36,6 +36,15 @@ export type ScoringInput = {
   jobType: string | null;
 };
 
+export type FactorBreakdown = {
+  key: keyof ScoringWeights;
+  available: boolean;
+  rawScore: number | null;
+  weight: number;
+  weighted: number;
+  note: string;
+};
+
 export type ScoringResult = {
   score: number;
   estValueLow: number;
@@ -43,6 +52,10 @@ export type ScoringResult = {
   buyingWindowEstimate: string;
   scoreReasons: string[];
   phaseConfidence: number;
+  scoreConfidence: ScoreConfidence;
+  factorsAvailable: number;
+  factorsTotal: number;
+  factorBreakdown: FactorBreakdown[];
 };
 
 /** Default signage phase-fit (interior_finishing + sign_ready highest). */
@@ -65,7 +78,7 @@ const PHASE_WINDOW: Record<ProjectPhase, string> = {
 };
 
 function clamp(n: number, min = 0, max = 100) {
-  return Math.round(Math.max(min, Math.min(max, n)));
+  return Math.max(min, Math.min(max, n));
 }
 
 function parseDate(value?: string | null) {
@@ -79,10 +92,19 @@ function parseDate(value?: string | null) {
 
 function isCommercial(occupancy?: string | null, buildingType?: string | null) {
   const hay = `${occupancy ?? ""} ${buildingType ?? ""}`.toLowerCase();
-  if (/resid|dwell|apt|condo|1-2|1\s*&\s*2|family/i.test(hay) && !/mixed|commercial|retail|store|hotel|restaurant/i.test(hay)) {
+  if (
+    /resid|dwell|apt|condo|1-2|1\s*&\s*2|family/i.test(hay) &&
+    !/mixed|commercial|retail|store|hotel|restaurant/i.test(hay)
+  ) {
     return false;
   }
-  return /commercial|retail|store|restaurant|hotel|office|mixed|merc|public/i.test(hay) || !hay.trim();
+  return /commercial|retail|store|restaurant|hotel|office|mixed|merc|public/i.test(
+    hay,
+  );
+}
+
+function hasOccupancySignal(occupancy?: string | null, buildingType?: string | null) {
+  return Boolean(`${occupancy ?? ""}${buildingType ?? ""}`.trim());
 }
 
 function valueBand(cost: number | null, phase: ProjectPhase): [number, number] {
@@ -94,7 +116,30 @@ function valueBand(cost: number | null, phase: ProjectPhase): [number, number] {
         ? 1.05
         : 0.85;
   const mid = Math.max(5000, base * mult);
-  return [Math.round(mid * 0.7 / 1000) * 1000, Math.round(mid * 1.35 / 1000) * 1000];
+  return [
+    Math.round((mid * 0.7) / 1000) * 1000,
+    Math.round((mid * 1.35) / 1000) * 1000,
+  ];
+}
+
+/** Smooth recency: ~100 at day 0, ~50 at ~32d, ~20 at ~90d. */
+export function recencyScoreContinuous(days: number): number {
+  return clamp(12 + 88 * Math.exp(-days / 32));
+}
+
+/** Continuous log-scaled size from estimated job cost. */
+export function sizeScoreContinuous(cost: number): number {
+  const c = Math.max(1, cost);
+  // $25k ≈ 28, $250k ≈ 48, $2.5M ≈ 68, $25M ≈ 88
+  const t = Math.log10(c) / Math.log10(50_000_000);
+  return clamp(18 + 82 * Math.min(1, Math.max(0, t)));
+}
+
+export function confidenceFromCoverage(available: number, total: number): ScoreConfidence {
+  const ratio = total > 0 ? available / total : 0;
+  if (ratio >= 0.75) return "high";
+  if (ratio >= 0.45) return "medium";
+  return "low";
 }
 
 export function detectPhase(signals: {
@@ -108,7 +153,10 @@ export function detectPhase(signals: {
 }): { phase: ProjectPhase; confidence: number; reasons: string[] } {
   const reasons: string[] = [];
   const wt = signals.workTypes.map((w) => w.toUpperCase());
-  const hasSG = signals.hasSignPermit || wt.includes("SG") || wt.some((w) => /SIGN/.test(w));
+  const hasSG =
+    signals.hasSignPermit ||
+    wt.includes("SG") ||
+    wt.some((w) => /SIGN/.test(w));
   const hasFoundation =
     signals.foundation ||
     wt.some((w) => /FO|FOUND|EXCAV|STRUCT|EQ/.test(w));
@@ -148,124 +196,202 @@ export function detectPhase(signals: {
 }
 
 /**
- * Shared scorer. Pass phaseFitOverride for trade-specific phase curves;
- * omit for default signage Buy Score.
+ * Shared scorer. Missing inputs are excluded; weights renormalize over available factors.
+ * No soft floors / placeholder defaults that cluster scores.
  */
 export function scoreProjectWithPhaseFit(
   input: ScoringInput,
   phaseFitOverride: Record<ProjectPhase, number> = SIGNAGE_PHASE_FIT,
   weights: ScoringWeights = DEFAULT_WEIGHTS,
-  opts: { collectReasons?: boolean; applySignageFloors?: boolean } = {},
+  opts: { collectReasons?: boolean } = {},
 ): ScoringResult {
   const collectReasons = opts.collectReasons ?? true;
-  const applySignageFloors = opts.applySignageFloors ?? phaseFitOverride === SIGNAGE_PHASE_FIT;
   const reasons: string[] = [];
+  const breakdown: FactorBreakdown[] = [];
+
   const phaseScore = phaseFitOverride[input.phase];
   if (collectReasons) {
     reasons.push(
-      `Phase fit: ${input.phase.replace(/_/g, " ")} (+${phaseScore} base)`,
+      `Phase fit: ${input.phase.replace(/_/g, " ")} (${phaseScore.toFixed(0)})`,
     );
   }
+  breakdown.push({
+    key: "phaseFit",
+    available: true,
+    rawScore: phaseScore,
+    weight: weights.phaseFit,
+    weighted: 0,
+    note: `Phase ${input.phase}`,
+  });
 
   const activity = parseDate(input.lastActivityAt);
-  const days = activity
-    ? differenceInCalendarDays(new Date(), activity)
-    : 90;
-  let recencyScore = 40;
-  if (days <= 7) {
-    recencyScore = 95;
-    if (collectReasons) reasons.push("Permit activity in the last 7 days");
-  } else if (days <= 14) {
-    recencyScore = 85;
-    if (collectReasons) reasons.push("Permit activity in the last 14 days");
-  } else if (days <= 30) {
-    recencyScore = 70;
-    if (collectReasons) reasons.push("Activity within 30 days");
-  } else if (days <= 60) {
-    recencyScore = 50;
-  } else {
-    recencyScore = 28;
-    if (collectReasons) reasons.push("No recent activity (>60 days) — score decayed");
-  }
-
-  const cost = input.estimatedJobCost ?? 0;
-  let sizeScore = 35;
-  if (cost >= 10_000_000) {
-    sizeScore = 95;
-    if (collectReasons) {
-      reasons.push("Large project ($10M+) — earlier / bigger signage budgets");
-    }
-  } else if (cost >= 2_000_000) {
-    sizeScore = 80;
-    if (collectReasons) reasons.push("Substantial job cost ($2M+)");
-  } else if (cost >= 500_000) {
-    sizeScore = 65;
-  } else if (cost >= 100_000) {
-    sizeScore = 50;
-  }
-
-  const commercial = isCommercial(input.occupancy, input.buildingType);
-  const occupancyScore = commercial ? 82 : 45;
-  if (collectReasons) {
-    reasons.push(
-      commercial
-        ? "Commercial / retail / mixed-use classification"
-        : "Primarily residential — lower base priority",
+  if (activity) {
+    const days = Math.max(
+      0,
+      differenceInCalendarDays(new Date(), activity),
     );
-  }
-
-  let filerScore = 35;
-  if (input.gcName) {
-    filerScore += 35;
-    if (collectReasons) reasons.push(`GC identified: ${input.gcName}`);
-  }
-  if (input.architectName) {
-    filerScore += 25;
-    if (collectReasons) {
-      reasons.push(`Architect of record: ${input.architectName}`);
-    }
-  }
-  filerScore = Math.min(100, filerScore);
-
-  let competitiveScore = 90;
-  if (input.hasSignPermit) {
-    competitiveScore = 35;
+    const recencyScore = recencyScoreContinuous(days);
     if (collectReasons) {
       reasons.push(
-        "Sign permit already filed — lower new-opportunity score; check uncovered scope",
+        `Recency: activity ${days}d ago → ${recencyScore.toFixed(1)}`,
       );
     }
-  } else if (collectReasons) {
-    reasons.push("No competing sign permit detected");
+    breakdown.push({
+      key: "recency",
+      available: true,
+      rawScore: recencyScore,
+      weight: weights.recency,
+      weighted: 0,
+      note: `${days} days since activity`,
+    });
+  } else {
+    breakdown.push({
+      key: "recency",
+      available: false,
+      rawScore: null,
+      weight: weights.recency,
+      weighted: 0,
+      note: "No filing/activity date — excluded",
+    });
   }
 
-  const raw =
-    phaseScore * weights.phaseFit +
-    recencyScore * weights.recency +
-    sizeScore * weights.projectSize +
-    occupancyScore * weights.occupancy +
-    filerScore * weights.filerSignal +
-    competitiveScore * weights.competitive;
-
-  // Soft floors so peak buying windows land in the green 90+ band (signage)
-  let score = clamp(raw);
-  if (applySignageFloors) {
-    const peakPhase =
-      input.phase === "interior_finishing" || input.phase === "sign_ready";
-    if (
-      peakPhase &&
-      commercial &&
-      days <= 14 &&
-      (input.gcName || input.architectName)
-    ) {
-      score = Math.max(score, 92);
-    } else if (peakPhase && commercial && days <= 21) {
-      score = Math.max(score, 90);
-    } else if (peakPhase && commercial && days <= 45) {
-      score = Math.max(score, 82);
-    } else if (peakPhase && days <= 30) {
-      score = Math.max(score, 78);
+  const cost =
+    input.estimatedJobCost && input.estimatedJobCost > 0
+      ? input.estimatedJobCost
+      : null;
+  if (cost != null) {
+    const sizeScore = sizeScoreContinuous(cost);
+    if (collectReasons) {
+      reasons.push(
+        `Project size: $${Math.round(cost).toLocaleString()} → ${sizeScore.toFixed(1)}`,
+      );
     }
+    breakdown.push({
+      key: "projectSize",
+      available: true,
+      rawScore: sizeScore,
+      weight: weights.projectSize,
+      weighted: 0,
+      note: `Job cost $${Math.round(cost).toLocaleString()}`,
+    });
+  } else {
+    breakdown.push({
+      key: "projectSize",
+      available: false,
+      rawScore: null,
+      weight: weights.projectSize,
+      weighted: 0,
+      note: "No estimated job cost — excluded",
+    });
+  }
+
+  if (hasOccupancySignal(input.occupancy, input.buildingType)) {
+    const commercial = isCommercial(input.occupancy, input.buildingType);
+    // Continuous-ish: commercial high, residential lower, mixed mid via hay match
+    const hay = `${input.occupancy ?? ""} ${input.buildingType ?? ""}`.toLowerCase();
+    let occupancyScore = commercial ? 84 : 42;
+    if (/mixed/i.test(hay)) occupancyScore = 70;
+    if (/hotel|hospital|school|public/i.test(hay)) occupancyScore = 88;
+    if (collectReasons) {
+      reasons.push(
+        commercial
+          ? "Commercial / retail / mixed-use classification"
+          : "Primarily residential — lower base priority",
+      );
+    }
+    breakdown.push({
+      key: "occupancy",
+      available: true,
+      rawScore: occupancyScore,
+      weight: weights.occupancy,
+      weighted: 0,
+      note: commercial ? "commercial-leaning" : "residential-leaning",
+    });
+  } else {
+    breakdown.push({
+      key: "occupancy",
+      available: false,
+      rawScore: null,
+      weight: weights.occupancy,
+      weighted: 0,
+      note: "No occupancy/building type — excluded",
+    });
+  }
+
+  if (input.gcName || input.architectName) {
+    let filerScore = 40;
+    if (input.gcName) filerScore += 32;
+    if (input.architectName) filerScore += 24;
+    filerScore = Math.min(100, filerScore);
+    if (collectReasons) {
+      if (input.gcName) reasons.push(`GC identified: ${input.gcName}`);
+      if (input.architectName) {
+        reasons.push(`Architect of record: ${input.architectName}`);
+      }
+    }
+    breakdown.push({
+      key: "filerSignal",
+      available: true,
+      rawScore: filerScore,
+      weight: weights.filerSignal,
+      weighted: 0,
+      note: [input.gcName && "GC", input.architectName && "architect"]
+        .filter(Boolean)
+        .join("+"),
+    });
+  } else {
+    breakdown.push({
+      key: "filerSignal",
+      available: false,
+      rawScore: null,
+      weight: weights.filerSignal,
+      weighted: 0,
+      note: "No GC/architect — excluded",
+    });
+  }
+
+  const competitiveScore = input.hasSignPermit ? 34 : 91;
+  if (collectReasons) {
+    reasons.push(
+      input.hasSignPermit
+        ? "Sign permit already filed — lower new-opportunity score"
+        : "No competing sign permit detected",
+    );
+  }
+  breakdown.push({
+    key: "competitive",
+    available: true,
+    rawScore: competitiveScore,
+    weight: weights.competitive,
+    weighted: 0,
+    note: input.hasSignPermit ? "SG present" : "no SG",
+  });
+
+  const available = breakdown.filter((f) => f.available && f.rawScore != null);
+  const weightSum = available.reduce((s, f) => s + f.weight, 0) || 1;
+
+  let raw = 0;
+  for (const f of breakdown) {
+    if (!f.available || f.rawScore == null) continue;
+    const w = f.weight / weightSum;
+    f.weighted = f.rawScore * w;
+    raw += f.weighted;
+  }
+
+  // Preserve fractional spread; round only once at the end
+  const score = Math.round(clamp(raw));
+
+  const factorsAvailable = available.length;
+  const factorsTotal = breakdown.length;
+  const scoreConfidence = confidenceFromCoverage(
+    factorsAvailable,
+    factorsTotal,
+  );
+
+  if (collectReasons) {
+    reasons.push(
+      `Confidence: ${scoreConfidence} (${factorsAvailable}/${factorsTotal} factors with data)`,
+    );
   }
 
   const [estValueLow, estValueHigh] = valueBand(
@@ -283,6 +409,10 @@ export function scoreProjectWithPhaseFit(
       input.phase === "interior_finishing" || input.phase === "sign_ready"
         ? 0.8
         : 0.65,
+    scoreConfidence,
+    factorsAvailable,
+    factorsTotal,
+    factorBreakdown: breakdown,
   };
 }
 
@@ -293,35 +423,69 @@ export function scoreProject(
   return scoreProjectWithPhaseFit(input, SIGNAGE_PHASE_FIT, weights);
 }
 
-/** Heuristic product recommendations — not literal DOB data. */
+export type SourcingRecommendation = {
+  trade: string;
+  score: number;
+  reason: string;
+};
+
+const TRADE_LABELS: Record<string, string> = {
+  signage: "Signage",
+  lighting: "Lighting",
+  glass: "Glass",
+  security: "Security cameras",
+  flooring: "Flooring",
+};
+
+/**
+ * Per-project sourcing recommendations from trade_scores (thresholded).
+ * Replaces the old static recommendSolutions list.
+ */
+export function recommendSourcing(input: {
+  tradeScores: Record<string, number>;
+  phase: ProjectPhase;
+  lastActivityAt?: string | null;
+  scoreReasons?: string[];
+  threshold?: number;
+}): SourcingRecommendation[] {
+  const threshold = input.threshold ?? 60;
+  const activity = parseDate(input.lastActivityAt ?? null);
+  const days = activity
+    ? Math.max(0, differenceInCalendarDays(new Date(), activity))
+    : null;
+
+  const phaseHint = input.phase.replace(/_/g, " ");
+  const recencyHint =
+    days != null
+      ? days <= 7
+        ? "filed/active this week"
+        : days <= 30
+          ? `activity ${days}d ago`
+          : `last activity ${days}d ago`
+      : phaseHint;
+
+  const rows = Object.entries(input.tradeScores)
+    .map(([trade, score]) => ({
+      trade,
+      score,
+      reason: `${TRADE_LABELS[trade] ?? trade} fits ${phaseHint} · ${recencyHint}`,
+    }))
+    .filter((r) => r.score >= threshold)
+    .sort((a, b) => b.score - a.score)
+    .map((r) => ({
+      trade: TRADE_LABELS[r.trade] ?? r.trade,
+      score: r.score,
+      reason: r.reason,
+    }));
+
+  return rows;
+}
+
+/** @deprecated Use recommendSourcing — kept temporarily for any leftover imports. */
 export function recommendSolutions(
   phase: ProjectPhase,
-  occupancy: string | null,
+  _occupancy: string | null,
 ): { name: string; probability: string; blurb: string }[] {
-  const commercial = isCommercial(occupancy, null);
-  const base = [
-    {
-      name: "Exterior identity signage",
-      probability: phase === "sign_ready" || phase === "interior_finishing" ? "High" : "Medium",
-      blurb: "Facade, blade, and primary brand marks as the shell completes.",
-    },
-    {
-      name: "Interior wayfinding",
-      probability: phase === "interior_finishing" ? "High" : "Medium",
-      blurb: "Directory, suite, and elevator IDs during finishing.",
-    },
-    {
-      name: "ADA / code-required signs",
-      probability: "High",
-      blurb: "Restroom, egress, and accessibility plaques before CO.",
-    },
-    {
-      name: commercial ? "Storefront / awning" : "Lobby directory",
-      probability: commercial && phase !== "foundation_structure" ? "High" : "Low",
-      blurb: commercial
-        ? "Retail frontage graphics timed with glazing and fit-out."
-        : "Residential lobby branding as units near finish.",
-    },
-  ];
-  return base;
+  void phase;
+  return [];
 }

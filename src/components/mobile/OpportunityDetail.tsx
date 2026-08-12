@@ -107,20 +107,26 @@ export function OpportunityDetail({ site }: { site: OpportunityView }) {
 
         <section className="mt-7">
           <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-pc-slate">
-            Likely Solutions
+            What This Project Is Likely Sourcing
           </h2>
           <div className="mt-3 space-y-2">
-            {site.solutions.map((s) => (
-              <div
-                key={s.name}
-                className="flex items-center justify-between rounded-2xl border border-pc-line px-4 py-3"
-              >
-                <span className="text-sm font-semibold text-pc-ink">{s.name}</span>
-                <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700">
-                  {s.tag}
-                </span>
-              </div>
-            ))}
+            {site.solutions.length ? (
+              site.solutions.map((s) => (
+                <div
+                  key={s.name}
+                  className="flex items-center justify-between rounded-2xl border border-pc-line px-4 py-3"
+                >
+                  <span className="text-sm font-semibold text-pc-ink">{s.name}</span>
+                  <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700">
+                    {s.tag}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="rounded-2xl border border-dashed border-pc-line px-4 py-4 text-sm text-pc-slate">
+                Not enough signal yet to estimate procurement needs.
+              </p>
+            )}
           </div>
         </section>
 

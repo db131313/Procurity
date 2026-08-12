@@ -35,15 +35,21 @@ function hydrateProject(raw: Project): Project {
   return {
     ...raw,
     tradeScores,
+    scoreConfidence: raw.scoreConfidence ?? "medium",
     architectFirm: raw.architectFirm ?? null,
     architectPhone: raw.architectPhone ?? null,
     architectEmail: raw.architectEmail ?? null,
     architectWebsite: raw.architectWebsite ?? null,
+    architectLicense: raw.architectLicense ?? null,
     engineerName: raw.engineerName ?? null,
     engineerFirm: raw.engineerFirm ?? null,
     engineerPhone: raw.engineerPhone ?? null,
     engineerEmail: raw.engineerEmail ?? null,
     engineerWebsite: raw.engineerWebsite ?? null,
+    engineerLicense: raw.engineerLicense ?? null,
+    filerName: raw.filerName ?? null,
+    filerFirm: raw.filerFirm ?? null,
+    sourceDataset: raw.sourceDataset ?? null,
   };
 }
 

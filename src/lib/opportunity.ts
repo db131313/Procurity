@@ -102,18 +102,9 @@ function permitAgeLabel(site: ScoredSite) {
   }
 }
 
-function solutions(site: ScoredSite) {
-  const items = [
-    { name: "Exterior Signage", tag: "High Probability" },
-    { name: "Storefront / Blade", tag: "Likely" },
-  ];
-  if (site.stories && site.stories >= 6) {
-    items.push({ name: "Building Identity", tag: "Strong fit" });
-  }
-  if (site.signWork) {
-    items.unshift({ name: "Permit-linked Signs", tag: "Active now" });
-  }
-  return items.slice(0, 3);
+/** Legacy mobile path — no static recommendation list. */
+function solutions(_site: ScoredSite) {
+  return [] as { name: string; tag: string }[];
 }
 
 export function toOpportunity(site: ScoredSite, index = 0): OpportunityView {

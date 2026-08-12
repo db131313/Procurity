@@ -181,17 +181,28 @@ const NYC_BOROUGHS = [
 ] as const;
 
 export async function fetchDobNowFilings(opts: SyncWindowOptions = {}) {
-  const days = opts.days ?? 45;
+  const days = opts.days ?? 90;
   const limit = opts.limit ?? 2000;
   const since = daysAgoIso(days);
   const boroughClause = opts.borough
     ? ` AND borough = '${opts.borough.replace(/'/g, "")}'`
     : "";
-  return sodaFetch<DobNowFiling>(NYC_DATASETS.dobNowFilings, {
-    $where: `filing_date >= '${since}' AND latitude IS NOT NULL AND longitude IS NOT NULL${boroughClause}`,
-    $order: "filing_date DESC",
-    $limit: String(limit),
-  });
+  // Pull filings even without coords — normalize enriches BIN lat/lng from other feeds
+  // and logs discards when enrichment fails (no silent drop at fetch time).
+  try {
+    return await sodaFetch<DobNowFiling>(NYC_DATASETS.dobNowFilings, {
+      $where: `filing_date >= '${since}'${boroughClause}`,
+      $order: "filing_date DESC",
+      $limit: String(limit),
+    });
+  } catch {
+    // Fallback: geo-filtered if open where fails on some tenants
+    return sodaFetch<DobNowFiling>(NYC_DATASETS.dobNowFilings, {
+      $where: `filing_date >= '${since}' AND latitude IS NOT NULL AND longitude IS NOT NULL${boroughClause}`,
+      $order: "filing_date DESC",
+      $limit: String(limit),
+    });
+  }
 }
 
 /** Balanced pull across all five boroughs so SI/Bronx aren't crowded out. */
@@ -199,8 +210,8 @@ export async function fetchDobNowFilingsCitywide(opts: {
   days?: number;
   perBorough?: number;
 } = {}) {
-  const days = opts.days ?? 60;
-  const perBorough = opts.perBorough ?? 900;
+  const days = opts.days ?? 90;
+  const perBorough = opts.perBorough ?? 1000;
   const batches = await Promise.all(
     NYC_BOROUGHS.map((borough) =>
       fetchDobNowFilings({ days, limit: perBorough, borough }),
@@ -250,9 +261,24 @@ export async function fetchPermitIssuance(opts: SyncWindowOptions = {}) {
 }
 
 export async function fetchApprovedPermits(opts: SyncWindowOptions = {}) {
-  const limit = opts.limit ?? 2500;
+  const limit = opts.limit ?? 4000;
+  const days = opts.days ?? 90;
+  const since = daysAgoIso(days);
+  // Prefer date-filtered pull when issued_date is queryable; otherwise latest geo rows.
   try {
-    // rbx6-tga4 has no reliable issued_date column — pull latest signed/active rows
+    const dated = await sodaFetch<DobApprovedPermit>(
+      NYC_DATASETS.approvedPermits,
+      {
+        $where: `issued_date >= '${since}'`,
+        $order: "issued_date DESC",
+        $limit: String(limit),
+      },
+    );
+    if (dated.length) return dated;
+  } catch {
+    // issued_date may be unavailable on some Socrata views
+  }
+  try {
     return await sodaFetch<DobApprovedPermit>(NYC_DATASETS.approvedPermits, {
       $where: "latitude IS NOT NULL AND longitude IS NOT NULL",
       $order: "job_filing_number DESC",

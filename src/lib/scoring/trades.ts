@@ -60,7 +60,9 @@ export function scoreTrade(
   input: ScoringInput,
   weights: ScoringWeights = DEFAULT_WEIGHTS,
 ): number {
-  return scoreProjectWithPhaseFit(input, TRADE_PHASE_FIT[trade], weights).score;
+  return scoreProjectWithPhaseFit(input, TRADE_PHASE_FIT[trade], weights, {
+    collectReasons: false,
+  }).score;
 }
 
 export function scoreAllTrades(
@@ -74,4 +76,15 @@ export function scoreAllTrades(
     security: scoreTrade("security", input, weights),
     flooring: scoreTrade("flooring", input, weights),
   };
+}
+
+/** Full trade scoring with reasons for debug / Likely Sourcing. */
+export function scoreTradeDetailed(
+  trade: TradeKey,
+  input: ScoringInput,
+  weights: ScoringWeights = DEFAULT_WEIGHTS,
+) {
+  return scoreProjectWithPhaseFit(input, TRADE_PHASE_FIT[trade], weights, {
+    collectReasons: true,
+  });
 }

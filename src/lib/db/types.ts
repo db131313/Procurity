@@ -1,6 +1,5 @@
-/** City-agnostic project intelligence types. NYC is the first wired city. */
-
-export type CityCode = "nyc";
+/** City / region codes for project intelligence. */
+export type CityCode = "nyc" | "nassau" | "westchester" | "suffolk" | "bergen";
 
 export type ProjectPhase =
   | "pre_construction"
@@ -22,6 +21,9 @@ export type TradeScores = {
   flooring: number;
 };
 
+/** How many scoring factors had real data (not silently filled). */
+export type ScoreConfidence = "high" | "medium" | "low";
+
 export type Project = {
   id: string;
   city: CityCode;
@@ -40,6 +42,7 @@ export type Project = {
   phase: ProjectPhase;
   phaseConfidence: number;
   score: number;
+  scoreConfidence: ScoreConfidence;
   scoreReasons: string[];
   tradeScores: TradeScores;
   estValueLow: number;
@@ -51,15 +54,20 @@ export type Project = {
   architectPhone: string | null;
   architectEmail: string | null;
   architectWebsite: string | null;
+  architectLicense: string | null;
   engineerName: string | null;
   engineerFirm: string | null;
   engineerPhone: string | null;
   engineerEmail: string | null;
   engineerWebsite: string | null;
+  engineerLicense: string | null;
   ownerName: string | null;
+  filerName: string | null;
+  filerFirm: string | null;
   hasSignPermit: boolean;
   lastActivityAt: string;
   filingDate: string | null;
+  sourceDataset: string | null;
   updatedAt: string;
 };
 

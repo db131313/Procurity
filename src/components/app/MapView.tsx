@@ -38,6 +38,7 @@ export type MapProject = {
   latitude: number;
   longitude: number;
   score: number;
+  scoreConfidence?: "high" | "medium" | "low";
   tradeScores?: TradeScores;
   address: string;
   estValueLow: number;
@@ -422,6 +423,13 @@ export function MapView({ projects }: Props) {
                 <p className="mt-1 text-sm text-slate">
                   {formatMoneyRange(selected.estValueLow, selected.estValueHigh)} ·{" "}
                   {selected.buyingWindowEstimate}
+                </p>
+                <p className="mt-1 text-[11px] font-semibold text-slate">
+                  {selected.scoreConfidence === "high"
+                    ? "High confidence"
+                    : selected.scoreConfidence === "medium"
+                      ? "Medium confidence"
+                      : "Low confidence — limited data"}
                 </p>
               </div>
             </div>
