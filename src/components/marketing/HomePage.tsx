@@ -72,7 +72,7 @@ export function HomePage() {
         <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-6xl flex-col justify-end px-5 pb-14 pt-28 sm:pb-16 md:justify-center md:px-8 md:pb-24 md:pt-28">
           <div className="max-w-xl animate-pc-rise md:max-w-2xl">
             {/* Brand as hero-level signal (not just nav) */}
-            <Logo variant="light" size={48} className="mb-6 sm:mb-8 sm:h-14 md:h-16" />
+            <Logo variant="light" size={48} className="mb-6 sm:mb-8" />
             <h1 className="text-[2.35rem] font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl lg:text-[4.25rem]">
               Find the next job.{" "}
               <span className="pc-gradient-text">Before</span> they need you.
