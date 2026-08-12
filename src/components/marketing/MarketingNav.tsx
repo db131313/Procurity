@@ -17,7 +17,7 @@ export function MarketingNav() {
 
   return (
     <header className="absolute inset-x-0 top-0 z-30">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
+      <div className="flex w-full items-center justify-between px-5 py-4 md:pl-12 md:pr-8">
         <Link href="/" aria-label="Procurity home">
           <Logo variant="light" size={28} />
         </Link>
@@ -32,8 +32,8 @@ export function MarketingNav() {
         </button>
       </div>
       {open && (
-        <div className="border-t border-white/10 bg-[#0B0F19]/95 px-5 py-5 backdrop-blur-md">
-          <nav className="mx-auto flex max-w-6xl flex-col gap-1">
+        <div className="border-t border-white/10 bg-[#0B0F19]/95 px-5 py-5 backdrop-blur-md md:px-12">
+          <nav className="flex flex-col gap-1">
             {links.map((l) => (
               <Link
                 key={l.href}

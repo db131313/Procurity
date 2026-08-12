@@ -77,14 +77,15 @@ export function HomePage() {
           <HeroScorePins variant="desktop" />
         </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 pb-10 pt-[4.75rem] md:justify-center md:px-8 md:pb-24 md:pt-28">
+        <div className="relative z-10 flex w-full flex-1 flex-col px-5 pb-10 pt-[4.75rem] md:justify-center md:pb-24 md:pl-12 md:pr-10 md:pt-28 lg:pr-16">
           {/* Mobile: featured pin centered under nav */}
           <div className="mb-6 mt-4 flex justify-center md:hidden">
             <HeroScorePins variant="mobile" />
           </div>
 
-          <div className="mt-auto max-w-xl animate-pc-rise md:mt-0 md:max-w-2xl">
-            <h1 className="text-[2.05rem] font-bold leading-[1.12] tracking-tight sm:text-[2.5rem] md:text-5xl lg:text-[3.35rem]">
+          {/* Copy column — capped so pins stay in the clear right zone */}
+          <div className="mt-auto w-full max-w-xl animate-pc-rise md:mt-0 md:max-w-[min(34rem,44vw)]">
+            <h1 className="text-[2.05rem] font-bold leading-[1.12] tracking-tight sm:text-[2.5rem] md:text-5xl lg:text-[3.25rem]">
               Know{" "}
               <span className="pc-gradient-text font-black tracking-wide">
                 WHO

@@ -16,23 +16,25 @@ const PINS: PinData[] = [
     id: "hot-1",
     score: 96,
     label: "Very likely to buy",
-    x: 72,
-    y: 26,
+    // Far right / upper — clear of headline column
+    x: 82,
+    y: 22,
     featured: true,
   },
   {
     id: "hot-2",
     score: 93,
     label: "Very likely to buy",
-    x: 56,
-    y: 46,
+    // Was overlapping headline at ~56%; keep in right third
+    x: 70,
+    y: 52,
   },
   {
     id: "warm-1",
     score: 82,
     label: "Warm",
-    x: 80,
-    y: 64,
+    x: 88,
+    y: 70,
   },
 ];
 
@@ -190,11 +192,10 @@ export function HeroScorePins({
 export function HeroCityBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/brand/hero-city-bg.png"
-        alt=""
-        className="absolute inset-0 h-full w-full scale-105 object-cover object-[58%_40%] md:object-[68%_38%]"
+      {/* Real photo asset — drop exact file at /public/hero-bg.jpg */}
+      <div
+        className="absolute inset-0 scale-105 bg-cover bg-[position:58%_40%] md:bg-[position:68%_38%]"
+        style={{ backgroundImage: "url('/hero-bg.jpg')" }}
       />
       <div
         className="absolute inset-0"
