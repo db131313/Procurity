@@ -1,31 +1,49 @@
-import type { Metadata } from "next";
-import { Manrope, Syne } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import { SiteProviders } from "@/components/SiteProviders";
 import "./globals.css";
 
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
-
-const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Procurity.Pro — Construction signage procurement intel",
+  title: "Procurity.Pro — Find the next job before they need you",
   description:
-    "Know who is ready to buy signage. Daily Top 20 NYC construction sites ranked by procurement-window probability, with contacts and 3D maps.",
+    "Construction project intelligence for signage sales. Live permit activity scored into Buy Scores, maps, and pipeline — mobile-first.",
+  applicationName: "Procurity",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Procurity",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0B0F19",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} ${syne.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col font-sans">
+    <html lang="en" className="h-full antialiased">
+      <head>
+        <link
+          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body
+        className="min-h-full font-sans"
+        style={{ ["--font-satoshi" as string]: "'Satoshi', ui-sans-serif, system-ui, sans-serif" }}
+      >
         <SiteProviders>{children}</SiteProviders>
       </body>
     </html>

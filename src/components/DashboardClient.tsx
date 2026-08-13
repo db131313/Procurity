@@ -1,10 +1,22 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState, useTransition } from "react";
-import { Map3D } from "@/components/Map3D";
 import { UpgradeButton } from "@/components/UpgradeButton";
 import { formatCurrency, formatShortDate, scoreTone } from "@/lib/format";
 import type { ScoredSite, Top20Response } from "@/lib/types";
+
+const Map3D = dynamic(
+  () => import("@/components/Map3D").then((m) => m.Map3D),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full min-h-[420px] items-center justify-center rounded-xl border border-[var(--line)] bg-ink/40 text-sm text-sand/60">
+        Loading 3D field map…
+      </div>
+    ),
+  },
+);
 
 const BOROUGHS = ["All NYC", "Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 

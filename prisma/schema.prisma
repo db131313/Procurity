@@ -1,0 +1,143 @@
+// Production Postgres + PostGIS schema (wire DATABASE_URL when ready).
+// Local/dev uses the file-backed store in src/lib/db/store.ts until then.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis]
+}
+
+enum PlanTier {
+  trial
+  starter
+  growth
+  pro
+}
+
+enum ProjectPhase {
+  pre_construction
+  foundation_structure
+  mep
+  interior_finishing
+  sign_ready
+  signage_filed
+}
+
+enum PipelineStage {
+  new
+  contacted
+  quoted
+  won
+  lost
+}
+
+model User {
+  id                   String         @id @default(cuid())
+  firebaseUid          String         @unique
+  email                String         @unique
+  name                 String?
+  plan                 PlanTier       @default(trial)
+  zipCodes             String[]
+  trialEndsAt          DateTime?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  zipAllowance         Int            @default(3)
+  onboardingComplete   Boolean        @default(false)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  pipelineItems        PipelineItem[]
+}
+
+model Project {
+  id                   String         @id
+  city                 String         @default("nyc")
+  bin                  String?
+  jobNumber            String
+  address              String
+  borough              String?
+  zip                  String?
+  latitude             Float
+  longitude            Float
+  jobType              String?
+  buildingType         String?
+  occupancy            String?
+  description          String?
+  estimatedJobCost     Float?
+  phase                ProjectPhase
+  phaseConfidence      Float
+  score                Int
+  scoreReasons         String[]
+  estValueLow          Int
+  estValueHigh         Int
+  buyingWindowEstimate String
+  gcName               String?
+  architectName        String?
+  ownerName            String?
+  hasSignPermit        Boolean        @default(false)
+  lastActivityAt       DateTime
+  filingDate           DateTime?
+  updatedAt            DateTime       @updatedAt
+  permits              Permit[]
+  events               ProjectEvent[]
+  pipelineItems        PipelineItem[]
+
+  @@index([zip])
+  @@index([score])
+  @@index([bin, jobNumber])
+}
+
+model Permit {
+  id             String   @id @default(cuid())
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id])
+  sourceDataset  String
+  workType       String?
+  permitType     String?
+  status         String?
+  issuedAt       DateTime?
+  createdAt      DateTime @default(now())
+}
+
+model ProjectEvent {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  type      String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model PipelineItem {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id])
+  projectId  String
+  project    Project       @relation(fields: [projectId], references: [id])
+  stage      PipelineStage @default(new)
+  notes      String?
+  dealValue  Int?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([userId, projectId])
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  plan                 PlanTier
+  status               String
+  zipAllowance         Int
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  updatedAt            DateTime  @updatedAt
+}

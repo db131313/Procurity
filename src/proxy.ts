@@ -1,26 +1,31 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import type { NextRequest } from "next/server";
 
-export default auth((req) => {
-  const isLoggedIn = Boolean(req.auth);
-  const path = req.nextUrl.pathname;
-  const isAuthPage = path.startsWith("/signin") || path.startsWith("/signup");
-  const isProtected =
-    path.startsWith("/dashboard") || path.startsWith("/api/intel");
+const SESSION_COOKIE = "pc_session";
 
-  if (isProtected && !isLoggedIn) {
-    const url = new URL("/signin", req.nextUrl.origin);
-    url.searchParams.set("callbackUrl", path);
-    return NextResponse.redirect(url);
+export function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
+  const isApp = path.startsWith("/app");
+  const isAuthPage =
+    path === "/login" ||
+    path === "/signup" ||
+    path.startsWith("/login/") ||
+    path.startsWith("/signup/");
+
+  if (isApp && !hasSession) {
+    const login = new URL("/login", request.nextUrl.origin);
+    login.searchParams.set("next", path);
+    return NextResponse.redirect(login);
   }
 
-  if (isAuthPage && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+  if (isAuthPage && hasSession) {
+    return NextResponse.redirect(new URL("/app/home", request.nextUrl.origin));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/signin", "/signup", "/api/intel/:path*"],
+  matcher: ["/app/:path*", "/login", "/signup"],
 };
