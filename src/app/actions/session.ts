@@ -8,14 +8,15 @@ import {
 import { upsertUser, setUserZips } from "@/lib/db/store";
 import { verifyFirebaseIdToken } from "@/lib/firebase/verify-id-token";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
+import { CITY_COOKIE } from "@/lib/cities/picker";
+import { cookies } from "next/headers";
 
-export async function startDemoSession() {
+export async function startDemoSession(city?: string) {
   await upsertUser({
     firebaseUid: "demo-uid",
     email: "demo@procurity.pro",
     name: "Demo Rep",
     onboardingComplete: true,
-    // Empty zip list = citywide (all five boroughs) in listProjects
     zipCodes: [],
     zipAllowance: 25,
     plan: "pro",
@@ -26,6 +27,15 @@ export async function startDemoSession() {
     name: "Demo Rep",
     demo: true,
   });
+  if (city) {
+    const jar = await cookies();
+    jar.set(CITY_COOKIE, city, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+    redirect(`/app/map?city=${encodeURIComponent(city)}`);
+  }
   redirect("/app/home");
 }
 
@@ -37,6 +47,9 @@ export async function establishFirebaseSession(input: {
   idToken: string;
   name?: string | null;
   mode?: "login" | "signup";
+  /** Paid funnel: skip zip onboarding and go to checkout / map */
+  skipOnboarding?: boolean;
+  city?: string | null;
 }): Promise<{ error?: string; redirectTo?: string }> {
   try {
     const verified = await verifyFirebaseIdToken(input.idToken);
@@ -45,6 +58,7 @@ export async function establishFirebaseSession(input: {
       firebaseUid: verified.uid,
       email: verified.email,
       name,
+      ...(input.skipOnboarding ? { onboardingComplete: true } : {}),
     });
 
     await createSession({
@@ -53,8 +67,27 @@ export async function establishFirebaseSession(input: {
       name: name ?? undefined,
     });
 
+    if (input.city) {
+      const jar = await cookies();
+      jar.set(CITY_COOKIE, input.city, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
+
+    if (input.skipOnboarding) {
+      return {
+        redirectTo: input.city
+          ? `/app/map?city=${encodeURIComponent(input.city)}`
+          : "/app/map",
+      };
+    }
+
     const redirectTo = user.onboardingComplete
-      ? "/app/home"
+      ? input.city
+        ? `/app/map?city=${encodeURIComponent(input.city)}`
+        : "/app/home"
       : "/app/onboarding";
     return { redirectTo };
   } catch (err) {
@@ -70,13 +103,14 @@ export async function establishFirebaseSession(input: {
 
 /**
  * Local/dev fallback when Firebase env vars are not set yet.
- * Production with Firebase configured should never hit this path from the UI.
  */
 export async function signInWithPassword(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
   const name = String(formData.get("name") || "").trim() || null;
   const mode = String(formData.get("mode") || "login");
+  const checkout = String(formData.get("checkout") || "") === "1";
+  const city = String(formData.get("city") || "").trim() || null;
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -86,8 +120,6 @@ export async function signInWithPassword(formData: FormData) {
     return { error: "Password must be at least 6 characters." };
   }
 
-  // Prefer Firebase path — client should call establishFirebaseSession instead.
-  // This remains for demo/dev when Firebase keys are absent.
   if (isFirebaseConfigured()) {
     return {
       error:
@@ -100,15 +132,29 @@ export async function signInWithPassword(formData: FormData) {
     firebaseUid: uid,
     email,
     name,
-    onboardingComplete: mode === "login",
+    onboardingComplete: mode === "login" || checkout,
   });
 
   await createSession({ uid, email, name: name ?? undefined });
 
-  if (!user.onboardingComplete) {
+  if (city) {
+    const jar = await cookies();
+    jar.set(CITY_COOKIE, city, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
+
+  if (checkout && mode === "signup") {
+    // Let the client start Stripe checkout while session cookie is set.
+    return { needsCheckout: true as const, city: city ?? undefined };
+  }
+
+  if (!user.onboardingComplete && !checkout) {
     redirect("/app/onboarding");
   }
-  redirect("/app/home");
+  redirect(city ? `/app/map?city=${encodeURIComponent(city)}` : "/app/home");
 }
 
 export async function signOutAction() {

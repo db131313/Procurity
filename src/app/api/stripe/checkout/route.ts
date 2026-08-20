@@ -18,10 +18,14 @@ export async function POST(request: Request) {
   }
 
   let tier: CheckoutTier = "growth";
+  let city: string | undefined;
   try {
-    const body = (await request.json()) as { tier?: string };
+    const body = (await request.json()) as { tier?: string; city?: string };
     if (body.tier && TIERS.includes(body.tier as CheckoutTier)) {
       tier = body.tier as CheckoutTier;
+    }
+    if (body.city && typeof body.city === "string") {
+      city = body.city.trim().slice(0, 64) || undefined;
     }
   } catch {
     // default growth
@@ -30,9 +34,12 @@ export async function POST(request: Request) {
   if (!stripeConfigured()) {
     const { updateUserPlan } = await import("@/lib/db/store");
     await updateUserPlan(user.id, tier);
+    const mapUrl = city
+      ? `/app/map?city=${encodeURIComponent(city)}`
+      : `/app/map`;
     return NextResponse.json({
       demo: true,
-      url: `/app/billing?upgraded=${tier}`,
+      url: mapUrl,
     });
   }
 
@@ -61,25 +68,28 @@ export async function POST(request: Request) {
   }
 
   const origin = getAppUrl();
+  const successCity = city ? `&city=${encodeURIComponent(city)}` : "";
 
   const checkout = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/app/billing?checkout=success&tier=${tier}`,
-    cancel_url: `${origin}/pricing?checkout=cancel`,
+    success_url: `${origin}/app/map?checkout=success&tier=${tier}${successCity}`,
+    cancel_url: `${origin}/signup?checkout=cancel${city ? `&city=${encodeURIComponent(city)}` : ""}`,
     client_reference_id: user.id,
     metadata: {
       userId: user.id,
       email: user.email,
       tier,
       firebaseUid: user.firebaseUid,
+      ...(city ? { city } : {}),
     },
     subscription_data: {
       metadata: {
         userId: user.id,
         email: user.email,
         tier,
+        ...(city ? { city } : {}),
       },
     },
   });

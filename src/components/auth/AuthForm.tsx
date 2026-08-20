@@ -14,13 +14,64 @@ import {
   isFirebaseConfigured,
   mapFirebaseAuthError,
 } from "@/lib/firebase/client";
+import { CITY_COOKIE } from "@/lib/cities/picker";
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+type Props = {
+  mode: "login" | "signup";
+  /** City from teaser funnel */
+  city?: string | null;
+  /** When set, skip free map and start Stripe checkout after signup */
+  checkout?: boolean;
+  tier?: string | null;
+};
+
+export function AuthForm({
+  mode,
+  city = null,
+  checkout = false,
+  tier = "growth",
+}: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const firebaseReady =
     typeof window !== "undefined" ? isFirebaseConfigured() : false;
+
+  function persistCity() {
+    if (!city) return;
+    try {
+      document.cookie = `${CITY_COOKIE}=${encodeURIComponent(city)};path=/;max-age=31536000;samesite=lax`;
+    } catch {
+      // ignore
+    }
+  }
+
+  async function startCheckoutAndGo() {
+    persistCity();
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tier: tier || "growth",
+        city: city || undefined,
+      }),
+    });
+    const data = (await res.json()) as {
+      url?: string;
+      error?: string;
+      demo?: boolean;
+    };
+    if (!res.ok || !data.url) {
+      throw new Error(data.error || "Checkout unavailable");
+    }
+    window.location.href = data.url;
+  }
+
+  function mapPath() {
+    return city
+      ? `/app/map?city=${encodeURIComponent(city)}`
+      : "/app/map";
+  }
 
   function onSubmit(formData: FormData) {
     setError(null);
@@ -40,12 +91,21 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             idToken,
             name: name || cred.user.displayName,
             mode,
+            skipOnboarding: Boolean(checkout && mode === "signup"),
+            city: city || undefined,
           });
           if (result.error) {
             setError(result.error);
             return;
           }
-          router.push(result.redirectTo || "/app/home");
+
+          if (checkout && mode === "signup") {
+            await startCheckoutAndGo();
+            return;
+          }
+
+          persistCity();
+          router.push(result.redirectTo || mapPath());
           router.refresh();
         } catch (err) {
           setError(mapFirebaseAuthError(err));
@@ -54,20 +114,36 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       }
 
       formData.set("mode", mode);
+      if (checkout) formData.set("checkout", "1");
+      if (city) formData.set("city", city);
       const result = await signInWithPassword(formData);
-      if (result?.error) setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      if (result?.needsCheckout) {
+        await startCheckoutAndGo();
+        return;
+      }
     });
   }
 
   function onDemo() {
     setError(null);
     startTransition(async () => {
-      await startDemoSession();
+      persistCity();
+      await startDemoSession(city || undefined);
     });
   }
 
   return (
     <div className="space-y-4">
+      {checkout && mode === "signup" && (
+        <p className="rounded-2xl border border-teal/30 bg-teal/10 px-3 py-2 text-sm font-semibold text-ink">
+          After signup you&apos;ll continue to checkout
+          {city ? ` · then open the ${city.replace(/_/g, " ")} map` : ""}.
+        </p>
+      )}
       <form action={onSubmit} className="space-y-4">
         {mode === "signup" && (
           <label className="block space-y-1.5 text-sm font-semibold text-ink">
@@ -106,7 +182,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             autoComplete={
               mode === "login" ? "current-password" : "new-password"
             }
-            defaultValue={mode === "login" && !firebaseReady ? "demo1234" : undefined}
+            defaultValue={
+              mode === "login" && !firebaseReady ? "demo1234" : undefined
+            }
             className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
             placeholder="••••••••"
           />
@@ -138,7 +216,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             ? "Working…"
             : mode === "login"
               ? "Log in"
-              : "Create account"}
+              : checkout
+                ? "Create account & continue to payment"
+                : "Create account"}
         </button>
       </form>
 
@@ -155,7 +235,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         {mode === "login" ? (
           <>
             New here?{" "}
-            <Link href="/signup" className="font-semibold text-purple">
+            <Link
+              href={
+                city
+                  ? `/signup?city=${encodeURIComponent(city)}&checkout=1&tier=${tier || "growth"}`
+                  : "/signup"
+              }
+              className="font-semibold text-purple"
+            >
               Create an account
             </Link>
           </>
