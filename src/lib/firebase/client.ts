@@ -60,13 +60,10 @@ export async function firebaseSignIn(email: string, password: string) {
 export async function firebaseSendPasswordReset(email: string) {
   const a = getFirebaseAuth();
   if (!a) throw new Error("Firebase is not configured");
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : undefined;
-  await sendPasswordResetEmail(
-    a,
-    email,
-    origin ? { url: `${origin}/login` } : undefined,
-  );
+  // Do not pass actionCodeSettings.url unless the exact continue URL is
+  // allowlisted in Firebase Console → Authentication → Settings.
+  // A bare sendPasswordResetEmail works with authorized domains alone.
+  await sendPasswordResetEmail(a, email);
 }
 
 export function mapFirebaseAuthError(err: unknown): string {
