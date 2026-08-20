@@ -147,9 +147,13 @@ export async function listProjects(opts?: {
   zipCodes?: string[];
   minScore?: number;
   filter?: "all" | "hot" | "buying" | "new";
+  city?: string;
 }): Promise<Project[]> {
   const db = await ensureDb();
   let items = [...db.projects];
+  if (opts?.city) {
+    items = items.filter((p) => p.city === opts.city);
+  }
   if (opts?.zipCodes?.length) {
     items = items.filter((p) => p.zip && opts.zipCodes!.includes(p.zip));
   }

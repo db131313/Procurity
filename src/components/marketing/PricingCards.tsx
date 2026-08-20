@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Check } from "lucide-react";
 import { PLAN_PRICING } from "@/lib/db/types";
 import { cn } from "@/lib/cn";
@@ -32,7 +31,37 @@ const FEATURES = {
 
 export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
   const [annual, setAnnual] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const tiers = ["starter", "growth", "pro"] as const;
+
+  async function startTrial(tier: (typeof tiers)[number]) {
+    setLoading(tier);
+    setError(null);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier }),
+      });
+      if (res.status === 401) {
+        window.location.href = `${ctaHref}?tier=${tier}`;
+        return;
+      }
+      const data = (await res.json()) as {
+        url?: string;
+        error?: string;
+        demo?: boolean;
+      };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Checkout unavailable");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Checkout failed");
+      setLoading(null);
+    }
+  }
 
   return (
     <div>
@@ -95,21 +124,26 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
                   </li>
                 ))}
               </ul>
-              <Link
-                href={ctaHref}
+              <button
+                type="button"
+                disabled={loading !== null}
+                onClick={() => startTrial(tier)}
                 className={cn(
-                  "mt-6 flex h-12 items-center justify-center rounded-full text-sm font-bold transition active:scale-[0.98]",
+                  "mt-6 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold transition active:scale-[0.98] disabled:opacity-60",
                   featured
                     ? "bg-white text-ink"
                     : "pc-gradient-bg text-white",
                 )}
               >
-                Start free trial
-              </Link>
+                {loading === tier ? "Starting…" : "Start free trial"}
+              </button>
             </article>
           );
         })}
       </div>
+      {error && (
+        <p className="mt-4 text-center text-sm text-hot">{error}</p>
+      )}
     </div>
   );
 }
