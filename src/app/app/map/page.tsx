@@ -1,10 +1,10 @@
 import { MapViewLazy } from "@/components/app/MapViewLazy";
+import { SyncMapButton } from "@/components/app/SyncMapButton";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getSyncMeta, listProjects } from "@/lib/db/store";
-import { relativeTime } from "@/lib/format";
+import { isDatabaseConfigured } from "@/lib/db/prisma";
 
 export default async function MapPage() {
-  // Always citywide — all five boroughs from live DOB store
   await getCurrentUser();
   const sync = await getSyncMeta();
   const projects = await listProjects();
@@ -38,12 +38,18 @@ export default async function MapPage() {
 
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden md:h-full md:min-h-0 md:flex-1">
-      <div className="pointer-events-none absolute left-3 top-3 z-20 md:left-5 md:top-4">
-        <p className="pointer-events-auto rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-slate shadow-sm backdrop-blur">
-          {sync.lastSyncAt
-            ? `Live · ${boroughs.size} boroughs · ${projects.length.toLocaleString()} sites · ${relativeTime(sync.lastSyncAt)}`
-            : "Citywide · run DOB sync"}
-        </p>
+      <div className="absolute left-3 top-3 z-20 md:left-5 md:top-4">
+        <SyncMapButton
+          lastSyncAt={sync.lastSyncAt}
+          projectCount={projects.length}
+          boroughCount={boroughs.size}
+        />
+        {!isDatabaseConfigured() && (
+          <p className="pointer-events-auto mt-1.5 max-w-xs rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] font-medium text-amber-950">
+            DATABASE_URL is not set — map data cannot persist on Netlify until
+            Neon is connected.
+          </p>
+        )}
       </div>
       <MapViewLazy projects={mapProjects} />
     </main>

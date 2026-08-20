@@ -12,18 +12,29 @@ import {
   replaceProjects,
 } from "@/lib/db/store";
 
-/** Rolling 90-day filing window + enrichment from approved/issuance/CO. */
+/** Rolling filing window + enrichment. Tuned for Netlify ≤60s when days≤21. */
 export async function syncDobData(days = 90) {
   const previous = (await listProjects()).filter(
     (p) => p.city === "nyc" || !p.city,
   );
 
+  // Smaller pulls on short windows so serverless sync finishes.
+  const light = days <= 30;
+  const perBorough = light ? 250 : 1000;
+  const permitLimit = light ? 800 : 2500;
+  const approvedLimit = light ? 1000 : 4000;
+  const coLimit = light ? 500 : 1500;
+  const legacyLimit = light ? 400 : 1000;
+
   const [filings, permits, approved, cos, legacy] = await Promise.all([
-    fetchDobNowFilingsCitywide({ days, perBorough: 1000 }),
-    fetchPermitIssuance({ days, limit: 2500 }),
-    fetchApprovedPermits({ days, limit: 4000 }),
-    fetchCertificatesOfOccupancy({ days: Math.max(days, 120), limit: 1500 }),
-    fetchLegacyFilings({ days, limit: 1000 }),
+    fetchDobNowFilingsCitywide({ days, perBorough }),
+    fetchPermitIssuance({ days, limit: permitLimit }),
+    fetchApprovedPermits({ days, limit: approvedLimit }),
+    fetchCertificatesOfOccupancy({
+      days: Math.max(days, light ? days : 120),
+      limit: coLimit,
+    }),
+    fetchLegacyFilings({ days, limit: legacyLimit }),
   ]);
 
   const { projects, events, discarded } = await normalizeProjects(

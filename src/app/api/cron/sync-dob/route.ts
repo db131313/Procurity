@@ -1,34 +1,18 @@
 import { NextResponse } from "next/server";
-import { syncAllCities } from "@/lib/cities/sync-all";
+import { GET as syncCitiesGet, POST as syncCitiesPost } from "@/app/api/cron/sync-cities/route";
 
-/** Nightly / manual multi-city ingest (NYC + Chicago + LA + Miami + Boston). */
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
+/** Back-compat alias for older cron schedules → same handler as sync-cities. */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const secret = process.env.CRON_SECRET;
-  const isDev = process.env.NODE_ENV !== "production";
-
-  const authorized =
-    isDev ||
-    !secret ||
-    authHeader === `Bearer ${secret}` ||
-    request.headers.get("x-cron-secret") === secret;
-
-  if (!authorized) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const result = await syncAllCities();
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error("City sync failed", error);
-    return NextResponse.json(
-      { error: "Sync failed", detail: String(error) },
-      { status: 500 },
-    );
-  }
+  return syncCitiesGet(request);
 }
 
 export async function POST(request: Request) {
-  return GET(request);
+  return syncCitiesPost(request);
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({ ok: true });
 }
