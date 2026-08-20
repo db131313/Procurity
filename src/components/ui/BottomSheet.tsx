@@ -19,7 +19,7 @@ export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
           <motion.button
             type="button"
             aria-label="Dismiss"
-            className="fixed inset-0 z-40 bg-ink/35"
+            className="fixed inset-0 z-30 bg-ink/35 md:z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -28,7 +28,7 @@ export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
           <motion.div
             role="dialog"
             aria-modal
-            className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg rounded-t-[24px] bg-white px-4 pb-[calc(16px+var(--safe-bottom))] pt-2 shadow-2xl"
+            className="fixed inset-x-0 bottom-[calc(64px+var(--safe-bottom))] z-50 mx-auto max-w-lg rounded-t-[24px] bg-white px-4 pb-4 pt-2 shadow-2xl md:bottom-0 md:pb-[calc(16px+var(--safe-bottom))]"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}

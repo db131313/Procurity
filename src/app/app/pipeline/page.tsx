@@ -1,16 +1,27 @@
 import { PipelineBoard } from "@/components/app/PipelineBoard";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getProject, listPipeline } from "@/lib/db/store";
+import { getProject, listPipeline, listProjects } from "@/lib/db/store";
 import Link from "next/link";
 
 export default async function PipelinePage() {
   const user = await getCurrentUser();
   const items = user ? await listPipeline(user.id) : [];
 
+  // Prefer one projects list over N+1 getProject round-trips when possible.
+  const projectIds = new Set(items.map((i) => i.projectId));
+  const all =
+    projectIds.size > 0
+      ? await listProjects().then((ps) =>
+          ps.filter((p) => projectIds.has(p.id)),
+        )
+      : [];
+  const byId = new Map(all.map((p) => [p.id, p]));
+
   const cards = (
     await Promise.all(
       items.map(async (item) => {
-        const project = await getProject(item.projectId);
+        let project = byId.get(item.projectId) ?? null;
+        if (!project) project = await getProject(item.projectId);
         if (!project) return null;
         return {
           itemId: item.id,

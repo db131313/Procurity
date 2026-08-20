@@ -183,14 +183,14 @@ export function MapFilters({ value, onChange }: Props) {
               <button
                 type="button"
                 aria-label="Close filters"
-                className="fixed inset-0 z-40 cursor-default bg-transparent"
+                className="fixed inset-0 z-30 cursor-default bg-transparent"
                 onClick={() => setPanelOpen(false)}
               />
               <div
                 id="map-filter-panel"
                 role="dialog"
                 aria-label="Map filters"
-                className="absolute right-0 top-full z-50 mt-2 w-[min(100vw-1.5rem,20rem)] rounded-2xl border border-line bg-white p-4 shadow-xl"
+                className="absolute right-0 top-full z-40 mt-2 w-[min(100vw-1.5rem,20rem)] rounded-2xl border border-line bg-white p-4 shadow-xl"
               >
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wide text-slate">
