@@ -2,6 +2,9 @@ import { chicagoSource } from "@/lib/sources/chicago";
 import { losAngelesSource } from "@/lib/sources/los-angeles";
 import { sanFranciscoSource } from "@/lib/sources/san-francisco";
 import { bostonSource } from "@/lib/sources/boston";
+import { seattleSource } from "@/lib/sources/seattle";
+import { fortWorthSource } from "@/lib/sources/fort-worth";
+import { miamiDadeSource } from "@/lib/sources/miami-dade";
 import { syncDobData } from "@/lib/dob/sync";
 import type { CityCode } from "@/lib/db/types";
 
@@ -11,11 +14,14 @@ const TARGET_CITIES = [
   "los_angeles",
   "san_francisco",
   "boston",
+  "seattle",
+  "fort_worth",
+  "miami_dade",
 ] as const satisfies readonly CityCode[];
 
 /**
- * Sync NYC (DOB) + Chicago / LA / San Francisco / Boston open-data adapters.
- * Miami is deprioritized (connectivity) and no longer in the active set.
+ * Sync NYC (DOB) + active open-data city adapters.
+ * Houston / Dallas / Phoenix held (stale or incomplete feeds).
  */
 export async function syncAllCities(days = 90) {
   const results: Record<string, { ok: boolean; count: number; error?: string }> =
@@ -37,6 +43,9 @@ export async function syncAllCities(days = 90) {
     { id: "los_angeles", source: losAngelesSource },
     { id: "san_francisco", source: sanFranciscoSource },
     { id: "boston", source: bostonSource },
+    { id: "seattle", source: seattleSource },
+    { id: "fort_worth", source: fortWorthSource },
+    { id: "miami_dade", source: miamiDadeSource },
   ] as const;
 
   await Promise.all(

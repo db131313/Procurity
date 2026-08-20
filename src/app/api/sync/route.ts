@@ -8,6 +8,11 @@ import { chicagoSource } from "@/lib/sources/chicago";
 import { losAngelesSource } from "@/lib/sources/los-angeles";
 import { sanFranciscoSource } from "@/lib/sources/san-francisco";
 import { bostonSource } from "@/lib/sources/boston";
+import { seattleSource } from "@/lib/sources/seattle";
+import { fortWorthSource } from "@/lib/sources/fort-worth";
+import { miamiDadeSource } from "@/lib/sources/miami-dade";
+import type { DataSource } from "@/lib/sources/types";
+import type { CityCode } from "@/lib/db/types";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -18,7 +23,20 @@ type CityParam =
   | "los_angeles"
   | "san_francisco"
   | "boston"
+  | "seattle"
+  | "fort_worth"
+  | "miami_dade"
   | "all";
+
+const CITY_SOURCES: Partial<Record<CityCode, DataSource>> = {
+  chicago: chicagoSource,
+  los_angeles: losAngelesSource,
+  san_francisco: sanFranciscoSource,
+  boston: bostonSource,
+  seattle: seattleSource,
+  fort_worth: fortWorthSource,
+  miami_dade: miamiDadeSource,
+};
 
 /**
  * Authenticated sync for admin / debugging.
@@ -56,14 +74,10 @@ export async function POST(request: Request) {
     } else if (city === "nyc") {
       result = await syncDobData(windowDays);
     } else {
-      const source =
-        city === "chicago"
-          ? chicagoSource
-          : city === "los_angeles"
-            ? losAngelesSource
-            : city === "san_francisco"
-              ? sanFranciscoSource
-              : bostonSource;
+      const source = CITY_SOURCES[city];
+      if (!source) {
+        return NextResponse.json({ error: `Unknown city: ${city}` }, { status: 400 });
+      }
       const projects = await source.fetchProjects({ days: windowDays });
       result = { ok: true, city, count: projects.length };
     }

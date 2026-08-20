@@ -6,6 +6,8 @@
 import {
   detectPhase,
   scoreProject,
+  DEFAULT_WEIGHTS,
+  type ScoringWeights,
 } from "@/lib/scoring/engine";
 import { scoreAllTrades } from "@/lib/scoring/trades";
 import type { CityCode, Project } from "@/lib/db/types";
@@ -31,6 +33,24 @@ export type RawCityPermit = {
   applicantName?: string | null;
   sourceDataset: string;
 };
+
+/**
+ * Miami-Dade feed has no job valuation — boost phase / recency / type signals
+ * and keep projectSize at 0 so weights renormalize over available factors.
+ */
+export const NO_VALUATION_WEIGHTS: ScoringWeights = {
+  phaseFit: 0.48,
+  recency: 0.22,
+  projectSize: 0,
+  occupancy: 0.14,
+  filerSignal: 0.12,
+  competitive: 0.04,
+};
+
+function scoringWeightsForCity(city: CityCode): ScoringWeights {
+  if (city === "miami_dade") return NO_VALUATION_WEIGHTS;
+  return DEFAULT_WEIGHTS;
+}
 
 function signalBlob(p: RawCityPermit) {
   return [p.permitType, p.workType, p.description, p.status]
@@ -95,7 +115,8 @@ export function buildScoredProjects(
         .filter((n): n is number => n != null && n > 0)
         .sort((a, b) => b - a)[0] ?? null;
 
-    const scored = scoreProject({
+    const weights = scoringWeightsForCity(city);
+    const scoreInput = {
       phase: phaseInfo.phase,
       lastActivityAt: primary.filingDate ?? null,
       estimatedJobCost: cost,
@@ -105,19 +126,10 @@ export function buildScoredProjects(
       architectName: null,
       hasSignPermit,
       jobType: primary.permitType ?? primary.workType ?? null,
-    });
+    };
 
-    const tradeScores = scoreAllTrades({
-      phase: phaseInfo.phase,
-      lastActivityAt: primary.filingDate ?? null,
-      estimatedJobCost: cost,
-      occupancy: primary.occupancy ?? null,
-      buildingType: primary.buildingType ?? primary.permitType ?? null,
-      gcName: primary.gcName ?? null,
-      architectName: null,
-      hasSignPermit,
-      jobType: primary.permitType ?? primary.workType ?? null,
-    });
+    const scored = scoreProject(scoreInput, weights);
+    const tradeScores = scoreAllTrades(scoreInput, weights);
 
     const base = socrataHelpers.baseProject({
       id: `${city}-${primary.id}`,
@@ -136,16 +148,23 @@ export function buildScoredProjects(
       scoreConfidence: scored.scoreConfidence,
     });
 
+    const scoreReasons = [
+      ...phaseInfo.reasons.slice(0, 2),
+      ...scored.scoreReasons.slice(0, 4),
+    ];
+    if (city === "miami_dade" && cost == null) {
+      scoreReasons.unshift(
+        "No job valuation in Miami-Dade feed — Buy Score weighted toward type, description, and status",
+      );
+    }
+
     projects.push({
       ...base,
       phase: phaseInfo.phase,
       phaseConfidence: phaseInfo.confidence,
       score: scored.score,
       scoreConfidence: scored.scoreConfidence,
-      scoreReasons: [
-        ...phaseInfo.reasons.slice(0, 2),
-        ...scored.scoreReasons.slice(0, 4),
-      ],
+      scoreReasons,
       tradeScores,
       estValueLow: scored.estValueLow,
       estValueHigh: scored.estValueHigh,

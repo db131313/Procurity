@@ -37,6 +37,103 @@ export async function fetchSocrataRows(
   return Array.isArray(rows) ? rows : [];
 }
 
+export type ArcGisFeature = {
+  attributes: SocrataRow;
+  geometry?: {
+    x?: number;
+    y?: number;
+    type?: string;
+    coordinates?: [number, number];
+  };
+};
+
+/** Query an ArcGIS Feature/MapServer layer (`.../MapServer/N` or FeatureServer/N). */
+export async function fetchArcGisFeatures(
+  layerUrl: string,
+  params: Record<string, string> = {},
+  opts?: { limit?: number },
+): Promise<ArcGisFeature[]> {
+  if (!layerUrl) return [];
+  const qs = new URLSearchParams({
+    where: "1=1",
+    outFields: "*",
+    returnGeometry: "true",
+    outSR: "4326",
+    f: "json",
+    resultRecordCount: String(opts?.limit ?? 800),
+    ...params,
+  });
+  const base = layerUrl.replace(/\/$/, "");
+  const url = `${base}/query?${qs.toString()}`;
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    next: { revalidate: 0 },
+  });
+  if (!res.ok) {
+    console.warn("[arcgis]", layerUrl, res.status, await res.text().catch(() => ""));
+    return [];
+  }
+  const body = (await res.json()) as {
+    error?: { message?: string };
+    features?: ArcGisFeature[];
+  };
+  if (body.error) {
+    console.warn("[arcgis]", layerUrl, body.error.message);
+    return [];
+  }
+  return Array.isArray(body.features) ? body.features : [];
+}
+
+export function arcGisEpochToIso(v: unknown): string | null {
+  if (v == null || v === "") return null;
+  if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)) {
+    return v.slice(0, 10);
+  }
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  // ArcGIS often uses ms since epoch; sometimes seconds
+  const ms = n > 1e12 ? n : n > 1e9 ? n : n * 1000;
+  try {
+    return new Date(ms).toISOString();
+  } catch {
+    return null;
+  }
+}
+
+/** ArcGIS SQL date literal for where clauses (`date'2026-05-22'`). */
+export function arcGisDateLiteral(daysAgo = 90): string {
+  const d = new Date(Date.now() - daysAgo * 86400000);
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `date'${yyyy}-${mm}-${dd}'`;
+}
+
+function geomLatLng(feature: ArcGisFeature, attrs: SocrataRow): {
+  lat: number | null;
+  lng: number | null;
+} {
+  const lat =
+    num(attrs.Latitude) ??
+    num(attrs.latitude) ??
+    num(attrs.Y) ??
+    (feature.geometry?.y != null ? Number(feature.geometry.y) : null);
+  const lng =
+    num(attrs.Longitude) ??
+    num(attrs.longitude) ??
+    num(attrs.X) ??
+    (feature.geometry?.x != null ? Number(feature.geometry.x) : null);
+  if (lat != null && lng != null && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+    return { lat, lng };
+  }
+  // GeoJSON-style
+  const coords = feature.geometry?.coordinates;
+  if (coords && coords.length >= 2) {
+    return { lat: coords[1], lng: coords[0] };
+  }
+  return { lat: null, lng: null };
+}
+
 /** Boston CKAN DataStore (not Socrata). */
 export async function fetchBostonCkanRows(limit = 800): Promise<SocrataRow[]> {
   const resourceId =
@@ -257,6 +354,125 @@ export function mapBostonRow(row: SocrataRow): RawCityPermit | null {
     occupancy: str(row.occupancytype),
     applicantName: str(row.applicant),
     sourceDataset: "boston-approved-building-permits",
+  };
+}
+
+/** Seattle Building Permits — data.seattle.gov 76t5-zqzr */
+export function mapSeattleRow(row: SocrataRow): RawCityPermit | null {
+  const id = str(row.permitnum) || str(row.id);
+  const lat = num(row.latitude);
+  const lng = num(row.longitude);
+  const address = str(row.originaladdress1);
+  if (!id || lat == null || lng == null || !address) return null;
+  return {
+    id,
+    address,
+    latitude: lat,
+    longitude: lng,
+    zip: str(row.originalzip),
+    borough: str(row.originalcity) || "Seattle",
+    description: str(row.description),
+    permitType:
+      str(row.permittypedesc) ||
+      str(row.permittypemapped) ||
+      str(row.permitclass),
+    workType: str(row.permitclass) || str(row.permitclassmapped),
+    status: str(row.statuscurrent),
+    estimatedJobCost: parseMoney(row.estprojectcost),
+    filingDate: str(row.issueddate) || str(row.applieddate),
+    occupancy: str(row.permitclassmapped) || str(row.housingcategory),
+    buildingType: str(row.permitclass) || str(row.permittypemapped),
+    gcName: str(row.contractorcompanyname),
+    sourceDataset: "seattle-building-permits",
+  };
+}
+
+/** Fort Worth CIVIC/Permits ArcGIS layer 0 */
+export function mapFortWorthFeature(feature: ArcGisFeature): RawCityPermit | null {
+  const row = feature.attributes;
+  const id =
+    str(row.Permit_No) ||
+    str(row.Unique_ID) ||
+    str(row.CAPID) ||
+    str(row.OBJECTID);
+  const { lat, lng } = geomLatLng(feature, row);
+  const address =
+    str(row.Address) ||
+    [str(row.Addr_No), str(row.Direction), str(row.Street_Name), str(row.Street_Suffix)]
+      .filter(Boolean)
+      .join(" ");
+  if (!id || lat == null || lng == null || !address) return null;
+  return {
+    id,
+    address,
+    latitude: lat,
+    longitude: lng,
+    zip: str(row.Zip_Code),
+    borough: "Fort Worth",
+    description: str(row.B1_WORK_DESC) || str(row.Specific_Use),
+    permitType:
+      str(row.Permit_Type) ||
+      str(row.Permit_SubType) ||
+      str(row.Permit_Category),
+    workType: str(row.Permit_SubType) || str(row.Use_Type),
+    status: str(row.Current_Status),
+    estimatedJobCost: parseMoney(row.JobValue),
+    filingDate:
+      arcGisEpochToIso(row.File_Date) || arcGisEpochToIso(row.Status_Date),
+    occupancy: str(row.Use_Type),
+    buildingType: str(row.Permit_Type),
+    ownerName: str(row.Owner_Full_Name),
+    sourceDataset: "fort-worth-civic-permits",
+  };
+}
+
+/**
+ * Miami-Dade County Building Permits (MD_LandInformation / layer 1).
+ * No job-value field — estimatedJobCost stays null; Buy Score renormalizes.
+ */
+export function mapMiamiDadeFeature(feature: ArcGisFeature): RawCityPermit | null {
+  const row = feature.attributes;
+  const id =
+    str(row.PROCNUM) ||
+    (row.ID != null ? String(row.ID) : null) ||
+    str(row.OBJECTID);
+  const { lat, lng } = geomLatLng(feature, row);
+  const address = str(row.ADDRESS)?.replace(/\s+/g, " ").trim() || null;
+  if (!id || lat == null || lng == null || !address) return null;
+  const descParts = [
+    str(row.DESC1),
+    str(row.DESC2),
+    str(row.FFRMLINE),
+  ]
+    .filter(Boolean)
+    .map((s) => s!.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  const statusCode = str(row.BPSTATUS);
+  const status =
+    statusCode === "A"
+      ? "Active"
+      : statusCode === "E"
+        ? "Expired"
+        : statusCode === "F"
+          ? "Finalized"
+          : statusCode;
+  return {
+    id,
+    address,
+    latitude: lat,
+    longitude: lng,
+    zip: null,
+    borough: "Miami-Dade",
+    description: descParts.join(" — ") || null,
+    permitType: str(row.TYPE) || str(row.APPTYPE),
+    workType: str(row.FFRMLINE) || str(row.TYPE),
+    status,
+    estimatedJobCost: null,
+    filingDate: arcGisEpochToIso(row.ISSUDATE) || arcGisEpochToIso(row.LSTINSDT),
+    occupancy: str(row.RESCOMM) === "C" ? "Commercial" : str(row.RESCOMM) === "R" ? "Residential" : str(row.PROPUSE),
+    buildingType: str(row.TYPE),
+    gcName: str(row.CONTRNAME)?.replace(/\s+/g, " ").trim() || null,
+    sourceDataset: "miami-dade-county-building-permits",
   };
 }
 

@@ -8,6 +8,9 @@ import { chicagoSource } from "@/lib/sources/chicago";
 import { losAngelesSource } from "@/lib/sources/los-angeles";
 import { sanFranciscoSource } from "@/lib/sources/san-francisco";
 import { bostonSource } from "@/lib/sources/boston";
+import { seattleSource } from "@/lib/sources/seattle";
+import { fortWorthSource } from "@/lib/sources/fort-worth";
+import { miamiDadeSource } from "@/lib/sources/miami-dade";
 import { syncDobData } from "@/lib/dob/sync";
 import { isDatabaseConfigured } from "@/lib/db/prisma";
 import { getSyncMeta, listProjects } from "@/lib/db/store";
@@ -26,6 +29,9 @@ const ACTIVE_CITIES = [
   "los_angeles",
   "san_francisco",
   "boston",
+  "seattle",
+  "fort_worth",
+  "miami_dade",
 ] as const satisfies readonly CityCode[];
 
 const CITY_SOURCES: Partial<Record<CityCode, DataSource>> = {
@@ -33,6 +39,9 @@ const CITY_SOURCES: Partial<Record<CityCode, DataSource>> = {
   los_angeles: losAngelesSource,
   san_francisco: sanFranciscoSource,
   boston: bostonSource,
+  seattle: seattleSource,
+  fort_worth: fortWorthSource,
+  miami_dade: miamiDadeSource,
 };
 
 export type EnsureFreshResult = {
