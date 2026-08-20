@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Logo } from "@/components/brand/Logo";
+import { redirectIfAuthenticated } from "@/lib/auth/redirect-if-authenticated";
 
-export default function SignUpPage() {
+export default async function SignUpPage() {
+  await redirectIfAuthenticated();
+
   return (
     <main className="grid min-h-[100dvh] lg:grid-cols-2">
       <section className="relative hidden overflow-hidden bg-ink text-white lg:flex lg:flex-col lg:justify-between lg:p-12">
