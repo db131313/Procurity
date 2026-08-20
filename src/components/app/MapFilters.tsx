@@ -133,7 +133,7 @@ export function MapFilters({ value, onChange }: Props) {
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-12 z-20 px-3 md:top-14 md:px-5">
+    <div className="pointer-events-none absolute inset-x-0 top-3 z-30 px-3 md:top-4 md:px-5">
       <div className="flex items-start gap-2">
         <div className="pointer-events-auto flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
           {QUICK.map((f) => {
@@ -156,7 +156,7 @@ export function MapFilters({ value, onChange }: Props) {
           })}
         </div>
 
-        <div className="pointer-events-auto relative shrink-0">
+        <div className="pointer-events-auto relative z-40 shrink-0">
           <button
             type="button"
             aria-expanded={panelOpen}
@@ -164,7 +164,7 @@ export function MapFilters({ value, onChange }: Props) {
             onClick={() => setPanelOpen((o) => !o)}
             className={cn(
               "flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold shadow-sm backdrop-blur transition",
-              filterActive || panelOpen
+                  filterActive || panelOpen
                 ? "border-ink/15 bg-ink text-white"
                 : "border-line bg-white/95 text-ink",
             )}
@@ -183,14 +183,14 @@ export function MapFilters({ value, onChange }: Props) {
               <button
                 type="button"
                 aria-label="Close filters"
-                className="fixed inset-0 z-30 cursor-default bg-transparent"
+                className="fixed inset-0 z-40 cursor-default bg-transparent"
                 onClick={() => setPanelOpen(false)}
               />
               <div
                 id="map-filter-panel"
                 role="dialog"
                 aria-label="Map filters"
-                className="absolute right-0 top-full z-40 mt-2 w-[min(100vw-1.5rem,20rem)] rounded-2xl border border-line bg-white p-4 shadow-xl"
+                className="absolute right-0 top-full z-50 mt-2 w-[min(100vw-1.5rem,20rem)] rounded-2xl border border-line bg-white p-4 shadow-xl"
               >
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wide text-slate">

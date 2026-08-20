@@ -130,6 +130,18 @@ a {
   opacity: 0.65;
 }
 
+/* Keep MapLibre chrome under app filter / legend overlays (z-30+) */
+.maplibregl-ctrl-top-right,
+.maplibregl-ctrl-top-left,
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-bottom-left {
+  z-index: 5;
+}
+
+.maplibregl-ctrl-top-right {
+  top: 3.25rem; /* clear filter chip row */
+}
+
 /* Hide map attribution crowding on tiny screens */
 @media (max-width: 430px) {
   .maplibregl-ctrl-bottom-right {

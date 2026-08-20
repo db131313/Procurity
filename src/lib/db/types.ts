@@ -7,6 +7,7 @@ export type CityCode =
   | "bergen"
   | "chicago"
   | "los_angeles"
+  | "san_francisco"
   | "miami"
   | "boston"
   | "philadelphia";

@@ -184,6 +184,57 @@ export function mapMiamiRow(row: SocrataRow): RawCityPermit | null {
   };
 }
 
+/** DataSF Building Permits (p4e4-a5a7) — GeoJSON `location` Point. */
+export function mapSanFranciscoRow(row: SocrataRow): RawCityPermit | null {
+  const id = str(row.permit_number) || str(row.record_id) || str(row.id);
+  const loc = row.location as
+    | { type?: string; coordinates?: [number, number] }
+    | undefined;
+  const lng = loc?.coordinates?.[0] ?? num(row.longitude);
+  const lat = loc?.coordinates?.[1] ?? num(row.latitude);
+  const address = [
+    str(row.street_number),
+    str(row.street_name),
+    str(row.street_suffix),
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (!id || lat == null || lng == null || !address) return null;
+  const estimated = parseMoney(row.estimated_cost);
+  const revised = parseMoney(row.revised_cost);
+  const cost =
+    revised != null && revised > 1
+      ? revised
+      : estimated != null && estimated > 0
+        ? estimated
+        : revised;
+  return {
+    id,
+    address,
+    latitude: lat,
+    longitude: lng,
+    zip: str(row.zipcode),
+    borough:
+      str(row.neighborhoods_analysis_boundaries) || "San Francisco",
+    description: str(row.description),
+    permitType:
+      str(row.permit_type_definition) || str(row.permit_type),
+    workType: str(row.permit_type_definition),
+    status: str(row.status),
+    estimatedJobCost: cost,
+    filingDate:
+      str(row.filed_date) ||
+      str(row.issued_date) ||
+      str(row.permit_creation_date),
+    occupancy: str(row.proposed_occupancy) || str(row.existing_occupancy),
+    buildingType:
+      str(row.proposed_use) ||
+      str(row.existing_use) ||
+      str(row.proposed_construction_type_description),
+    sourceDataset: "sf-building-permits",
+  };
+}
+
 export function mapBostonRow(row: SocrataRow): RawCityPermit | null {
   const id = str(row.permitnumber) || str(row._id) || str(row.id);
   const lat = num(row.y_latitude) ?? num(row.latitude);

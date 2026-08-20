@@ -4,6 +4,7 @@ import {
   mapBostonRow,
   mapChicagoRow,
   mapLaRow,
+  mapSanFranciscoRow,
 } from "../src/lib/cities/fetch";
 import { buildScoredProjects } from "../src/lib/cities/score-permits";
 
@@ -71,16 +72,39 @@ async function main() {
     bos[0]?.address,
   );
 
+  const sfRows = await fetchSocrataRows(
+    "https://data.sfgov.org/resource/p4e4-a5a7.json",
+    {
+      $order: "filed_date DESC",
+      $where: `location IS NOT NULL AND filed_date >= '${since}'`,
+    },
+    { limit: 50 },
+  );
+  const sfPermits = sfRows
+    .map(mapSanFranciscoRow)
+    .filter((p): p is NonNullable<typeof p> => p != null);
+  const sf = buildScoredProjects("san_francisco", sfPermits);
+  console.log(
+    "san_francisco",
+    sfRows.length,
+    "rows ->",
+    sf.length,
+    "projects",
+    sf[0]?.score,
+    sf[0]?.phase,
+    sf[0]?.address,
+  );
+
   try {
     const mia = await fetchSocrataRows(
       "https://data.miamigov.com/resource/7ey5-m434.json",
       {},
       { limit: 5 },
     );
-    console.log("miami rows", mia.length);
+    console.log("miami (deprecated) rows", mia.length);
   } catch (e) {
     console.log(
-      "miami FLAG unreachable",
+      "miami FLAG unreachable (expected)",
       e instanceof Error ? e.message : e,
     );
   }

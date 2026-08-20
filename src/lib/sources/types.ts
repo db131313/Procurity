@@ -8,6 +8,7 @@ export type SourceRegionId =
   | "bergen"
   | "chicago"
   | "los_angeles"
+  | "san_francisco"
   | "miami"
   | "boston"
   | "philadelphia";
