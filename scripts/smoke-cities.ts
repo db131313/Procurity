@@ -1,15 +1,21 @@
 import {
+  fetchArcGisFeatures,
   fetchBostonCkanRows,
   fetchSocrataRows,
   mapBostonRow,
   mapChicagoRow,
+  mapFortWorthFeature,
   mapLaRow,
+  mapMiamiDadeFeature,
   mapSanFranciscoRow,
+  mapSeattleRow,
+  arcGisDateLiteral,
 } from "../src/lib/cities/fetch";
 import { buildScoredProjects } from "../src/lib/cities/score-permits";
 
 async function main() {
   const since = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);
+  const arcSince = arcGisDateLiteral(90);
 
   const chiRows = await fetchSocrataRows(
     "https://data.cityofchicago.org/resource/ydr8-5enu.json",
@@ -19,58 +25,29 @@ async function main() {
     },
     { limit: 50 },
   );
-  const chiPermits = chiRows
-    .map(mapChicagoRow)
-    .filter((p): p is NonNullable<typeof p> => p != null);
-  const chi = buildScoredProjects("chicago", chiPermits);
-  console.log(
+  const chi = buildScoredProjects(
     "chicago",
-    chiRows.length,
-    "rows ->",
-    chi.length,
-    "projects",
-    chi[0]?.score,
-    chi[0]?.phase,
-    chi[0]?.address,
+    chiRows.map(mapChicagoRow).filter((p): p is NonNullable<typeof p> => p != null),
   );
+  console.log("chicago", chiRows.length, "->", chi.length, chi[0]?.address);
 
   const laRows = await fetchSocrataRows(
     "https://data.lacity.org/resource/xnhu-aczu.json",
-    {
-      $order: "issue_date DESC",
-      $where: "location_1 IS NOT NULL",
-    },
+    { $order: "issue_date DESC", $where: "location_1 IS NOT NULL" },
     { limit: 40 },
   );
-  const laPermits = laRows
-    .map(mapLaRow)
-    .filter((p): p is NonNullable<typeof p> => p != null);
-  const la = buildScoredProjects("los_angeles", laPermits);
-  console.log(
-    "la",
-    laRows.length,
-    "rows ->",
-    la.length,
-    "projects",
-    la[0]?.score,
-    la[0]?.phase,
+  const la = buildScoredProjects(
+    "los_angeles",
+    laRows.map(mapLaRow).filter((p): p is NonNullable<typeof p> => p != null),
   );
+  console.log("la", laRows.length, "->", la.length);
 
   const bosRows = await fetchBostonCkanRows(40);
-  const bosPermits = bosRows
-    .map(mapBostonRow)
-    .filter((p): p is NonNullable<typeof p> => p != null);
-  const bos = buildScoredProjects("boston", bosPermits);
-  console.log(
+  const bos = buildScoredProjects(
     "boston",
-    bosRows.length,
-    "rows ->",
-    bos.length,
-    "projects",
-    bos[0]?.score,
-    bos[0]?.phase,
-    bos[0]?.address,
+    bosRows.map(mapBostonRow).filter((p): p is NonNullable<typeof p> => p != null),
   );
+  console.log("boston", bosRows.length, "->", bos.length, bos[0]?.address);
 
   const sfRows = await fetchSocrataRows(
     "https://data.sfgov.org/resource/p4e4-a5a7.json",
@@ -80,34 +57,79 @@ async function main() {
     },
     { limit: 50 },
   );
-  const sfPermits = sfRows
-    .map(mapSanFranciscoRow)
-    .filter((p): p is NonNullable<typeof p> => p != null);
-  const sf = buildScoredProjects("san_francisco", sfPermits);
-  console.log(
+  const sf = buildScoredProjects(
     "san_francisco",
-    sfRows.length,
-    "rows ->",
-    sf.length,
-    "projects",
-    sf[0]?.score,
-    sf[0]?.phase,
-    sf[0]?.address,
+    sfRows
+      .map(mapSanFranciscoRow)
+      .filter((p): p is NonNullable<typeof p> => p != null),
+  );
+  console.log("san_francisco", sfRows.length, "->", sf.length, sf[0]?.address);
+
+  const seaRows = await fetchSocrataRows(
+    "https://data.seattle.gov/resource/76t5-zqzr.json",
+    {
+      $order: "issueddate DESC",
+      $where: `latitude IS NOT NULL AND issueddate >= '${since}'`,
+    },
+    { limit: 50 },
+  );
+  const sea = buildScoredProjects(
+    "seattle",
+    seaRows.map(mapSeattleRow).filter((p): p is NonNullable<typeof p> => p != null),
+  );
+  console.log(
+    "seattle",
+    seaRows.length,
+    "->",
+    sea.length,
+    sea[0]?.address,
+    sea[0]?.estimatedJobCost,
   );
 
-  try {
-    const mia = await fetchSocrataRows(
-      "https://data.miamigov.com/resource/7ey5-m434.json",
-      {},
-      { limit: 5 },
-    );
-    console.log("miami (deprecated) rows", mia.length);
-  } catch (e) {
-    console.log(
-      "miami FLAG unreachable (expected)",
-      e instanceof Error ? e.message : e,
-    );
-  }
+  const fwFeats = await fetchArcGisFeatures(
+    "https://mapit.fortworthtexas.gov/ags/rest/services/CIVIC/Permits/MapServer/0",
+    {
+      where: `Latitude IS NOT NULL AND JobValue > 0 AND File_Date >= ${arcSince}`,
+      orderByFields: "File_Date DESC",
+    },
+    { limit: 40 },
+  );
+  const fw = buildScoredProjects(
+    "fort_worth",
+    fwFeats
+      .map(mapFortWorthFeature)
+      .filter((p): p is NonNullable<typeof p> => p != null),
+  );
+  console.log(
+    "fort_worth",
+    fwFeats.length,
+    "->",
+    fw.length,
+    fw[0]?.address,
+    fw[0]?.estimatedJobCost,
+  );
+
+  const miaFeats = await fetchArcGisFeatures(
+    "https://gisweb.miamidade.gov/arcgis/rest/services/MD_LandInformation/MapServer/1",
+    { where: `ISSUDATE >= ${arcSince}`, orderByFields: "ISSUDATE DESC" },
+    { limit: 40 },
+  );
+  const mia = buildScoredProjects(
+    "miami_dade",
+    miaFeats
+      .map(mapMiamiDadeFeature)
+      .filter((p): p is NonNullable<typeof p> => p != null),
+  );
+  console.log(
+    "miami_dade",
+    miaFeats.length,
+    "->",
+    mia.length,
+    mia[0]?.address,
+    "cost",
+    mia[0]?.estimatedJobCost,
+    mia[0]?.score,
+  );
 }
 
 main().catch((e) => {
