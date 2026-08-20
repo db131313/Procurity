@@ -6,17 +6,23 @@ import { syncDobData } from "@/lib/dob/sync";
 import { getSyncMeta, listProjects } from "@/lib/db/store";
 import { chicagoSource } from "@/lib/sources/chicago";
 import { losAngelesSource } from "@/lib/sources/los-angeles";
-import { miamiSource } from "@/lib/sources/miami";
+import { sanFranciscoSource } from "@/lib/sources/san-francisco";
 import { bostonSource } from "@/lib/sources/boston";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-type CityParam = "nyc" | "chicago" | "los_angeles" | "miami" | "boston" | "all";
+type CityParam =
+  | "nyc"
+  | "chicago"
+  | "los_angeles"
+  | "san_francisco"
+  | "boston"
+  | "all";
 
 /**
- * Session-authenticated sync for the map UI.
- * Defaults to NYC with a shorter window so Netlify functions can finish.
+ * Authenticated sync for admin / debugging.
+ * Map UI auto-syncs server-side via ensureMapDataFresh — users never call this.
  *
  * POST /api/sync?city=nyc&days=21
  */
@@ -26,7 +32,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // On Netlify, file/memory store does not persist across invocations.
   if (process.env.NETLIFY && !isDatabaseConfigured()) {
     return NextResponse.json(
       {
@@ -56,8 +61,8 @@ export async function POST(request: Request) {
           ? chicagoSource
           : city === "los_angeles"
             ? losAngelesSource
-            : city === "miami"
-              ? miamiSource
+            : city === "san_francisco"
+              ? sanFranciscoSource
               : bostonSource;
       const projects = await source.fetchProjects({ days: windowDays });
       result = { ok: true, city, count: projects.length };

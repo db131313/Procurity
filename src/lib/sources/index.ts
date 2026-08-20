@@ -5,7 +5,7 @@ import { suffolkSource } from "./suffolk";
 import { bergenSource } from "./bergen";
 import { chicagoSource } from "./chicago";
 import { losAngelesSource } from "./los-angeles";
-import { miamiSource } from "./miami";
+import { sanFranciscoSource } from "./san-francisco";
 import { bostonSource } from "./boston";
 import type { DataSource, SourceRegionId } from "./types";
 
@@ -21,7 +21,7 @@ export const DATA_SOURCES: DataSource[] = [
   nycDobSource,
   chicagoSource,
   losAngelesSource,
-  miamiSource,
+  sanFranciscoSource,
   bostonSource,
   westchesterSource,
   nassauSource,

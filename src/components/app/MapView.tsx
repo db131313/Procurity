@@ -380,8 +380,8 @@ export function MapView({ projects }: Props) {
 
       <MapFilters value={filters} onChange={updateFilters} />
 
-      {/* Score legend */}
-      <div className="pointer-events-none absolute bottom-4 left-3 z-10 md:bottom-6 md:left-5">
+      {/* Score legend — above map chrome; shell already pads above mobile tab bar */}
+      <div className="pointer-events-none absolute bottom-3 left-3 z-30 md:bottom-6 md:left-5">
         <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
           <p className="mb-1.5 font-bold text-ink">Buy Score</p>
           <ul className="space-y-1 font-semibold text-slate">
