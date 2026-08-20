@@ -8,6 +8,9 @@ export type CityCode =
   | "chicago"
   | "los_angeles"
   | "san_francisco"
+  | "seattle"
+  | "fort_worth"
+  | "miami_dade"
   | "miami"
   | "boston"
   | "philadelphia";
