@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
-import { TeaserMapView } from "@/components/marketing/TeaserMapView";
+import { TeaserMapLazy } from "@/components/marketing/TeaserMapLazy";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
 import {
   getPickerCity,
@@ -87,7 +87,7 @@ export default async function TeaserCityPage({ params }: Props) {
 
       <div className="mx-auto max-w-5xl px-5 py-6 md:py-8">
         {pins.length > 0 ? (
-          <TeaserMapView
+          <TeaserMapLazy
             cityId={city.id}
             cityLabel={city.label}
             center={city.center}
