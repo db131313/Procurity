@@ -13,6 +13,17 @@ import { isDatabaseConfigured } from "@/lib/db/prisma";
 
 const USERS_PATH = path.join(process.cwd(), "data", "users.json");
 
+function isServerlessRuntime() {
+  return Boolean(
+    process.env.NETLIFY ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.LAMBDA_TASK_ROOT ||
+      process.env.VERCEL,
+  );
+}
+
+let memoryUsers: UserRecord[] | null = null;
+
 const DEMO_USER: UserRecord = {
   id: "usr_demo_procurity",
   name: "Demo Rep",
@@ -32,25 +43,46 @@ async function ensureStore(): Promise<UserRecord[]> {
       "data/users.json is disabled when DATABASE_URL is set — use Firebase Auth + db/store",
     );
   }
+  if (memoryUsers) return memoryUsers;
+  if (isServerlessRuntime()) {
+    memoryUsers = [{ ...DEMO_USER }];
+    return memoryUsers;
+  }
   try {
     const raw = await fs.readFile(USERS_PATH, "utf8");
     const parsed = JSON.parse(raw) as UserRecord[];
     if (!Array.isArray(parsed) || parsed.length === 0) {
-      await fs.writeFile(USERS_PATH, JSON.stringify([DEMO_USER], null, 2));
-      return [DEMO_USER];
+      memoryUsers = [{ ...DEMO_USER }];
+      try {
+        await fs.writeFile(USERS_PATH, JSON.stringify(memoryUsers, null, 2));
+      } catch {
+        /* read-only */
+      }
+      return memoryUsers;
     }
+    memoryUsers = parsed;
     return parsed;
   } catch {
-    await fs.mkdir(path.dirname(USERS_PATH), { recursive: true });
-    await fs.writeFile(USERS_PATH, JSON.stringify([DEMO_USER], null, 2));
-    return [DEMO_USER];
+    memoryUsers = [{ ...DEMO_USER }];
+    try {
+      await fs.mkdir(path.dirname(USERS_PATH), { recursive: true });
+      await fs.writeFile(USERS_PATH, JSON.stringify(memoryUsers, null, 2));
+    } catch {
+      /* read-only */
+    }
+    return memoryUsers;
   }
 }
 
 async function saveUsers(users: UserRecord[]) {
-  if (isDatabaseConfigured()) return;
-  await fs.mkdir(path.dirname(USERS_PATH), { recursive: true });
-  await fs.writeFile(USERS_PATH, JSON.stringify(users, null, 2));
+  memoryUsers = users;
+  if (isDatabaseConfigured() || isServerlessRuntime()) return;
+  try {
+    await fs.mkdir(path.dirname(USERS_PATH), { recursive: true });
+    await fs.writeFile(USERS_PATH, JSON.stringify(users, null, 2));
+  } catch {
+    /* read-only — keep memory only */
+  }
 }
 
 export async function findUserByEmail(email: string) {

@@ -53,29 +53,94 @@ function hydrateProject(raw: Project): Project {
   };
 }
 
+/** Netlify / Lambda / other serverless — filesystem is read-only. */
+function isServerlessRuntime() {
+  return Boolean(
+    process.env.NETLIFY ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.LAMBDA_TASK_ROOT ||
+      process.env.VERCEL,
+  );
+}
+
+let memoryDb: DbShape | null = null;
+let warnedEphemeral = false;
+
+function warnEphemeralOnce() {
+  if (warnedEphemeral) return;
+  warnedEphemeral = true;
+  console.warn(
+    "[procurity/store] DATABASE_URL is not set — using ephemeral in-memory data on a read-only host. Paste a Neon DATABASE_URL into Netlify env and redeploy for durable storage.",
+  );
+}
+
+function initialDb(): DbShape {
+  return {
+    projects: SEED_PROJECTS.map(hydrateProject),
+    events: [...SEED_EVENTS],
+    users: [{ ...DEMO_USER }],
+    pipeline: [],
+    lastSyncAt: null,
+  };
+}
+
 async function ensureDb(): Promise<DbShape> {
+  if (memoryDb) return memoryDb;
+
+  // Never attempt writes on serverless without Postgres.
+  if (isServerlessRuntime()) {
+    warnEphemeralOnce();
+    memoryDb = initialDb();
+    return memoryDb;
+  }
+
   try {
     const raw = await fs.readFile(DATA_PATH, "utf8");
     const db = JSON.parse(raw) as DbShape;
     db.projects = (db.projects ?? []).map(hydrateProject);
+    memoryDb = db;
     return db;
   } catch {
-    const initial: DbShape = {
-      projects: SEED_PROJECTS,
-      events: SEED_EVENTS,
-      users: [DEMO_USER],
-      pipeline: [],
-      lastSyncAt: null,
-    };
-    await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
-    await fs.writeFile(DATA_PATH, JSON.stringify(initial, null, 2));
+    const initial = initialDb();
+    memoryDb = initial;
+    try {
+      await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
+      await fs.writeFile(DATA_PATH, JSON.stringify(initial, null, 2));
+    } catch (err) {
+      const code =
+        err && typeof err === "object" && "code" in err
+          ? String((err as { code: string }).code)
+          : "";
+      if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
+        warnEphemeralOnce();
+        return initial;
+      }
+      throw err;
+    }
     return initial;
   }
 }
 
 async function save(db: DbShape) {
-  await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
-  await fs.writeFile(DATA_PATH, JSON.stringify(db, null, 2));
+  memoryDb = db;
+  if (isServerlessRuntime()) {
+    warnEphemeralOnce();
+    return;
+  }
+  try {
+    await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
+    await fs.writeFile(DATA_PATH, JSON.stringify(db, null, 2));
+  } catch (err) {
+    const code =
+      err && typeof err === "object" && "code" in err
+        ? String((err as { code: string }).code)
+        : "";
+    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
+      warnEphemeralOnce();
+      return;
+    }
+    throw err;
+  }
 }
 
 export async function listProjects(opts?: {
