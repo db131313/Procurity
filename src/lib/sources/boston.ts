@@ -1,65 +1,44 @@
-import {
-  SocrataCitySource,
-  socrataHelpers,
-  type SocrataRow,
-} from "./socrata-generic";
-import type { CityCode } from "@/lib/db/types";
+import type { Project } from "@/lib/db/types";
+import type { DataSource, DataSourceFetchOptions } from "./types";
+import { fetchBostonCkanRows, mapBostonRow } from "@/lib/cities/fetch";
+import { buildScoredProjects } from "@/lib/cities/score-permits";
+import { replaceProjects } from "@/lib/db/store";
 
 /**
- * Boston building permits scaffold.
- * Boston often uses CKAN; when a Socrata mirror exists, set CITY_BOSTON_SOCRATA_URL.
+ * Boston Approved Building Permits — CKAN DataStore (NOT Socrata).
+ * Package: https://data.boston.gov/dataset/approved-building-permits
+ * Resource: 6ddcd912-32a0-43df-9908-63574f8c7e77
+ * Optional: CITY_BOSTON_CKAN_RESOURCE_ID to override.
+ * CITY_BOSTON_SOCRATA_URL is unused (Boston does not publish this feed on Socrata).
  */
-function mapBoston(row: SocrataRow, city: CityCode) {
-  const id =
-    socrataHelpers.str(row.permitnumber) ||
-    socrataHelpers.str(row.permit_number) ||
-    socrataHelpers.str(row.id);
-  const lat = socrataHelpers.num(row.latitude) ?? socrataHelpers.num(row.y);
-  const lng = socrataHelpers.num(row.longitude) ?? socrataHelpers.num(row.x);
-  const address =
-    socrataHelpers.str(row.address) ||
-    socrataHelpers.str(row.workplace) ||
-    [
-      socrataHelpers.str(row.number),
-      socrataHelpers.str(row.street),
-      socrataHelpers.str(row.suffix),
-    ]
-      .filter(Boolean)
-      .join(" ");
-  if (!id || lat == null || lng == null || !address) return null;
-
-  return socrataHelpers.baseProject({
-    id: `bos-${id}`,
-    city,
-    address,
-    latitude: lat,
-    longitude: lng,
-    zip: socrataHelpers.str(row.zip) || socrataHelpers.str(row.zipcode),
-    borough: "Boston",
-    description:
-      socrataHelpers.str(row.description) ||
-      socrataHelpers.str(row.worktype),
-    filingDate:
-      socrataHelpers.str(row.issued_date) ||
-      socrataHelpers.str(row.issue_date),
-    jobNumber: id,
-    sourceDataset: "boston-building-permits",
-  });
-}
-
-const resourceUrl = process.env.CITY_BOSTON_SOCRATA_URL?.trim() || "";
-
-export const bostonSource = new SocrataCitySource(
-  {
-    id: "boston",
+export class BostonSource implements DataSource {
+  meta = {
+    id: "boston" as const,
     name: "Boston",
     county: "Suffolk County (MA)",
     state: "MA",
-    resourceUrl,
-    description: resourceUrl
-      ? "Scaffold — Boston permits via configured open-data URL."
-      : "Coming soon — set CITY_BOSTON_SOCRATA_URL to enable feed.",
-    mapRow: mapBoston,
-  },
-  resourceUrl ? "limited" : "coming_soon",
-);
+    status: "live" as const,
+    description:
+      "Live Boston approved building permits via CKAN DataStore (scored).",
+  };
+
+  async fetchProjects(opts: DataSourceFetchOptions = {}): Promise<Project[]> {
+    const limit = Math.min(1500, Math.max(200, (opts.days ?? 90) * 10));
+    const rows = await fetchBostonCkanRows(limit);
+    const permits = rows
+      .map(mapBostonRow)
+      .filter((p): p is NonNullable<typeof p> => p != null)
+      // Prefer rows with recent issued_date when available
+      .filter((p) => {
+        if (!opts.days || !p.filingDate) return true;
+        const age =
+          (Date.now() - new Date(p.filingDate).getTime()) / 86400000;
+        return age <= opts.days + 30;
+      });
+    const projects = buildScoredProjects("boston", permits);
+    await replaceProjects(projects, [], { cities: ["boston"] });
+    return projects;
+  }
+}
+
+export const bostonSource = new BostonSource();

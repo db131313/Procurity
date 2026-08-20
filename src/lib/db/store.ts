@@ -1,191 +1,80 @@
-import { promises as fs } from "fs";
-import path from "path";
-import { DEMO_USER, SEED_EVENTS, SEED_PROJECTS } from "./seed";
+/**
+ * Data access facade.
+ * - No DATABASE_URL → file-backed `data/store.json` (local/demo only)
+ * - DATABASE_URL set → Prisma/Postgres (Neon) exclusively
+ */
+
+import { isDatabaseConfigured } from "./prisma";
+import * as fileStore from "./file-store";
 import type {
-  PipelineItem,
   PipelineStage,
   PlanTier,
   Project,
   ProjectEvent,
-  TradeScores,
   UserRecord,
 } from "./types";
-import { PLAN_LIMITS } from "./types";
 
-type DbShape = {
-  projects: Project[];
-  events: ProjectEvent[];
-  users: UserRecord[];
-  pipeline: PipelineItem[];
-  lastSyncAt: string | null;
-};
-
-const DATA_PATH = path.join(process.cwd(), "data", "store.json");
-
-/** Backfill tradeScores + contact fields for older store rows. */
-function hydrateProject(raw: Project): Project {
-  const score = raw.score ?? 0;
-  const tradeScores: TradeScores = raw.tradeScores ?? {
-    signage: score,
-    lighting: score,
-    glass: score,
-    security: score,
-    flooring: score,
-  };
-  return {
-    ...raw,
-    tradeScores,
-    scoreConfidence: raw.scoreConfidence ?? "medium",
-    architectFirm: raw.architectFirm ?? null,
-    architectPhone: raw.architectPhone ?? null,
-    architectEmail: raw.architectEmail ?? null,
-    architectWebsite: raw.architectWebsite ?? null,
-    architectLicense: raw.architectLicense ?? null,
-    engineerName: raw.engineerName ?? null,
-    engineerFirm: raw.engineerFirm ?? null,
-    engineerPhone: raw.engineerPhone ?? null,
-    engineerEmail: raw.engineerEmail ?? null,
-    engineerWebsite: raw.engineerWebsite ?? null,
-    engineerLicense: raw.engineerLicense ?? null,
-    filerName: raw.filerName ?? null,
-    filerFirm: raw.filerFirm ?? null,
-    sourceDataset: raw.sourceDataset ?? null,
-  };
-}
-
-async function ensureDb(): Promise<DbShape> {
-  try {
-    const raw = await fs.readFile(DATA_PATH, "utf8");
-    const db = JSON.parse(raw) as DbShape;
-    db.projects = (db.projects ?? []).map(hydrateProject);
-    return db;
-  } catch {
-    const initial: DbShape = {
-      projects: SEED_PROJECTS,
-      events: SEED_EVENTS,
-      users: [DEMO_USER],
-      pipeline: [],
-      lastSyncAt: null,
-    };
-    await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
-    await fs.writeFile(DATA_PATH, JSON.stringify(initial, null, 2));
-    return initial;
+async function backend() {
+  if (isDatabaseConfigured()) {
+    return import("./prisma-store");
   }
-}
-
-async function save(db: DbShape) {
-  await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
-  await fs.writeFile(DATA_PATH, JSON.stringify(db, null, 2));
+  return fileStore;
 }
 
 export async function listProjects(opts?: {
   zipCodes?: string[];
   minScore?: number;
   filter?: "all" | "hot" | "buying" | "new";
+  city?: string;
 }): Promise<Project[]> {
-  const db = await ensureDb();
-  let items = [...db.projects];
-  if (opts?.zipCodes?.length) {
-    items = items.filter((p) => p.zip && opts.zipCodes!.includes(p.zip));
-  }
-  if (opts?.minScore) items = items.filter((p) => p.score >= opts.minScore!);
-  if (opts?.filter === "hot") items = items.filter((p) => p.score >= 85);
-  if (opts?.filter === "buying") {
-    items = items.filter(
-      (p) =>
-        p.phase === "interior_finishing" ||
-        p.phase === "sign_ready" ||
-        p.score >= 80,
-    );
-  }
-  if (opts?.filter === "new") {
-    const week = Date.now() - 7 * 86400000;
-    items = items.filter((p) => new Date(p.updatedAt).getTime() >= week);
-  }
-  return items.sort((a, b) => b.score - a.score);
+  const b = await backend();
+  return b.listProjects(opts);
 }
 
 export async function getProject(id: string) {
-  const db = await ensureDb();
-  return db.projects.find((p) => p.id === id) ?? null;
+  const b = await backend();
+  return b.getProject(id);
 }
 
-export async function replaceProjects(projects: Project[], events: ProjectEvent[]) {
-  const db = await ensureDb();
-  db.projects = projects.length ? projects : db.projects;
-  db.events = [...events, ...db.events].slice(0, 200);
-  db.lastSyncAt = new Date().toISOString();
-  await save(db);
-  return db;
+export async function replaceProjects(
+  projects: Project[],
+  events: ProjectEvent[],
+  opts?: { cities?: string[] },
+) {
+  const b = await backend();
+  return b.replaceProjects(projects, events, opts);
 }
 
 export async function listEvents() {
-  const db = await ensureDb();
-  return [...db.events].sort(
-    (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
-  );
+  const b = await backend();
+  return b.listEvents();
 }
 
 export async function getUserByFirebaseUid(uid: string) {
-  const db = await ensureDb();
-  return db.users.find((u) => u.firebaseUid === uid) ?? null;
+  const b = await backend();
+  return b.getUserByFirebaseUid(uid);
 }
 
 export async function getUserByEmail(email: string) {
-  const db = await ensureDb();
-  return db.users.find((u) => u.email.toLowerCase() === email.toLowerCase()) ?? null;
+  const b = await backend();
+  return b.getUserByEmail(email);
 }
 
 export async function getUserByStripeCustomerId(customerId: string) {
-  const db = await ensureDb();
-  return (
-    db.users.find((u) => u.stripeCustomerId === customerId) ?? null
-  );
+  const b = await backend();
+  return b.getUserByStripeCustomerId(customerId);
 }
 
 export async function getDemoUser() {
-  const db = await ensureDb();
-  return db.users.find((u) => u.email === DEMO_USER.email) ?? DEMO_USER;
+  const b = await backend();
+  return b.getDemoUser();
 }
 
 export async function upsertUser(
   partial: Partial<UserRecord> & { firebaseUid: string; email: string },
 ) {
-  const db = await ensureDb();
-  const existing = db.users.find(
-    (u) =>
-      u.firebaseUid === partial.firebaseUid ||
-      u.email.toLowerCase() === partial.email.toLowerCase(),
-  );
-  if (existing) {
-    Object.assign(existing, partial, { updatedAt: new Date().toISOString() });
-    await save(db);
-    return existing;
-  }
-  const user: UserRecord = {
-    id: `user-${Date.now()}`,
-    firebaseUid: partial.firebaseUid,
-    email: partial.email,
-    name: partial.name ?? null,
-    plan: partial.plan ?? "trial",
-    zipCodes: partial.zipCodes ?? [],
-    trialEndsAt:
-      partial.trialEndsAt ??
-      new Date(Date.now() + 7 * 86400000).toISOString(),
-    stripeCustomerId: partial.stripeCustomerId ?? null,
-    stripeSubscriptionId: partial.stripeSubscriptionId ?? null,
-    zipAllowance: partial.zipAllowance ?? PLAN_LIMITS.trial,
-    notificationPrefs: partial.notificationPrefs ?? {
-      email: true,
-      hotOpportunities: true,
-      phaseChanges: true,
-    },
-    onboardingComplete: partial.onboardingComplete ?? false,
-    createdAt: new Date().toISOString(),
-  };
-  db.users.push(user);
-  await save(db);
-  return user;
+  const b = await backend();
+  return b.upsertUser(partial);
 }
 
 export async function updateUserPlan(
@@ -193,60 +82,23 @@ export async function updateUserPlan(
   plan: PlanTier,
   stripe?: { customerId?: string; subscriptionId?: string | null },
 ) {
-  const db = await ensureDb();
-  const user = db.users.find((u) => u.id === userId);
-  if (!user) return null;
-  user.plan = plan;
-  user.zipAllowance = PLAN_LIMITS[plan];
-  if (stripe?.customerId) user.stripeCustomerId = stripe.customerId;
-  if (stripe && "subscriptionId" in stripe) {
-    user.stripeSubscriptionId = stripe.subscriptionId ?? null;
-  }
-  await save(db);
-  return user;
+  const b = await backend();
+  return b.updateUserPlan(userId, plan, stripe);
 }
 
 export async function setUserZips(userId: string, zipCodes: string[]) {
-  const db = await ensureDb();
-  const user = db.users.find((u) => u.id === userId);
-  if (!user) return { ok: false as const, reason: "not_found" as const };
-  if (zipCodes.length > user.zipAllowance) {
-    return {
-      ok: false as const,
-      reason: "limit" as const,
-      allowance: user.zipAllowance,
-    };
-  }
-  user.zipCodes = zipCodes;
-  user.onboardingComplete = true;
-  await save(db);
-  return { ok: true as const, user };
+  const b = await backend();
+  return b.setUserZips(userId, zipCodes);
 }
 
 export async function listPipeline(userId: string) {
-  const db = await ensureDb();
-  return db.pipeline.filter((p) => p.userId === userId);
+  const b = await backend();
+  return b.listPipeline(userId);
 }
 
 export async function addToPipeline(userId: string, projectId: string) {
-  const db = await ensureDb();
-  const existing = db.pipeline.find(
-    (p) => p.userId === userId && p.projectId === projectId,
-  );
-  if (existing) return existing;
-  const item: PipelineItem = {
-    id: `pipe-${Date.now()}`,
-    userId,
-    projectId,
-    stage: "new",
-    notes: null,
-    dealValue: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  db.pipeline.push(item);
-  await save(db);
-  return item;
+  const b = await backend();
+  return b.addToPipeline(userId, projectId);
 }
 
 export async function movePipelineItem(
@@ -254,58 +106,23 @@ export async function movePipelineItem(
   stage: PipelineStage,
   dealValue?: number | null,
 ) {
-  const db = await ensureDb();
-  const item = db.pipeline.find((p) => p.id === itemId);
-  if (!item) return null;
-  item.stage = stage;
-  item.updatedAt = new Date().toISOString();
-  if (dealValue !== undefined) item.dealValue = dealValue;
-  await save(db);
-  return item;
+  const b = await backend();
+  return b.movePipelineItem(itemId, stage, dealValue);
 }
 
 export async function getSyncMeta() {
-  const db = await ensureDb();
-  return { lastSyncAt: db.lastSyncAt, projectCount: db.projects.length };
+  const b = await backend();
+  return b.getSyncMeta();
 }
 
-/** Expand demo accounts to cover the densest live zip codes after a sync. */
 export async function expandDemoCoverage(limit = 25) {
-  const db = await ensureDb();
-  const counts = new Map<string, number>();
-  for (const p of db.projects) {
-    if (!p.zip) continue;
-    counts.set(p.zip, (counts.get(p.zip) ?? 0) + 1);
-  }
-  const topZips = [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([z]) => z);
-  if (!topZips.length) return db;
-
-  for (const user of db.users) {
-    user.zipCodes = topZips.slice(0, Math.max(user.zipAllowance, 25));
-    user.zipAllowance = Math.max(user.zipAllowance, 25);
-    if (user.email === DEMO_USER.email || user.plan === "trial") {
-      user.plan = user.plan === "trial" ? "pro" : user.plan;
-    }
-  }
-  await save(db);
-  return db;
+  const b = await backend();
+  return b.expandDemoCoverage(limit);
 }
 
-/**
- * Citywide demo mode: empty zip list = no filter in listProjects,
- * so Manhattan / Brooklyn / Queens / Bronx / Staten Island all show.
- */
 export async function enableCitywideDemo() {
-  const db = await ensureDb();
-  for (const user of db.users) {
-    user.zipCodes = [];
-    user.zipAllowance = Math.max(user.zipAllowance, 25);
-    user.onboardingComplete = true;
-    if (user.plan === "trial") user.plan = "pro";
-  }
-  await save(db);
-  return db;
+  const b = await backend();
+  return b.enableCitywideDemo();
 }
+
+export { isDatabaseConfigured } from "./prisma";

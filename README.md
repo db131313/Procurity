@@ -36,18 +36,25 @@ On `/login` or `/signup`, use **Try demo session**. With Firebase env vars set, 
 
 | Environment | Storage |
 | --- | --- |
-| Local / demo | **File-based** `data/store.json` (+ `data/users.json` legacy NextAuth path) |
-| Production (Netlify) | Needs **`DATABASE_URL`** (Postgres). File writes on serverless are ephemeral and will lose users/projects between invocations. |
+| No `DATABASE_URL` | **File-based** `data/store.json` + legacy `data/users.json` |
+| `DATABASE_URL` set | **Postgres via Prisma** exclusively — JSON file I/O is skipped |
 
-Prisma schema: `prisma/schema.prisma` (PostGIS-ready). Wire `DATABASE_URL` before relying on auth/billing/sync in production.
+**Cutover:** paste Neon `DATABASE_URL` into Netlify env → redeploy. Build runs `prisma migrate deploy` automatically. Then hit `/api/cron/sync-cities` (with `CRON_SECRET`) to load NYC + Chicago + LA + Miami + Boston.
 
-### Live DOB sync
+### Multi-city sync
 
 ```bash
-curl -X GET http://localhost:3000/api/cron/sync-dob
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  "https://rococo-scone-8d41f1.netlify.app/api/cron/sync-cities"
 ```
 
-Or set `CRON_SECRET` and call with `Authorization: Bearer $CRON_SECRET`. Schedule via Netlify scheduled functions / external cron against the Netlify URL.
+| City | Feed | Notes |
+| --- | --- | --- |
+| NYC | NYC Open Data / DOB | Live |
+| Chicago | Socrata `ydr8-5enu` | Live |
+| Los Angeles | Socrata `xnhu-aczu` | Live (geo via `location_1`) |
+| Boston | **CKAN** (not Socrata) | Live — `CITY_BOSTON_CKAN_RESOURCE_ID` |
+| Miami | Socrata `7ey5-m434` on `data.miamigov.com` | May need `CITY_MIAMI_SOCRATA_URL` if DNS/egress blocks default host |
 
 ### Stripe webhooks
 
