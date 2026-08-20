@@ -1,15 +1,14 @@
-// Production Postgres + PostGIS schema (wire DATABASE_URL when ready).
-// Local/dev uses the file-backed store in src/lib/db/store.ts until then.
+// Production Postgres schema for Neon / Netlify.
+// When DATABASE_URL is set, the app uses Prisma exclusively (no data/store.json).
+// PostGIS not required — lat/lng stored as Float for Neon out-of-the-box.
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [postgis]
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum PlanTier {
@@ -42,15 +41,18 @@ model User {
   email                String         @unique
   name                 String?
   plan                 PlanTier       @default(trial)
-  zipCodes             String[]
+  zipCodes             String[]       @default([])
   trialEndsAt          DateTime?
   stripeCustomerId     String?
   stripeSubscriptionId String?
   zipAllowance         Int            @default(3)
+  notificationPrefs    Json           @default("{\"email\":true,\"hotOpportunities\":true,\"phaseChanges\":true}")
   onboardingComplete   Boolean        @default(false)
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   pipelineItems        PipelineItem[]
+
+  @@index([stripeCustomerId])
 }
 
 model Project {
@@ -71,63 +73,84 @@ model Project {
   phase                ProjectPhase
   phaseConfidence      Float
   score                Int
-  scoreReasons         String[]
-  estValueLow          Int
-  estValueHigh         Int
-  buyingWindowEstimate String
+  scoreConfidence      String         @default("medium")
+  scoreReasons         String[]       @default([])
+  tradeScores          Json           @default("{\"signage\":0,\"lighting\":0,\"glass\":0,\"security\":0,\"flooring\":0}")
+  estValueLow          Int            @default(0)
+  estValueHigh         Int            @default(0)
+  buyingWindowEstimate String         @default("Unknown")
   gcName               String?
   architectName        String?
+  architectFirm        String?
+  architectPhone       String?
+  architectEmail       String?
+  architectWebsite     String?
+  architectLicense     String?
+  engineerName         String?
+  engineerFirm         String?
+  engineerPhone        String?
+  engineerEmail        String?
+  engineerWebsite      String?
+  engineerLicense      String?
   ownerName            String?
+  filerName            String?
+  filerFirm            String?
   hasSignPermit        Boolean        @default(false)
   lastActivityAt       DateTime
   filingDate           DateTime?
+  sourceDataset        String?
   updatedAt            DateTime       @updatedAt
   permits              Permit[]
   events               ProjectEvent[]
   pipelineItems        PipelineItem[]
 
+  @@index([city])
   @@index([zip])
   @@index([score])
   @@index([bin, jobNumber])
 }
 
 model Permit {
-  id             String   @id @default(cuid())
-  projectId      String
-  project        Project  @relation(fields: [projectId], references: [id])
-  sourceDataset  String
-  workType       String?
-  permitType     String?
-  status         String?
-  issuedAt       DateTime?
-  createdAt      DateTime @default(now())
+  id            String    @id @default(cuid())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceDataset String
+  workType      String?
+  permitType    String?
+  status        String?
+  issuedAt      DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([projectId])
 }
 
 model ProjectEvent {
   id        String   @id @default(cuid())
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   type      String
   title     String
   body      String
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([projectId])
 }
 
 model PipelineItem {
-  id         String        @id @default(cuid())
-  userId     String
-  user       User          @relation(fields: [userId], references: [id])
-  projectId  String
-  project    Project       @relation(fields: [projectId], references: [id])
-  stage      PipelineStage @default(new)
-  notes      String?
-  dealValue  Int?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage     PipelineStage @default(new)
+  notes     String?
+  dealValue Int?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   @@unique([userId, projectId])
+  @@index([userId])
 }
 
 model Subscription {
@@ -140,4 +163,12 @@ model Subscription {
   stripeSubscriptionId String?
   currentPeriodEnd     DateTime?
   updatedAt            DateTime  @updatedAt
+}
+
+/** Singleton row for ingest sync metadata. */
+model SyncMeta {
+  id           String    @id @default("default")
+  lastSyncAt   DateTime?
+  projectCount Int       @default(0)
+  meta         Json?
 }

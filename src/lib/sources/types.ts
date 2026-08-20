@@ -5,7 +5,12 @@ export type SourceRegionId =
   | "westchester"
   | "nassau"
   | "suffolk"
-  | "bergen";
+  | "bergen"
+  | "chicago"
+  | "los_angeles"
+  | "miami"
+  | "boston"
+  | "philadelphia";
 
 export type SourceCoverageStatus = "live" | "limited" | "coming_soon";
 

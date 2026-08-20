@@ -2,14 +2,19 @@
 
 **Find the next job. Before they need you.**
 
-Construction project intelligence for exterior/interior signage sales — starting with New York City. Procurity ingests NYC DOB open data, estimates construction phase, and scores each project on likelihood to buy signage right now.
+Construction project intelligence for exterior/interior signage sales. Procurity ingests open permit data, estimates construction phase, and scores each project on likelihood to buy signage right now.
+
+## Hosting
+
+**Netlify** (not Vercel). Live site: [rococo-scone-8d41f1.netlify.app](https://rococo-scone-8d41f1.netlify.app).  
+`vercel.json` is unused/dead — all hosting, domain, and env work goes through Netlify (`netlify.toml`).
 
 ## Stack
 
 - Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
 - MapLibre GL + OpenFreeMap (free tiles, no API key)
-- Firebase Auth scaffold (demo session works without keys)
-- File-backed store + Prisma schema for Postgres/PostGIS
+- Firebase Auth (Email/Password + password reset) via env config
+- File-backed store for local/demo + Prisma schema for Postgres/PostGIS
 - Stripe Checkout / Customer Portal / webhooks (3 tiers)
 - Framer Motion, lucide-react, @dnd-kit, canvas-confetti
 
@@ -25,18 +30,40 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Demo access
 
-On `/login` or `/signup`, use **Continue with demo** (or email/password — local scaffold until Firebase is configured).
+On `/login` or `/signup`, use **Try demo session**. With Firebase env vars set, email/password and `/forgot-password` use Firebase Auth.
 
-- Demo email: `demo@procurity.pro`
-- Seeded NYC projects load from `data/store.json` (auto-created)
+### Storage (important)
 
-### Live DOB sync
+| Environment | Storage |
+| --- | --- |
+| No `DATABASE_URL` | **File-based** `data/store.json` + legacy `data/users.json` |
+| `DATABASE_URL` set | **Postgres via Prisma** exclusively — JSON file I/O is skipped |
+
+**Cutover:** paste Neon `DATABASE_URL` into Netlify env → redeploy. Build runs `prisma migrate deploy` automatically. Then hit `/api/cron/sync-cities` (with `CRON_SECRET`) to load NYC + Chicago + LA + Miami + Boston.
+
+### Multi-city sync
 
 ```bash
-curl -X GET http://localhost:3000/api/cron/sync-dob
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  "https://rococo-scone-8d41f1.netlify.app/api/cron/sync-cities"
 ```
 
-Or set `CRON_SECRET` and call with `Authorization: Bearer $CRON_SECRET`. Vercel Cron hits this nightly (`vercel.json`).
+| City | Feed | Notes |
+| --- | --- | --- |
+| NYC | NYC Open Data / DOB | Live |
+| Chicago | Socrata `ydr8-5enu` | Live |
+| Los Angeles | Socrata `xnhu-aczu` | Live (geo via `location_1`) |
+| Boston | **CKAN** (not Socrata) | Live — `CITY_BOSTON_CKAN_RESOURCE_ID` |
+| Miami | Socrata `7ey5-m434` on `data.miamigov.com` | May need `CITY_MIAMI_SOCRATA_URL` if DNS/egress blocks default host |
+
+### Stripe webhooks
+
+Point Stripe at:
+
+`https://rococo-scone-8d41f1.netlify.app/api/webhooks/stripe`
+
+(Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`.)  
+After `procurity.pro` DNS cutover, update the endpoint to the custom domain.
 
 ## App routes
 
@@ -44,7 +71,7 @@ Or set `CRON_SECRET` and call with `Authorization: Bearer $CRON_SECRET`. Vercel 
 | --- | --- |
 | `/` | Marketing home |
 | `/pricing`, `/how-it-works` | Public pages |
-| `/login`, `/signup` | Auth |
+| `/login`, `/signup`, `/forgot-password` | Auth |
 | `/app/home` | Dashboard |
 | `/app/map` | MapLibre field map |
 | `/app/project/[id]` | Project detail + Buy Score |
@@ -55,11 +82,11 @@ Or set `CRON_SECRET` and call with `Authorization: Bearer $CRON_SECRET`. Vercel 
 
 ## Configuration
 
-See `.env.example` for Firebase, `DATABASE_URL`, Stripe price IDs (`STRIPE_PRICE_ID_STARTER/GROWTH/PRO`), NYC Open Data token, and map style URL.
+See `.env.example` for the full Netlify env checklist (Firebase, Stripe, `DATABASE_URL`, city feed URLs, etc.).
 
 Until keys are provided:
 
-- Auth uses the `pc_session` cookie + local user store
+- Auth uses demo session + local scaffold
 - Billing upgrades apply in **demo mode**
 - Projects use seed data (or live Socrata pulls when you run the cron)
 

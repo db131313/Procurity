@@ -1,0 +1,15 @@
+# Procurity.Pro — Netlify hosting
+# Site: https://rococo-scone-8d41f1.netlify.app
+# Domain cutover: point procurity.pro here when DNS is ready.
+
+[build]
+  # migrate deploy is a no-op without DATABASE_URL? — requires DATABASE_URL at build.
+  # Set DATABASE_URL in Netlify env before deploy; build runs prisma migrate deploy.
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  included_files = ["prisma/**"]

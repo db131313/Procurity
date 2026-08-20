@@ -1,5 +1,15 @@
 /** City / region codes for project intelligence. */
-export type CityCode = "nyc" | "nassau" | "westchester" | "suffolk" | "bergen";
+export type CityCode =
+  | "nyc"
+  | "nassau"
+  | "westchester"
+  | "suffolk"
+  | "bergen"
+  | "chicago"
+  | "los_angeles"
+  | "miami"
+  | "boston"
+  | "philadelphia";
 
 export type ProjectPhase =
   | "pre_construction"

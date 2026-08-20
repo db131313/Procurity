@@ -10,8 +10,10 @@ export function proxy(request: NextRequest) {
   const isAuthPage =
     path === "/login" ||
     path === "/signup" ||
+    path === "/forgot-password" ||
     path.startsWith("/login/") ||
-    path.startsWith("/signup/");
+    path.startsWith("/signup/") ||
+    path.startsWith("/forgot-password/");
 
   if (isApp && !hasSession) {
     const login = new URL("/login", request.nextUrl.origin);
@@ -27,5 +29,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/login", "/signup"],
+  matcher: ["/app/:path*", "/login", "/signup", "/forgot-password"],
 };

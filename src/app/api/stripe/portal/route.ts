@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
-import { findUserByEmail } from "@/lib/users";
+import { getAppUrl } from "@/lib/env";
 
 export async function POST() {
-  const session = await auth();
-  if (!session?.user?.email) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -18,15 +18,13 @@ export async function POST() {
     return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
   }
 
-  const user = await findUserByEmail(session.user.email);
-  if (!user?.stripeCustomerId) {
+  if (!user.stripeCustomerId) {
     return NextResponse.json({ error: "No billing customer" }, { status: 400 });
   }
 
-  const origin = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const portal = await stripe.billingPortal.sessions.create({
     customer: user.stripeCustomerId,
-    return_url: `${origin}/dashboard`,
+    return_url: `${getAppUrl()}/app/billing`,
   });
 
   return NextResponse.json({ url: portal.url });
