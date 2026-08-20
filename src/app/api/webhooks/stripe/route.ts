@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
-import { updateUserPlan, upsertUser } from "@/lib/db/store";
-import type { PlanTier } from "@/lib/db/types";
+import { handleStripeWebhookEvent } from "@/lib/stripe/handle-webhook";
 
-function tierFromMetadata(meta?: Stripe.Metadata | null): PlanTier {
-  const tier = meta?.tier;
-  if (tier === "starter" || tier === "growth" || tier === "pro") return tier;
-  return "pro";
-}
-
-/** Stub webhook — verifies STRIPE_WEBHOOK_SECRET when configured. */
+/**
+ * Canonical Stripe webhook endpoint for Netlify.
+ * Point Stripe Dashboard → Webhooks to:
+ *   https://rococo-scone-8d41f1.netlify.app/api/webhooks/stripe
+ * (swap to https://procurity.pro/... after DNS cutover)
+ *
+ * Events: checkout.session.completed,
+ *         customer.subscription.updated,
+ *         customer.subscription.deleted
+ */
 export async function POST(request: Request) {
   const stripe = getStripe();
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -37,45 +39,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const plan = tierFromMetadata(session.metadata);
-        const email =
-          session.metadata?.email ||
-          session.customer_details?.email ||
-          undefined;
-        const customerId =
-          typeof session.customer === "string" ? session.customer : null;
-        const subscriptionId =
-          typeof session.subscription === "string"
-            ? session.subscription
-            : null;
-        const userId = session.metadata?.userId;
-
-        if (userId) {
-          await updateUserPlan(userId, plan, {
-            customerId: customerId ?? undefined,
-            subscriptionId,
-          });
-        } else if (email) {
-          await upsertUser({
-            firebaseUid: `stripe-${email}`,
-            email,
-            plan,
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: subscriptionId,
-          });
-        }
-        break;
-      }
-      case "customer.subscription.deleted": {
-        // Downgrade handled when we can resolve user by customer id — stub OK.
-        break;
-      }
-      default:
-        break;
-    }
+    await handleStripeWebhookEvent(event);
   } catch (error) {
     console.error("Webhook handler error", error);
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });

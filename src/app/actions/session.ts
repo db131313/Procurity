@@ -6,6 +6,8 @@ import {
   destroySession,
 } from "@/lib/auth/session";
 import { upsertUser, setUserZips } from "@/lib/db/store";
+import { verifyFirebaseIdToken } from "@/lib/firebase/verify-id-token";
+import { isFirebaseConfigured } from "@/lib/firebase/config";
 
 export async function startDemoSession() {
   await upsertUser({
@@ -27,6 +29,49 @@ export async function startDemoSession() {
   redirect("/app/home");
 }
 
+/**
+ * After client-side Firebase Email/Password success, exchange the ID token
+ * for an httpOnly pc_session cookie and upsert the app user row.
+ */
+export async function establishFirebaseSession(input: {
+  idToken: string;
+  name?: string | null;
+  mode?: "login" | "signup";
+}): Promise<{ error?: string; redirectTo?: string }> {
+  try {
+    const verified = await verifyFirebaseIdToken(input.idToken);
+    const name = input.name?.trim() || verified.name || null;
+    const user = await upsertUser({
+      firebaseUid: verified.uid,
+      email: verified.email,
+      name,
+    });
+
+    await createSession({
+      uid: verified.uid,
+      email: verified.email,
+      name: name ?? undefined,
+    });
+
+    const redirectTo = user.onboardingComplete
+      ? "/app/home"
+      : "/app/onboarding";
+    return { redirectTo };
+  } catch (err) {
+    console.error("establishFirebaseSession", err);
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Could not establish session. Try again.",
+    };
+  }
+}
+
+/**
+ * Local/dev fallback when Firebase env vars are not set yet.
+ * Production with Firebase configured should never hit this path from the UI.
+ */
 export async function signInWithPassword(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
@@ -37,10 +82,17 @@ export async function signInWithPassword(formData: FormData) {
     return { error: "Email and password are required." };
   }
 
-  // PLACEHOLDER: When Firebase is configured, exchange credentials via client SDK
-  // and call createSession with the Firebase UID. Until then, local demo accounts.
   if (password.length < 6) {
     return { error: "Password must be at least 6 characters." };
+  }
+
+  // Prefer Firebase path — client should call establishFirebaseSession instead.
+  // This remains for demo/dev when Firebase keys are absent.
+  if (isFirebaseConfigured()) {
+    return {
+      error:
+        "Firebase is configured — use the client sign-in flow (reload the page).",
+    };
   }
 
   const uid = `local-${Buffer.from(email).toString("base64url").slice(0, 24)}`;

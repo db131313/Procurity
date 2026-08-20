@@ -136,6 +136,13 @@ export async function getUserByEmail(email: string) {
   return db.users.find((u) => u.email.toLowerCase() === email.toLowerCase()) ?? null;
 }
 
+export async function getUserByStripeCustomerId(customerId: string) {
+  const db = await ensureDb();
+  return (
+    db.users.find((u) => u.stripeCustomerId === customerId) ?? null
+  );
+}
+
 export async function getDemoUser() {
   const db = await ensureDb();
   return db.users.find((u) => u.email === DEMO_USER.email) ?? DEMO_USER;

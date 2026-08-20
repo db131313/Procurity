@@ -1,0 +1,15 @@
+# Procurity.Pro — Netlify hosting
+# Site: https://rococo-scone-8d41f1.netlify.app
+# Domain cutover: point procurity.pro here when DNS is ready.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Persist seed/data files into the serverless function bundle (ephemeral writes
+# still won't survive across invocations — wire DATABASE_URL for production).
+[functions]
+  included_files = ["data/**", "prisma/**"]

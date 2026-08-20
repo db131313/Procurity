@@ -19,6 +19,7 @@
     "date-fns": "^4.4.0",
     "firebase": "^12.17.1",
     "framer-motion": "^13.1.0",
+    "jose": "^6.2.9",
     "lucide-react": "^1.31.0",
     "maplibre-gl": "^6.3.0",
     "next": "16.3.0",
@@ -30,6 +31,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.15.13",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/canvas-confetti": "^1.9.0",

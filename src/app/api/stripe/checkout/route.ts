@@ -6,7 +6,8 @@ import {
   stripeConfigured,
   type CheckoutTier,
 } from "@/lib/stripe";
-import { updateUserPlan, upsertUser } from "@/lib/db/store";
+import { upsertUser } from "@/lib/db/store";
+import { getAppUrl } from "@/lib/env";
 
 const TIERS: CheckoutTier[] = ["starter", "growth", "pro"];
 
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
   }
 
   if (!stripeConfigured()) {
+    const { updateUserPlan } = await import("@/lib/db/store");
     await updateUserPlan(user.id, tier);
     return NextResponse.json({
       demo: true,
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
     const customer = await stripe.customers.create({
       email: user.email,
       name: user.name ?? undefined,
-      metadata: { userId: user.id },
+      metadata: { userId: user.id, firebaseUid: user.firebaseUid },
     });
     customerId = customer.id;
     await upsertUser({
@@ -58,10 +60,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const origin =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    "http://localhost:3000";
+  const origin = getAppUrl();
 
   const checkout = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -69,10 +68,19 @@ export async function POST(request: Request) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${origin}/app/billing?checkout=success&tier=${tier}`,
     cancel_url: `${origin}/pricing?checkout=cancel`,
+    client_reference_id: user.id,
     metadata: {
       userId: user.id,
       email: user.email,
       tier,
+      firebaseUid: user.firebaseUid,
+    },
+    subscription_data: {
+      metadata: {
+        userId: user.id,
+        email: user.email,
+        tier,
+      },
     },
   });
 

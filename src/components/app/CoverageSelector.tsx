@@ -14,8 +14,8 @@ const STATUS_CLASS: Record<SourceCoverageStatus, string> = {
 };
 
 /**
- * County → coverage selector for settings / map.
- * Lists NYC (live) and suburban counties as coming soon / limited.
+ * County / metro coverage selector for settings / map.
+ * Lists live NYC + scaffolded US cities and suburban counties.
  */
 export function CoverageSelector() {
   const regions = listCoverage();
@@ -23,10 +23,10 @@ export function CoverageSelector() {
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-wide text-slate">
-        County coverage
+        City & county coverage
       </p>
       <p className="mt-1 text-sm text-slate">
-        Choose where Procurity pulls permit intelligence. Stub counties return
+        Choose where Procurity pulls permit intelligence. Stub regions return
         no fabricated data until an open feed is wired.
       </p>
       <ul className="mt-4 space-y-2">
