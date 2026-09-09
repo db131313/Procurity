@@ -13,9 +13,10 @@ import {
   DEFAULT_MAP_FILTERS,
   MapFilters,
   getMapFilters,
+  scoreModeLabel,
   setMapFilters,
   type MapFilterState,
-  type TradeKey,
+  type ScoreMode,
 } from "@/components/app/MapFilters";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { ScoreRing } from "@/components/ui/ScoreRing";
@@ -25,6 +26,10 @@ import {
   getMapCamera,
   setMapCamera,
 } from "@/lib/map/cameraStore";
+import {
+  approxBoundsFromCamera,
+  boundsForCity,
+} from "@/lib/map/city-bounds";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -86,14 +91,14 @@ function tradeScoresFor(p: MapProject): TradeScores {
   };
 }
 
-/** When trades are enabled, pin score = max of those trade scores. */
+/** Pin score for coloring/filtering — overall Buy Score or one trade. */
 export function effectivePinScore(
   p: MapProject,
-  trades: TradeKey[],
+  scoreMode: ScoreMode,
 ): number {
-  if (!trades.length) return p.score;
+  if (scoreMode === "general") return p.score;
   const scores = tradeScoresFor(p);
-  return Math.max(...trades.map((t) => scores[t]));
+  return scores[scoreMode] ?? p.score;
 }
 
 function matchesQuick(
@@ -151,6 +156,10 @@ export function MapView({ projects: initialProjects, city }: Props) {
   const [mapReady, setMapReady] = useState(false);
   const [filters, setFilters] = useState<MapFilterState>(DEFAULT_MAP_FILTERS);
   const [projects, setProjects] = useState<MapProject[]>(initialProjects);
+  const [pinsLoading, setPinsLoading] = useState(initialProjects.length === 0);
+  const [pinCount, setPinCount] = useState<number | null>(
+    initialProjects.length ? initialProjects.length : null,
+  );
   const fetchGen = useRef(0);
 
   useEffect(() => {
@@ -175,13 +184,13 @@ export function MapView({ projects: initialProjects, city }: Props) {
 
   const selected = selectedId ? byId.get(selectedId) ?? null : null;
   const selectedScore = selected
-    ? effectivePinScore(selected, filters.trades)
+    ? effectivePinScore(selected, filters.scoreMode)
     : 0;
 
   const visible = useMemo(() => {
     return projects
       .map((p) => {
-        const score = effectivePinScore(p, filters.trades);
+        const score = effectivePinScore(p, filters.scoreMode);
         return { p, score };
       })
       .filter(
@@ -214,7 +223,84 @@ export function MapView({ projects: initialProjects, city }: Props) {
     [visible],
   );
 
-  // Viewport refetch — bbox + buffer so pans don't require shipping every city.
+  /** Shared pin fetch — used for instant first paint + pan/zoom. */
+  const fetchPins = (bounds: {
+    west: number;
+    south: number;
+    east: number;
+    north: number;
+  }) => {
+    const gen = ++fetchGen.current;
+    const qs = new URLSearchParams({
+      west: String(bounds.west),
+      south: String(bounds.south),
+      east: String(bounds.east),
+      north: String(bounds.north),
+      limit: "2000",
+    });
+    if (city) qs.set("city", city);
+
+    return fetch(`/api/map/pins?${qs.toString()}`, {
+      credentials: "same-origin",
+    })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          pins?: MapProject[];
+          totalMatched?: number;
+        };
+        if (gen !== fetchGen.current) return;
+        if (Array.isArray(data.pins)) {
+          setProjects(data.pins);
+          setPinCount(
+            typeof data.totalMatched === "number"
+              ? data.totalMatched
+              : data.pins.length,
+          );
+        }
+      })
+      .catch(() => {
+        // Keep current pins on network failure
+      })
+      .finally(() => {
+        if (gen === fetchGen.current) setPinsLoading(false);
+      });
+  };
+
+  // Instant first fetch — don't wait for MapLibre style/tiles.
+  useEffect(() => {
+    const saved = getMapCamera();
+    let bounds: {
+      west: number;
+      south: number;
+      east: number;
+      north: number;
+    };
+    if (saved) {
+      const fromCamera = approxBoundsFromCamera(saved.center, saved.zoom);
+      const latPad = (fromCamera.north - fromCamera.south) * 0.15;
+      const lngPad = (fromCamera.east - fromCamera.west) * 0.15;
+      bounds = {
+        west: fromCamera.west - lngPad,
+        south: fromCamera.south - latPad,
+        east: fromCamera.east + lngPad,
+        north: fromCamera.north + latPad,
+      };
+    } else {
+      const cityBounds = boundsForCity(city);
+      bounds = {
+        west: cityBounds.west,
+        south: cityBounds.south,
+        east: cityBounds.east,
+        north: cityBounds.north,
+      };
+    }
+    setPinsLoading(true);
+    void fetchPins(bounds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- first load / city change only
+  }, [city]);
+
+  // Viewport refetch on pan/zoom once the map is ready.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -222,43 +308,17 @@ export function MapView({ projects: initialProjects, city }: Props) {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const loadViewport = () => {
-      const bounds = map.getBounds();
-      const ne = bounds.getNorthEast();
-      const sw = bounds.getSouthWest();
-      // ~15% buffer
+      const mapBounds = map.getBounds();
+      const ne = mapBounds.getNorthEast();
+      const sw = mapBounds.getSouthWest();
       const latPad = (ne.lat - sw.lat) * 0.15;
       const lngPad = (ne.lng - sw.lng) * 0.15;
-      const west = sw.lng - lngPad;
-      const south = sw.lat - latPad;
-      const east = ne.lng + lngPad;
-      const north = ne.lat + latPad;
-
-      const gen = ++fetchGen.current;
-      const qs = new URLSearchParams({
-        west: String(west),
-        south: String(south),
-        east: String(east),
-        north: String(north),
-        limit: "2000",
+      void fetchPins({
+        west: sw.lng - lngPad,
+        south: sw.lat - latPad,
+        east: ne.lng + lngPad,
+        north: ne.lat + latPad,
       });
-      if (city) qs.set("city", city);
-
-      void fetch(`/api/map/pins?${qs.toString()}`, {
-        credentials: "same-origin",
-      })
-        .then(async (res) => {
-          if (!res.ok) return;
-          const data = (await res.json()) as {
-            pins?: MapProject[];
-          };
-          if (gen !== fetchGen.current) return;
-          if (Array.isArray(data.pins) && data.pins.length) {
-            setProjects(data.pins);
-          }
-        })
-        .catch(() => {
-          // Keep current pins on network failure
-        });
     };
 
     const onMoveEnd = () => {
@@ -267,13 +327,12 @@ export function MapView({ projects: initialProjects, city }: Props) {
     };
 
     map.on("moveend", onMoveEnd);
-    // Initial viewport refine after first paint
-    timer = setTimeout(loadViewport, 400);
 
     return () => {
       map.off("moveend", onMoveEnd);
       if (timer) clearTimeout(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, city]);
 
   // Init map once — restore session camera or NYC default (no fitBounds)
@@ -510,11 +569,32 @@ export function MapView({ projects: initialProjects, city }: Props) {
         role="application"
       />
 
+      {city && (
+        <div className="pointer-events-none absolute left-3 top-3 z-30 md:left-5 md:top-4">
+          <p className="rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
+            {city.replace(/_/g, " ")}
+            {pinCount != null ? ` · ${pinCount.toLocaleString()} sites` : ""}
+          </p>
+        </div>
+      )}
+
+      {pinsLoading && projects.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+          <div className="rounded-2xl border border-line bg-white/95 px-4 py-3 text-sm font-semibold text-slate shadow-md backdrop-blur">
+            Loading pins…
+          </div>
+        </div>
+      )}
+
       <MapFilters value={filters} onChange={updateFilters} />
 
       <div className="pointer-events-none absolute bottom-3 left-3 z-30 md:bottom-6 md:left-5">
         <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
-          <p className="mb-1.5 font-bold text-ink">Buy Score</p>
+          <p className="mb-1.5 font-bold text-ink">
+            {filters.scoreMode === "general"
+              ? "Buy Score"
+              : `${scoreModeLabel(filters.scoreMode)} Score`}
+          </p>
           <ul className="space-y-1 font-semibold text-slate">
             {[
               { c: "#16A34A", t: "90+ Act now" },

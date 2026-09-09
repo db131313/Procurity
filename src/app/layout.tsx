@@ -39,6 +39,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap"
           rel="stylesheet"
         />
+        <link rel="preconnect" href="https://tiles.openfreemap.org" />
+        <link rel="dns-prefetch" href="https://tiles.openfreemap.org" />
       </head>
       <body
         className="min-h-full font-sans"

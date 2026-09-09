@@ -42,6 +42,8 @@ model User {
   name                 String?
   plan                 PlanTier       @default(trial)
   /// Allowed zip list for map filtering (starter/growth/trial). Empty = grandfather unrestricted until picked. No separate allowedZipCodes column.
+  /** When set (admin only), takes precedence over Stripe-derived `plan`. */
+  devPlanOverride      PlanTier?
   zipCodes             String[]       @default([])
   trialEndsAt          DateTime?
   stripeCustomerId     String?

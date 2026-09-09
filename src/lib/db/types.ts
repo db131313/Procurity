@@ -110,6 +110,7 @@ export type UserRecord = {
   firebaseUid: string;
   email: string;
   name: string | null;
+  /** Stripe-derived (or trial) plan stored in DB. Prefer `effectivePlan()`. */
   plan: PlanTier;
   /**
    * Allowed zip list for map/project filtering (starter / growth / trial).
@@ -117,6 +118,8 @@ export type UserRecord = {
    * Empty list = grandfather unrestricted access until the user picks zips
    * (demo users stay empty + pro = unrestricted).
    */
+  /** Admin-only override; when set, takes precedence over `plan`. */
+  devPlanOverride: PlanTier | null;
   zipCodes: string[];
   trialEndsAt: string | null;
   stripeCustomerId: string | null;
@@ -131,6 +134,28 @@ export type UserRecord = {
   onboardingComplete: boolean;
   createdAt: string;
 };
+
+/** Plan used for entitlements: override wins when present. */
+export function effectivePlan(user: Pick<UserRecord, "plan" | "devPlanOverride">): PlanTier {
+  return user.devPlanOverride ?? user.plan;
+}
+
+/** Zip allowance for the effective plan. */
+export function effectiveZipAllowance(
+  user: Pick<UserRecord, "plan" | "devPlanOverride">,
+): number {
+  return PLAN_LIMITS[effectivePlan(user)];
+}
+
+/** Return a user view with `plan` / `zipAllowance` resolved for the app. */
+export function withEffectivePlan(user: UserRecord): UserRecord {
+  if (!user.devPlanOverride) return user;
+  return {
+    ...user,
+    plan: user.devPlanOverride,
+    zipAllowance: PLAN_LIMITS[user.devPlanOverride],
+  };
+}
 
 export type PipelineItem = {
   id: string;

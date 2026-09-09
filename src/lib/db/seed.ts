@@ -389,6 +389,7 @@ export const DEMO_USER: UserRecord = {
   email: "demo@procurity.pro",
   name: "Demo Rep",
   plan: "pro",
+  devPlanOverride: null,
   zipCodes: [],
   trialEndsAt: new Date(Date.now() + 7 * 86400000).toISOString(),
   stripeCustomerId: null,

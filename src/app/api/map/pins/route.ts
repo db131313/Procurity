@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { allowedZipFilter } from "@/lib/db/types";
 import { listMapPins } from "@/lib/map/pins";
-import { ensureMapDataFresh } from "@/lib/map/ensure-fresh";
-import { after } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +9,7 @@ export const dynamic = "force-dynamic";
  * Authenticated map pin feed.
  * Query: city, west,south,east,north (bbox), limit
  * Cached briefly via Cache-Control for repeat pans.
+ * Does not run freshness sync — that belongs on the map page `after()`.
  * Pins are filtered by the user's zipCodes allowlist for trial/starter/growth
  * when set; Pro and empty (grandfathered) lists are unrestricted.
  */
@@ -42,13 +41,6 @@ export async function GET(request: Request) {
       bbox = [west, south, east, north];
     }
   }
-
-  // Kick a background freshness check — never block the pin response on sync.
-  after(() => {
-    void ensureMapDataFresh().catch((err) =>
-      console.warn("[api/map/pins] background sync", err),
-    );
-  });
 
   const started = Date.now();
   const zipCodes = allowedZipFilter(user);

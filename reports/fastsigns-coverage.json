@@ -1,0 +1,2495 @@
+{
+  "generatedAt": "2026-09-09T03:29:03.708Z",
+  "source": "scripts/data/fastsigns-locations-raw.txt (FASTSIGNS public directory)",
+  "totalUsParsed": 724,
+  "geocodedOk": 651,
+  "geocodeFailed": 73,
+  "coveredMetros": {
+    "nyc": {
+      "label": "NYC",
+      "count": 11,
+      "locations": [
+        {
+          "name": "FASTSIGNS of Bayonne, NJ - Jersey City",
+          "city": "810 Broadway Bayonne",
+          "state": "NJ",
+          "zip": "07002",
+          "latitude": 40.674766158405,
+          "longitude": -74.109010933083
+        },
+        {
+          "name": "FASTSIGNS of Lodi-Hackensack, NJ",
+          "city": "46 W Lodi",
+          "state": "NJ",
+          "zip": "07644",
+          "latitude": 40.87527373685,
+          "longitude": -74.070478756601
+        },
+        {
+          "name": "FASTSIGNS of Newark, NJ",
+          "city": "Newark",
+          "state": "NJ",
+          "zip": "07102",
+          "latitude": 40.734883695822,
+          "longitude": -74.169979942799
+        },
+        {
+          "name": "FASTSIGNS of Union, NJ",
+          "city": "Union",
+          "state": "NJ",
+          "zip": "07083",
+          "latitude": 40.679465941987,
+          "longitude": -74.26817419268
+        },
+        {
+          "name": "FASTSIGNS of Brooklyn, NY - Borough Park",
+          "city": "Brooklyn",
+          "state": "NY",
+          "zip": "11218",
+          "latitude": 40.63780486685,
+          "longitude": -73.981951084159
+        },
+        {
+          "name": "FASTSIGNS of Forest Hills, NY",
+          "city": "Glendale",
+          "state": "NY",
+          "zip": "11385",
+          "latitude": 40.706497893718,
+          "longitude": -73.861331080864
+        },
+        {
+          "name": "FASTSIGNS of Manhattan, NY - NYU",
+          "city": "New York",
+          "state": "NY",
+          "zip": "10012",
+          "latitude": 40.727929303864,
+          "longitude": -73.999165540955
+        },
+        {
+          "name": "FASTSIGNS of Manhattan, NY - Penn Station",
+          "city": "New York",
+          "state": "NY",
+          "zip": "10001",
+          "latitude": 40.752335249523,
+          "longitude": -73.991898374039
+        },
+        {
+          "name": "FASTSIGNS of Manhattan-27th & 7th, NY",
+          "city": "3rd Floor New York",
+          "state": "NY",
+          "zip": "10001",
+          "latitude": 40.746126271288,
+          "longitude": -73.992487757417
+        },
+        {
+          "name": "FASTSIGNS of South Ozone Park - JFK Airport, NY",
+          "city": "South Ozone Park",
+          "state": "NY",
+          "zip": "11420",
+          "latitude": 40.677530493311,
+          "longitude": -73.827425910877
+        },
+        {
+          "name": "FASTSIGNS of Staten Island, NY",
+          "city": "Staten Island",
+          "state": "NY",
+          "zip": "10314",
+          "latitude": 40.596737663699,
+          "longitude": -74.182665892175
+        }
+      ]
+    },
+    "chicago": {
+      "label": "Chicago",
+      "count": 13,
+      "locations": [
+        {
+          "name": "FASTSIGNS of Addison, IL",
+          "city": "Addison",
+          "state": "IL",
+          "zip": "60101",
+          "latitude": 41.928769414884,
+          "longitude": -87.976716102184
+        },
+        {
+          "name": "FASTSIGNS of Chicago IL - South Loop",
+          "city": "Chicago",
+          "state": "IL",
+          "zip": "60605",
+          "latitude": 41.865357057887,
+          "longitude": -87.623947338673
+        },
+        {
+          "name": "FASTSIGNS of Chicago, IL - Lincoln Park/Bucktown",
+          "city": "Chicago",
+          "state": "IL",
+          "zip": "60614",
+          "latitude": 41.921519582897,
+          "longitude": -87.673620693609
+        },
+        {
+          "name": "FASTSIGNS of Chicago, IL - Magnificent Mile",
+          "city": "Chicago",
+          "state": "IL",
+          "zip": "60611",
+          "latitude": 41.892599308433,
+          "longitude": -87.616812621628
+        },
+        {
+          "name": "FASTSIGNS of Chicago, IL - O'Hare",
+          "city": "Chicago",
+          "state": "IL",
+          "zip": "60656",
+          "latitude": 41.980040965734,
+          "longitude": -87.836497104336
+        },
+        {
+          "name": "FASTSIGNS of Chicago, IL - United Center Park",
+          "city": "Chicago",
+          "state": "IL",
+          "zip": "60612",
+          "latitude": 41.885595913842,
+          "longitude": -87.676682890313
+        },
+        {
+          "name": "FASTSIGNS of Chicago, IL - West Loop",
+          "city": "Chicago",
+          "state": "IL",
+          "zip": "60607",
+          "latitude": 41.877852851833,
+          "longitude": -87.649658195873
+        },
+        {
+          "name": "FASTSIGNS of Downers Grove, IL",
+          "city": "Downers Grove",
+          "state": "IL",
+          "zip": "60516",
+          "latitude": 41.751720174844,
+          "longitude": -87.997090972329
+        },
+        {
+          "name": "FASTSIGNS of Elk Grove Village, IL",
+          "city": "Elk Grove Vlllage",
+          "state": "IL",
+          "zip": "60007",
+          "latitude": 42.011949114195,
+          "longitude": -87.956297834657
+        },
+        {
+          "name": "FASTSIGNS of Lincolnwood, IL",
+          "city": "Lincolnwood",
+          "state": "IL",
+          "zip": "60712",
+          "latitude": 41.997343426547,
+          "longitude": -87.716969138069
+        },
+        {
+          "name": "FASTSIGNS of Morton Grove, IL",
+          "city": "Morton Grove",
+          "state": "IL",
+          "zip": "60053",
+          "latitude": 42.054878672632,
+          "longitude": -87.822936707365
+        },
+        {
+          "name": "FASTSIGNS of Oakbrook Terrace, IL",
+          "city": "Terrace",
+          "state": "IL",
+          "zip": "60181",
+          "latitude": 41.85702922061,
+          "longitude": -87.973437461505
+        },
+        {
+          "name": "FASTSIGNS of Skokie, IL",
+          "city": "Skokie",
+          "state": "IL",
+          "zip": "60076",
+          "latitude": 42.040818596241,
+          "longitude": -87.714673533285
+        }
+      ]
+    },
+    "los_angeles": {
+      "label": "Los Angeles",
+      "count": 15,
+      "locations": [
+        {
+          "name": "FASTSIGNS of Santa Ana, CA",
+          "city": "Santa Ana",
+          "state": "CA",
+          "zip": "92704",
+          "latitude": 33.70685734137,
+          "longitude": -117.919503020663
+        },
+        {
+          "name": "FASTSIGNS of West Covina, CA",
+          "city": "West Covina",
+          "state": "CA",
+          "zip": "91791",
+          "latitude": 34.039835436424,
+          "longitude": -117.912806220055
+        },
+        {
+          "name": "FASTSIGNS of Culver City, CA",
+          "city": "Culver City",
+          "state": "CA",
+          "zip": "90230",
+          "latitude": 34.008255822234,
+          "longitude": -118.413646501756
+        },
+        {
+          "name": "FASTSIGNS of Garden Grove, CA",
+          "city": "Artesia",
+          "state": "CA",
+          "zip": "90703",
+          "latitude": 33.858419397764,
+          "longitude": -118.077976782573
+        },
+        {
+          "name": "FASTSIGNS of Inglewood / LAX, CA",
+          "city": "Inglewood",
+          "state": "CA",
+          "zip": "90301",
+          "latitude": 33.959321893504,
+          "longitude": -118.353358304236
+        },
+        {
+          "name": "FASTSIGNS of Long Beach, CA",
+          "city": "Long Beach",
+          "state": "CA",
+          "zip": "90806",
+          "latitude": 33.799582345416,
+          "longitude": -118.189433214043
+        },
+        {
+          "name": "FASTSIGNS of Los Angeles - West Hollywood",
+          "city": "Los Angeles",
+          "state": "CA",
+          "zip": "90048",
+          "latitude": 34.077235745978,
+          "longitude": -118.376664984677
+        },
+        {
+          "name": "FASTSIGNS of Los Angeles, CA - Financial District",
+          "city": "Los Angeles",
+          "state": "CA",
+          "zip": "90013",
+          "latitude": 34.049817184348,
+          "longitude": -118.24745559661
+        },
+        {
+          "name": "FASTSIGNS of Monrovia, CA",
+          "city": "Monrovia",
+          "state": "CA",
+          "zip": "91016",
+          "latitude": 34.151410649774,
+          "longitude": -118.001341501941
+        },
+        {
+          "name": "FASTSIGNS of North Hollywood, CA",
+          "city": "North Hollywood",
+          "state": "CA",
+          "zip": "91605",
+          "latitude": 34.202999722263,
+          "longitude": -118.413719496319
+        },
+        {
+          "name": "FASTSIGNS of Santa Fe Springs, CA",
+          "city": "Santa Fe Springs",
+          "state": "CA",
+          "zip": "90670",
+          "latitude": 33.945005479928,
+          "longitude": -118.08006119259
+        },
+        {
+          "name": "FASTSIGNS of Sherman Oaks, CA",
+          "city": "Sherman Oaks",
+          "state": "CA",
+          "zip": "91423",
+          "latitude": 34.150107898423,
+          "longitude": -118.444168898624
+        },
+        {
+          "name": "FASTSIGNS of Tarzana, CA",
+          "city": "Tarzana",
+          "state": "CA",
+          "zip": "91356",
+          "latitude": 34.172679090058,
+          "longitude": -118.552201311454
+        },
+        {
+          "name": "FASTSIGNS of Torrance, CA",
+          "city": "Torrance",
+          "state": "CA",
+          "zip": "90501",
+          "latitude": 33.836210261771,
+          "longitude": -118.316987203012
+        },
+        {
+          "name": "FASTSIGNS of Whittier, CA",
+          "city": "Whittier",
+          "state": "CA",
+          "zip": "90602",
+          "latitude": 33.976409415585,
+          "longitude": -118.04738717175
+        }
+      ]
+    },
+    "san_francisco": {
+      "label": "San Francisco",
+      "count": 7,
+      "locations": [
+        {
+          "name": "FASTSIGNS of Downtown Oakland",
+          "city": "Oakland",
+          "state": "CA",
+          "zip": "94607",
+          "latitude": 37.797683635804,
+          "longitude": -122.274259607746
+        },
+        {
+          "name": "FASTSIGNS of Dublin, CA",
+          "city": "Dublin",
+          "state": "CA",
+          "zip": "94568",
+          "latitude": 37.707970892596,
+          "longitude": -121.93296879926
+        },
+        {
+          "name": "FASTSIGNS of Fremont, CA",
+          "city": "Fremont",
+          "state": "CA",
+          "zip": "94538",
+          "latitude": 37.502202032099,
+          "longitude": -121.950459394499
+        },
+        {
+          "name": "FASTSIGNS of Pleasant Hill, CA",
+          "city": "Pleasant Hill",
+          "state": "CA",
+          "zip": "94523",
+          "latitude": 37.939104062197,
+          "longitude": -122.053913253404
+        },
+        {
+          "name": "FASTSIGNS of Redwood City, CA",
+          "city": "Redwood City",
+          "state": "CA",
+          "zip": "94063",
+          "latitude": 37.490299801678,
+          "longitude": -122.217776509769
+        },
+        {
+          "name": "FASTSIGNS of San Mateo, CA",
+          "city": "2130 S El Camino Real San Mateo",
+          "state": "CA",
+          "zip": "94403",
+          "latitude": 37.54707720015,
+          "longitude": -122.308607283214
+        },
+        {
+          "name": "FASTSIGNS of San Ramon, CA",
+          "city": "San Ramon",
+          "state": "CA",
+          "zip": "94583",
+          "latitude": 37.772471046666,
+          "longitude": -121.974407697722
+        }
+      ]
+    },
+    "boston": {
+      "label": "Boston",
+      "count": 3,
+      "locations": [
+        {
+          "name": "FASTSIGNS of Needham, MA",
+          "city": "Needham",
+          "state": "MA",
+          "zip": "02494",
+          "latitude": 42.306211339645,
+          "longitude": -71.227730563405
+        },
+        {
+          "name": "FASTSIGNS of Quincy, MA",
+          "city": "Quincy",
+          "state": "MA",
+          "zip": "02169",
+          "latitude": 42.243992602898,
+          "longitude": -70.997831780349
+        },
+        {
+          "name": "FASTSIGNS of Waltham, MA",
+          "city": "Waltham",
+          "state": "MA",
+          "zip": "02451",
+          "latitude": 42.376232170221,
+          "longitude": -71.248131096291
+        }
+      ]
+    },
+    "seattle": {
+      "label": "Seattle",
+      "count": 7,
+      "locations": [
+        {
+          "name": "FASTSIGNS of Bellevue, WA",
+          "city": "Bellevue",
+          "state": "WA",
+          "zip": "98005",
+          "latitude": 47.62797455613,
+          "longitude": -122.163217655915
+        },
+        {
+          "name": "FASTSIGNS of Burien-West Seattle, WA",
+          "city": "Burien",
+          "state": "WA",
+          "zip": "98166",
+          "latitude": 47.467730144588,
+          "longitude": -122.345955010924
+        },
+        {
+          "name": "FASTSIGNS of Kirkland, WA",
+          "city": "Kirkland",
+          "state": "WA",
+          "zip": "98033",
+          "latitude": 47.679427413529,
+          "longitude": -122.171973916795
+        },
+        {
+          "name": "FASTSIGNS of North Seattle, WA",
+          "city": "Seattle",
+          "state": "WA",
+          "zip": "98133",
+          "latitude": 47.721445054839,
+          "longitude": -122.344874477641
+        },
+        {
+          "name": "FASTSIGNS of Seattle, WA - Downtown",
+          "city": "Seattle",
+          "state": "WA",
+          "zip": "98101",
+          "latitude": 47.612856935162,
+          "longitude": -122.331537978285
+        },
+        {
+          "name": "FASTSIGNS of Seattle, WA - Queen Anne",
+          "city": "Seattle",
+          "state": "WA",
+          "zip": "98109",
+          "latitude": 47.63461684158,
+          "longitude": -122.340495637473
+        },
+        {
+          "name": "FASTSIGNS of Seattle, WA - University District",
+          "city": "Seattle",
+          "state": "WA",
+          "zip": "98115",
+          "latitude": 47.680225666656,
+          "longitude": -122.317344491144
+        }
+      ]
+    },
+    "fort_worth": {
+      "label": "Fort Worth",
+      "count": 8,
+      "locations": [
+        {
+          "name": "FASTSIGNS of Fort Worth, TX - Alliance",
+          "city": "Fort Worth",
+          "state": "TX",
+          "zip": "76177",
+          "latitude": 32.972120953296,
+          "longitude": -97.312316037892
+        },
+        {
+          "name": "FASTSIGNS of Fort Worth, TX - Camp Bowie",
+          "city": "Fort Worth",
+          "state": "TX",
+          "zip": "76107",
+          "latitude": 32.729981849033,
+          "longitude": -97.412109888774
+        },
+        {
+          "name": "FASTSIGNS of Fort Worth, TX - Downtown",
+          "city": "Fort Worth",
+          "state": "TX",
+          "zip": "76110",
+          "latitude": 32.714233605003,
+          "longitude": -97.343703743843
+        },
+        {
+          "name": "FASTSIGNS of Fort Worth, TX - Hulen",
+          "city": "Fort Worth",
+          "state": "TX",
+          "zip": "76132",
+          "latitude": 32.676268492336,
+          "longitude": -97.396463784539
+        },
+        {
+          "name": "FASTSIGNS of North Arlington, TX",
+          "city": "Arlington",
+          "state": "TX",
+          "zip": "76011",
+          "latitude": 32.767883720956,
+          "longitude": -97.096984354284
+        },
+        {
+          "name": "FASTSIGNS of Richland Hills, TX",
+          "city": "Richland Hills",
+          "state": "TX",
+          "zip": "76118",
+          "latitude": 32.805756955723,
+          "longitude": -97.221105618886
+        },
+        {
+          "name": "FASTSIGNS of South Arlington / Mansfield",
+          "city": "Arlington",
+          "state": "TX",
+          "zip": "76017",
+          "latitude": 32.670328893766,
+          "longitude": -97.131476183452
+        },
+        {
+          "name": "FASTSIGNS of Southlake, TX",
+          "city": "Southlake",
+          "state": "TX",
+          "zip": "76092",
+          "latitude": 32.930822444896,
+          "longitude": -97.115870509827
+        }
+      ]
+    },
+    "miami_dade": {
+      "label": "Miami-Dade",
+      "count": 8,
+      "locations": [
+        {
+          "name": "FASTSIGNS of Cutler Bay, FL",
+          "city": "Cutler Bay",
+          "state": "FL",
+          "zip": "33157",
+          "latitude": 25.586535276534,
+          "longitude": -80.362068288212
+        },
+        {
+          "name": "FASTSIGNS of Hollywood, FL",
+          "city": "Hollywood",
+          "state": "FL",
+          "zip": "33020",
+          "latitude": 26.011106497633,
+          "longitude": -80.163751929217
+        },
+        {
+          "name": "FASTSIGNS of Miami - Downtown",
+          "city": "Miami",
+          "state": "FL",
+          "zip": "33128",
+          "latitude": 25.776963836654,
+          "longitude": -80.194364527475
+        },
+        {
+          "name": "FASTSIGNS of Miami Beach, FL - MiMo District",
+          "city": "Suite #6 Miami",
+          "state": "FL",
+          "zip": "33138",
+          "latitude": 25.85506964823,
+          "longitude": -80.184968965197
+        },
+        {
+          "name": "FASTSIGNS of Miami, FL - Airport Area",
+          "city": "Doral",
+          "state": "FL",
+          "zip": "33166",
+          "latitude": 25.809856603207,
+          "longitude": -80.334098220843
+        },
+        {
+          "name": "FASTSIGNS of Miami, FL - Kendall",
+          "city": "Miami",
+          "state": "FL",
+          "zip": "33186",
+          "latitude": 25.656574695848,
+          "longitude": -80.405071055958
+        },
+        {
+          "name": "FASTSIGNS of North Miami Beach, FL",
+          "city": "North Miami Beach",
+          "state": "FL",
+          "zip": "33181",
+          "latitude": 25.917310012358,
+          "longitude": -80.160854549643
+        },
+        {
+          "name": "FASTSIGNS of Pembroke Pines, FL",
+          "city": "Pembroke Pines",
+          "state": "FL",
+          "zip": "33024",
+          "latitude": 26.008459551707,
+          "longitude": -80.276915125702
+        }
+      ]
+    }
+  },
+  "coveredTotal": 72,
+  "outsideTotal": 579,
+  "outsideByState": {
+    "TX": {
+      "count": 72,
+      "byCity": [
+        {
+          "city": "Houston, TX",
+          "count": 10
+        },
+        {
+          "city": "Dallas, TX",
+          "count": 9
+        },
+        {
+          "city": "San Antonio, TX",
+          "count": 5
+        },
+        {
+          "city": "Austin, TX",
+          "count": 3
+        },
+        {
+          "city": "2009 RR 620 N, Suite 720 Lakeway, TX",
+          "count": 1
+        },
+        {
+          "city": "Allen, TX",
+          "count": 1
+        },
+        {
+          "city": "Baytown, TX",
+          "count": 1
+        },
+        {
+          "city": "4108 N. Dowlen Beaumont, TX",
+          "count": 1
+        },
+        {
+          "city": "Carrollton, TX",
+          "count": 1
+        },
+        {
+          "city": "College Station, TX",
+          "count": 1
+        },
+        {
+          "city": "336 E Conroe, TX",
+          "count": 1
+        },
+        {
+          "city": "Corpus Christi, TX",
+          "count": 1
+        },
+        {
+          "city": "9742 Skillman Dallas, TX",
+          "count": 1
+        },
+        {
+          "city": "3401 E. University, #301 Denton, TX",
+          "count": 1
+        },
+        {
+          "city": "1201 Airway, Ste D3 El Paso, TX",
+          "count": 1
+        },
+        {
+          "city": "Bldg A Ste 103 El Paso, TX",
+          "count": 1
+        },
+        {
+          "city": "4224 N Mesa, Ste F El Paso, TX",
+          "count": 1
+        },
+        {
+          "city": "Frisco, TX",
+          "count": 1
+        },
+        {
+          "city": "Galveston, TX",
+          "count": 1
+        },
+        {
+          "city": "Georgetown, TX",
+          "count": 1
+        }
+      ]
+    },
+    "FL": {
+      "count": 55,
+      "byCity": [
+        {
+          "city": "Orlando, FL",
+          "count": 5
+        },
+        {
+          "city": "Jacksonville, FL",
+          "count": 4
+        },
+        {
+          "city": "Tampa, FL",
+          "count": 4
+        },
+        {
+          "city": "West Palm Beach, FL",
+          "count": 2
+        },
+        {
+          "city": "Saint Petersburg, FL",
+          "count": 2
+        },
+        {
+          "city": "Apopka, FL",
+          "count": 1
+        },
+        {
+          "city": "Boca Raton, FL",
+          "count": 1
+        },
+        {
+          "city": "Bradenton, FL",
+          "count": 1
+        },
+        {
+          "city": "Brandon, FL",
+          "count": 1
+        },
+        {
+          "city": "Cape Coral, FL",
+          "count": 1
+        },
+        {
+          "city": "915 SR 436 Casselberry, FL",
+          "count": 1
+        },
+        {
+          "city": "Clearwater, FL",
+          "count": 1
+        },
+        {
+          "city": "50, Unit D Clermont, FL",
+          "count": 1
+        },
+        {
+          "city": "Dania, FL",
+          "count": 1
+        },
+        {
+          "city": "84, Ste 7 Davie, FL",
+          "count": 1
+        },
+        {
+          "city": "Holly Hill, FL",
+          "count": 1
+        },
+        {
+          "city": "Deerfield Beach, FL",
+          "count": 1
+        },
+        {
+          "city": "Fernandina Beach, FL",
+          "count": 1
+        },
+        {
+          "city": "Fort Myers, FL",
+          "count": 1
+        },
+        {
+          "city": "Oakland Park, FL",
+          "count": 1
+        }
+      ]
+    },
+    "CA": {
+      "count": 48,
+      "byCity": [
+        {
+          "city": "San Diego, CA",
+          "count": 6
+        },
+        {
+          "city": "Sacramento, CA",
+          "count": 2
+        },
+        {
+          "city": "San Jose, CA",
+          "count": 2
+        },
+        {
+          "city": "K-8 American Canyon, CA",
+          "count": 1
+        },
+        {
+          "city": "Antioch, CA",
+          "count": 1
+        },
+        {
+          "city": "Brea, CA",
+          "count": 1
+        },
+        {
+          "city": "Camarillo, CA",
+          "count": 1
+        },
+        {
+          "city": "Clovis, CA",
+          "count": 1
+        },
+        {
+          "city": "Concord, CA",
+          "count": 1
+        },
+        {
+          "city": "584 Broadway El Cajon, CA",
+          "count": 1
+        },
+        {
+          "city": "Elk Grove, CA",
+          "count": 1
+        },
+        {
+          "city": "Encinitas, CA",
+          "count": 1
+        },
+        {
+          "city": "Escondido, CA",
+          "count": 1
+        },
+        {
+          "city": "Folsom, CA",
+          "count": 1
+        },
+        {
+          "city": "Fresno, CA",
+          "count": 1
+        },
+        {
+          "city": "Fullerton, CA",
+          "count": 1
+        },
+        {
+          "city": "Irvine, CA",
+          "count": 1
+        },
+        {
+          "city": "Lake Forest, CA",
+          "count": 1
+        },
+        {
+          "city": "6961 Broadway Lemon Grove, CA",
+          "count": 1
+        },
+        {
+          "city": "Moreno Valley, CA",
+          "count": 1
+        }
+      ]
+    },
+    "OH": {
+      "count": 31,
+      "byCity": [
+        {
+          "city": "Cincinnati, OH",
+          "count": 4
+        },
+        {
+          "city": "Dayton, OH",
+          "count": 3
+        },
+        {
+          "city": "Akron, OH",
+          "count": 1
+        },
+        {
+          "city": "Blue Ash, OH",
+          "count": 1
+        },
+        {
+          "city": "Broadview Heights, OH",
+          "count": 1
+        },
+        {
+          "city": "Canton, OH",
+          "count": 1
+        },
+        {
+          "city": "North Canton, OH",
+          "count": 1
+        },
+        {
+          "city": "Columbus, OH",
+          "count": 1
+        },
+        {
+          "city": "Beavercreek, OH",
+          "count": 1
+        },
+        {
+          "city": "Cleveland, OH",
+          "count": 1
+        },
+        {
+          "city": "Dublin, OH",
+          "count": 1
+        },
+        {
+          "city": "Fairfield, OH",
+          "count": 1
+        },
+        {
+          "city": "Findlay, OH",
+          "count": 1
+        },
+        {
+          "city": "Hilliard, OH",
+          "count": 1
+        },
+        {
+          "city": "Lima, OH",
+          "count": 1
+        },
+        {
+          "city": "Lyndhurst, OH",
+          "count": 1
+        },
+        {
+          "city": "Maumee, OH",
+          "count": 1
+        },
+        {
+          "city": "Medina, OH",
+          "count": 1
+        },
+        {
+          "city": "Mentor, OH",
+          "count": 1
+        },
+        {
+          "city": "North Olmsted, OH",
+          "count": 1
+        }
+      ]
+    },
+    "PA": {
+      "count": 29,
+      "byCity": [
+        {
+          "city": "Pittsburgh, PA",
+          "count": 2
+        },
+        {
+          "city": "Allentown, PA",
+          "count": 1
+        },
+        {
+          "city": "Conshohocken, PA",
+          "count": 1
+        },
+        {
+          "city": "Doylestown, PA",
+          "count": 1
+        },
+        {
+          "city": "Easton, PA",
+          "count": 1
+        },
+        {
+          "city": "Erie, PA",
+          "count": 1
+        },
+        {
+          "city": "Exton, PA",
+          "count": 1
+        },
+        {
+          "city": "Fairless Hills, PA",
+          "count": 1
+        },
+        {
+          "city": "Greencastle, PA",
+          "count": 1
+        },
+        {
+          "city": "6150 Route 30 W, Suite 500 Greensburg, PA",
+          "count": 1
+        },
+        {
+          "city": "Harrisburg, PA",
+          "count": 1
+        },
+        {
+          "city": "Lancaster, PA",
+          "count": 1
+        },
+        {
+          "city": "Narberth, PA",
+          "count": 1
+        },
+        {
+          "city": "McMurray, PA",
+          "count": 1
+        },
+        {
+          "city": "Mechanicsburg, PA",
+          "count": 1
+        },
+        {
+          "city": "Monroeville, PA",
+          "count": 1
+        },
+        {
+          "city": "Montgomeryville, PA",
+          "count": 1
+        },
+        {
+          "city": "Philadelphia, PA",
+          "count": 1
+        },
+        {
+          "city": "Phoenixville, PA",
+          "count": 1
+        },
+        {
+          "city": "Wexford, PA",
+          "count": 1
+        }
+      ]
+    },
+    "GA": {
+      "count": 23,
+      "byCity": [
+        {
+          "city": "Atlanta, GA",
+          "count": 3
+        },
+        {
+          "city": "Building 50, Suite 5 Lawrenceville, GA",
+          "count": 1
+        },
+        {
+          "city": "Athens, GA",
+          "count": 1
+        },
+        {
+          "city": "NE Atlanta, GA",
+          "count": 1
+        },
+        {
+          "city": "Augusta, GA",
+          "count": 1
+        },
+        {
+          "city": "Ste A/B Buford, GA",
+          "count": 1
+        },
+        {
+          "city": "Conyers, GA",
+          "count": 1
+        },
+        {
+          "city": "Cumming, GA",
+          "count": 1
+        },
+        {
+          "city": "Douglasville, GA",
+          "count": 1
+        },
+        {
+          "city": "Duluth, GA",
+          "count": 1
+        },
+        {
+          "city": "Johns Creek, GA",
+          "count": 1
+        },
+        {
+          "city": "Kennesaw, GA",
+          "count": 1
+        },
+        {
+          "city": "Macon, GA",
+          "count": 1
+        },
+        {
+          "city": "Marietta, GA",
+          "count": 1
+        },
+        {
+          "city": "34, Ste D Newnan, GA",
+          "count": 1
+        },
+        {
+          "city": "Norcross, GA",
+          "count": 1
+        },
+        {
+          "city": "Roswell, GA",
+          "count": 1
+        },
+        {
+          "city": "Sandy Springs, GA",
+          "count": 1
+        },
+        {
+          "city": "80, Suite 800 Savannah, GA",
+          "count": 1
+        },
+        {
+          "city": "Snellville, GA",
+          "count": 1
+        }
+      ]
+    },
+    "NC": {
+      "count": 19,
+      "byCity": [
+        {
+          "city": "Charlotte, NC",
+          "count": 5
+        },
+        {
+          "city": "Raleigh, NC",
+          "count": 2
+        },
+        {
+          "city": "Asheville, NC",
+          "count": 1
+        },
+        {
+          "city": "Cary, NC",
+          "count": 1
+        },
+        {
+          "city": "Concord, NC",
+          "count": 1
+        },
+        {
+          "city": "Durham, NC",
+          "count": 1
+        },
+        {
+          "city": "Fayetteville, NC",
+          "count": 1
+        },
+        {
+          "city": "Gastonia, NC",
+          "count": 1
+        },
+        {
+          "city": "Greenville, NC",
+          "count": 1
+        },
+        {
+          "city": "High Point, NC",
+          "count": 1
+        },
+        {
+          "city": "Huntersville, NC",
+          "count": 1
+        },
+        {
+          "city": "Monroe, NC",
+          "count": 1
+        },
+        {
+          "city": "Mooresville, NC",
+          "count": 1
+        },
+        {
+          "city": "Wilmington, NC",
+          "count": 1
+        }
+      ]
+    },
+    "CO": {
+      "count": 18,
+      "byCity": [
+        {
+          "city": "Colorado Springs, CO",
+          "count": 2
+        },
+        {
+          "city": "Denver, CO",
+          "count": 2
+        },
+        {
+          "city": "Arvada, CO",
+          "count": 1
+        },
+        {
+          "city": "Aurora, CO",
+          "count": 1
+        },
+        {
+          "city": "Boulder, CO",
+          "count": 1
+        },
+        {
+          "city": "287, Suite F Broomfield, CO",
+          "count": 1
+        },
+        {
+          "city": "Centennial, CO",
+          "count": 1
+        },
+        {
+          "city": "Durango, CO",
+          "count": 1
+        },
+        {
+          "city": "Englewood, CO",
+          "count": 1
+        },
+        {
+          "city": "Grand Junction, CO",
+          "count": 1
+        },
+        {
+          "city": "Greeley, CO",
+          "count": 1
+        },
+        {
+          "city": "Highlands Ranch, CO",
+          "count": 1
+        },
+        {
+          "city": "Lakewood, CO",
+          "count": 1
+        },
+        {
+          "city": "Longmont, CO",
+          "count": 1
+        },
+        {
+          "city": "Northglenn, CO",
+          "count": 1
+        },
+        {
+          "city": "Parker, CO",
+          "count": 1
+        }
+      ]
+    },
+    "VA": {
+      "count": 17,
+      "byCity": [
+        {
+          "city": "Arlington, VA",
+          "count": 1
+        },
+        {
+          "city": "Chesapeake, VA",
+          "count": 1
+        },
+        {
+          "city": "Fairfax, VA",
+          "count": 1
+        },
+        {
+          "city": "Lynchburg, VA",
+          "count": 1
+        },
+        {
+          "city": "Fredericksburg, VA",
+          "count": 1
+        },
+        {
+          "city": "Leesburg, VA",
+          "count": 1
+        },
+        {
+          "city": "Manassas, VA",
+          "count": 1
+        },
+        {
+          "city": "Norfolk, VA",
+          "count": 1
+        },
+        {
+          "city": "Richmond, VA",
+          "count": 1
+        },
+        {
+          "city": "Bon Air, VA",
+          "count": 1
+        },
+        {
+          "city": "Roanoke, VA",
+          "count": 1
+        },
+        {
+          "city": "Salem, VA",
+          "count": 1
+        },
+        {
+          "city": "Lorton, VA",
+          "count": 1
+        },
+        {
+          "city": "McLean, VA",
+          "count": 1
+        },
+        {
+          "city": "Virginia Beach, VA",
+          "count": 1
+        },
+        {
+          "city": "Winchester, VA",
+          "count": 1
+        },
+        {
+          "city": "Yorktown, VA",
+          "count": 1
+        }
+      ]
+    },
+    "AZ": {
+      "count": 16,
+      "byCity": [
+        {
+          "city": "Tucson, AZ",
+          "count": 3
+        },
+        {
+          "city": "Phoenix, AZ",
+          "count": 3
+        },
+        {
+          "city": "Scottsdale, AZ",
+          "count": 2
+        },
+        {
+          "city": "Chandler, AZ",
+          "count": 1
+        },
+        {
+          "city": "Gilbert, AZ",
+          "count": 1
+        },
+        {
+          "city": "Glendale, AZ",
+          "count": 1
+        },
+        {
+          "city": "Goodyear, AZ",
+          "count": 1
+        },
+        {
+          "city": "Mesa, AZ",
+          "count": 1
+        },
+        {
+          "city": "Surprise, AZ",
+          "count": 1
+        },
+        {
+          "city": "Tempe, AZ",
+          "count": 1
+        },
+        {
+          "city": "1911 W. Broadway, Suite 7 Mesa, AZ",
+          "count": 1
+        }
+      ]
+    },
+    "IL": {
+      "count": 16,
+      "byCity": [
+        {
+          "city": "Arlington Heights, IL",
+          "count": 1
+        },
+        {
+          "city": "Bloomington, IL",
+          "count": 1
+        },
+        {
+          "city": "Carpentersville, IL",
+          "count": 1
+        },
+        {
+          "city": "313 N Mattis, Ste 114 Champaign, IL",
+          "count": 1
+        },
+        {
+          "city": "Crystal Lake, IL",
+          "count": 1
+        },
+        {
+          "city": "Geneva, IL",
+          "count": 1
+        },
+        {
+          "city": "4215 IL-159, Route 159 Glen Carbon, IL",
+          "count": 1
+        },
+        {
+          "city": "Waukegan, IL",
+          "count": 1
+        },
+        {
+          "city": "Kankakee, IL",
+          "count": 1
+        },
+        {
+          "city": "Libertyville, IL",
+          "count": 1
+        },
+        {
+          "city": "Naperville, IL",
+          "count": 1
+        },
+        {
+          "city": "Northbrook, IL",
+          "count": 1
+        },
+        {
+          "city": "East Peoria, IL",
+          "count": 1
+        },
+        {
+          "city": "Rockford, IL",
+          "count": 1
+        },
+        {
+          "city": "Springfield, IL",
+          "count": 1
+        },
+        {
+          "city": "Tinley Park, IL",
+          "count": 1
+        }
+      ]
+    },
+    "MI": {
+      "count": 14,
+      "byCity": [
+        {
+          "city": "Ann Arbor, MI",
+          "count": 1
+        },
+        {
+          "city": "Birmingham, MI",
+          "count": 1
+        },
+        {
+          "city": "Brighton, MI",
+          "count": 1
+        },
+        {
+          "city": "Detroit, MI",
+          "count": 1
+        },
+        {
+          "city": "Grand Rapids, MI",
+          "count": 1
+        },
+        {
+          "city": "Kalamazoo, MI",
+          "count": 1
+        },
+        {
+          "city": "Lansing, MI",
+          "count": 1
+        },
+        {
+          "city": "Lincoln Park, MI",
+          "count": 1
+        },
+        {
+          "city": "Livonia, MI",
+          "count": 1
+        },
+        {
+          "city": "Monroe, MI",
+          "count": 1
+        },
+        {
+          "city": "Rochester Hills, MI",
+          "count": 1
+        },
+        {
+          "city": "Southfield, MI",
+          "count": 1
+        },
+        {
+          "city": "Heights, MI",
+          "count": 1
+        },
+        {
+          "city": "Traverse City, MI",
+          "count": 1
+        }
+      ]
+    },
+    "NJ": {
+      "count": 14,
+      "byCity": [
+        {
+          "city": "1743 Route 88 West Brick, NJ",
+          "count": 1
+        },
+        {
+          "city": "Cherry Hill, NJ",
+          "count": 1
+        },
+        {
+          "city": "285 State Route 18 East Brunswick, NJ",
+          "count": 1
+        },
+        {
+          "city": "50 Route 10 W East Hanover, NJ",
+          "count": 1
+        },
+        {
+          "city": "East Eatontown, NJ",
+          "count": 1
+        },
+        {
+          "city": "12, Ste 104 Flemington, NJ",
+          "count": 1
+        },
+        {
+          "city": "Lawrenceville, NJ",
+          "count": 1
+        },
+        {
+          "city": "3121 Rt 73 South Maple Shade, NJ",
+          "count": 1
+        },
+        {
+          "city": "Marlton, NJ",
+          "count": 1
+        },
+        {
+          "city": "33 W, Ste 5-6 Millstone Township, NJ",
+          "count": 1
+        },
+        {
+          "city": "206 S Raritan, NJ",
+          "count": 1
+        },
+        {
+          "city": "3885 Route 27, Suite 150A Princeton, NJ",
+          "count": 1
+        },
+        {
+          "city": "346 State Route 17 North Saddle River, NJ",
+          "count": 1
+        },
+        {
+          "city": "Avenel, NJ",
+          "count": 1
+        }
+      ]
+    },
+    "TN": {
+      "count": 14,
+      "byCity": [
+        {
+          "city": "Memphis, TN",
+          "count": 2
+        },
+        {
+          "city": "Nashville, TN",
+          "count": 2
+        },
+        {
+          "city": "Alcoa, TN",
+          "count": 1
+        },
+        {
+          "city": "Franklin, TN",
+          "count": 1
+        },
+        {
+          "city": "Chattanooga, TN",
+          "count": 1
+        },
+        {
+          "city": "Clarksville, TN",
+          "count": 1
+        },
+        {
+          "city": "Hendersonville, TN",
+          "count": 1
+        },
+        {
+          "city": "Johnson City, TN",
+          "count": 1
+        },
+        {
+          "city": "Knoxville, TN",
+          "count": 1
+        },
+        {
+          "city": "Murfreesboro, TN",
+          "count": 1
+        },
+        {
+          "city": "Hermitage, TN",
+          "count": 1
+        },
+        {
+          "city": "Sevierville, TN",
+          "count": 1
+        }
+      ]
+    },
+    "MD": {
+      "count": 13,
+      "byCity": [
+        {
+          "city": "Baltimore, MD",
+          "count": 3
+        },
+        {
+          "city": "Annapolis, MD",
+          "count": 1
+        },
+        {
+          "city": "3 Bethesda Metro Center, Suite B002 Bethesda, MD",
+          "count": 1
+        },
+        {
+          "city": "Columbia, MD",
+          "count": 1
+        },
+        {
+          "city": "Frederick, MD",
+          "count": 1
+        },
+        {
+          "city": "Laurel, MD",
+          "count": 1
+        },
+        {
+          "city": "Odenton, MD",
+          "count": 1
+        },
+        {
+          "city": "Owings Mills, MD",
+          "count": 1
+        },
+        {
+          "city": "Rockville, MD",
+          "count": 1
+        },
+        {
+          "city": "Timonium, MD",
+          "count": 1
+        },
+        {
+          "city": "Joppa, MD",
+          "count": 1
+        }
+      ]
+    },
+    "MN": {
+      "count": 13,
+      "byCity": [
+        {
+          "city": "Ham Lake, MN",
+          "count": 1
+        },
+        {
+          "city": "Bloomington, MN",
+          "count": 1
+        },
+        {
+          "city": "42 Burnsville, MN",
+          "count": 1
+        },
+        {
+          "city": "Minneapolis, MN",
+          "count": 1
+        },
+        {
+          "city": "Eden Prairie, MN",
+          "count": 1
+        },
+        {
+          "city": "Inver Grove Heights, MN",
+          "count": 1
+        },
+        {
+          "city": "Osseo, MN",
+          "count": 1
+        },
+        {
+          "city": "Plymouth, MN",
+          "count": 1
+        },
+        {
+          "city": "Rochester, MN",
+          "count": 1
+        },
+        {
+          "city": "Roseville, MN",
+          "count": 1
+        },
+        {
+          "city": "Cloud, MN",
+          "count": 1
+        },
+        {
+          "city": "Louis Park, MN",
+          "count": 1
+        },
+        {
+          "city": "East White Bear Lake, MN",
+          "count": 1
+        }
+      ]
+    },
+    "MO": {
+      "count": 13,
+      "byCity": [
+        {
+          "city": "Louis, MO",
+          "count": 2
+        },
+        {
+          "city": "Saint Louis, MO",
+          "count": 2
+        },
+        {
+          "city": "Valley Park, MO",
+          "count": 1
+        },
+        {
+          "city": "Columbia, MO",
+          "count": 1
+        },
+        {
+          "city": "40, Ste 104 Independence, MO",
+          "count": 1
+        },
+        {
+          "city": "Gladstone, MO",
+          "count": 1
+        },
+        {
+          "city": "Lee's Summit, MO",
+          "count": 1
+        },
+        {
+          "city": "South Earth City, MO",
+          "count": 1
+        },
+        {
+          "city": "650 East Battlefield, Ste A Springfield, MO",
+          "count": 1
+        },
+        {
+          "city": "Joseph, MO",
+          "count": 1
+        },
+        {
+          "city": "Saint Peters, MO",
+          "count": 1
+        }
+      ]
+    },
+    "NY": {
+      "count": 12,
+      "byCity": [
+        {
+          "city": "Central Islip, NY",
+          "count": 1
+        },
+        {
+          "city": "Cheektowaga, NY",
+          "count": 1
+        },
+        {
+          "city": "Colonie, NY",
+          "count": 1
+        },
+        {
+          "city": "Holbrook, NY",
+          "count": 1
+        },
+        {
+          "city": "Kingston, NY",
+          "count": 1
+        },
+        {
+          "city": "Lindenhurst, NY",
+          "count": 1
+        },
+        {
+          "city": "400 Hempstead Turnpike West Hempstead, NY",
+          "count": 1
+        },
+        {
+          "city": "Rochester, NY",
+          "count": 1
+        },
+        {
+          "city": "East, Suite 3 Syracuse, NY",
+          "count": 1
+        },
+        {
+          "city": "Wappingers Falls, NY",
+          "count": 1
+        },
+        {
+          "city": "West Babylon, NY",
+          "count": 1
+        },
+        {
+          "city": "White Plains, NY",
+          "count": 1
+        }
+      ]
+    },
+    "WA": {
+      "count": 12,
+      "byCity": [
+        {
+          "city": "Auburn, WA",
+          "count": 1
+        },
+        {
+          "city": "Everett, WA",
+          "count": 1
+        },
+        {
+          "city": "Way, WA",
+          "count": 1
+        },
+        {
+          "city": "Issaquah, WA",
+          "count": 1
+        },
+        {
+          "city": "1409 N Pittsburgh, Ste A Kennewick, WA",
+          "count": 1
+        },
+        {
+          "city": "Kent, WA",
+          "count": 1
+        },
+        {
+          "city": "Lynnwood, WA",
+          "count": 1
+        },
+        {
+          "city": "Lacey, WA",
+          "count": 1
+        },
+        {
+          "city": "Silverdale, WA",
+          "count": 1
+        },
+        {
+          "city": "Spokane, WA",
+          "count": 1
+        },
+        {
+          "city": "Tacoma, WA",
+          "count": 1
+        },
+        {
+          "city": "Vancouver, WA",
+          "count": 1
+        }
+      ]
+    },
+    "WI": {
+      "count": 12,
+      "byCity": [
+        {
+          "city": "Appleton, WI",
+          "count": 1
+        },
+        {
+          "city": "Eau Claire, WI",
+          "count": 1
+        },
+        {
+          "city": "Green Bay, WI",
+          "count": 1
+        },
+        {
+          "city": "7536 Pershing Plaza Kenosha, WI",
+          "count": 1
+        },
+        {
+          "city": "Madison, WI",
+          "count": 1
+        },
+        {
+          "city": "5318 N Port Washington Milwaukee, WI",
+          "count": 1
+        },
+        {
+          "city": "Greenfield, WI",
+          "count": 1
+        },
+        {
+          "city": "Wauwatosa, WI",
+          "count": 1
+        },
+        {
+          "city": "Mount Pleasant, WI",
+          "count": 1
+        },
+        {
+          "city": "Sheboygan, WI",
+          "count": 1
+        },
+        {
+          "city": "Point, WI",
+          "count": 1
+        },
+        {
+          "city": "Waukesha, WI",
+          "count": 1
+        }
+      ]
+    },
+    "IN": {
+      "count": 11,
+      "byCity": [
+        {
+          "city": "Indianapolis, IN",
+          "count": 4
+        },
+        {
+          "city": "Fort Wayne, IN",
+          "count": 2
+        },
+        {
+          "city": "Bloomington, IN",
+          "count": 1
+        },
+        {
+          "city": "Columbus, IN",
+          "count": 1
+        },
+        {
+          "city": "Evansville, IN",
+          "count": 1
+        },
+        {
+          "city": "31 N Greenwood, IN",
+          "count": 1
+        },
+        {
+          "city": "Jeffersonville, IN",
+          "count": 1
+        }
+      ]
+    },
+    "SC": {
+      "count": 10,
+      "byCity": [
+        {
+          "city": "Charleston, SC",
+          "count": 2
+        },
+        {
+          "city": "Columbia, SC",
+          "count": 2
+        },
+        {
+          "city": "Aiken, SC",
+          "count": 1
+        },
+        {
+          "city": "Anderson, SC",
+          "count": 1
+        },
+        {
+          "city": "Hilton Head Island, SC",
+          "count": 1
+        },
+        {
+          "city": "Myrtle Beach, SC",
+          "count": 1
+        },
+        {
+          "city": "Rock Hill, SC",
+          "count": 1
+        },
+        {
+          "city": "Spartanburg, SC",
+          "count": 1
+        }
+      ]
+    },
+    "CT": {
+      "count": 9,
+      "byCity": [
+        {
+          "city": "Clinton, CT",
+          "count": 1
+        },
+        {
+          "city": "Hartford, CT",
+          "count": 1
+        },
+        {
+          "city": "Manchester, CT",
+          "count": 1
+        },
+        {
+          "city": "Middletown, CT",
+          "count": 1
+        },
+        {
+          "city": "Milford, CT",
+          "count": 1
+        },
+        {
+          "city": "2434 Berlin Turnpike, Unit #5 Newington, CT",
+          "count": 1
+        },
+        {
+          "city": "North Haven, CT",
+          "count": 1
+        },
+        {
+          "city": "Stamford, CT",
+          "count": 1
+        },
+        {
+          "city": "Waterford, CT",
+          "count": 1
+        }
+      ]
+    },
+    "LA": {
+      "count": 9,
+      "byCity": [
+        {
+          "city": "Metairie, LA",
+          "count": 2
+        },
+        {
+          "city": "Baton Rouge, LA",
+          "count": 1
+        },
+        {
+          "city": "Gonzales, LA",
+          "count": 1
+        },
+        {
+          "city": "Lafayette, LA",
+          "count": 1
+        },
+        {
+          "city": "Lake Charles, LA",
+          "count": 1
+        },
+        {
+          "city": "New Orleans, LA",
+          "count": 1
+        },
+        {
+          "city": "Shreveport, LA",
+          "count": 1
+        },
+        {
+          "city": "90 Boutte, LA",
+          "count": 1
+        }
+      ]
+    },
+    "AL": {
+      "count": 8,
+      "byCity": [
+        {
+          "city": "Hoover, AL",
+          "count": 1
+        },
+        {
+          "city": "Birmingham, AL",
+          "count": 1
+        },
+        {
+          "city": "SE, Suite A5 Decatur, AL",
+          "count": 1
+        },
+        {
+          "city": "Dothan, AL",
+          "count": 1
+        },
+        {
+          "city": "Ste. A Huntsville, AL",
+          "count": 1
+        },
+        {
+          "city": "Mobile, AL",
+          "count": 1
+        },
+        {
+          "city": "Montgomery, AL",
+          "count": 1
+        },
+        {
+          "city": "98, Suite G Daphne, AL",
+          "count": 1
+        }
+      ]
+    },
+    "KS": {
+      "count": 7,
+      "byCity": [
+        {
+          "city": "Overland Park, KS",
+          "count": 2
+        },
+        {
+          "city": "Wichita, KS",
+          "count": 2
+        },
+        {
+          "city": "Lawrence, KS",
+          "count": 1
+        },
+        {
+          "city": "Olathe, KS",
+          "count": 1
+        },
+        {
+          "city": "Topeka, KS",
+          "count": 1
+        }
+      ]
+    },
+    "KY": {
+      "count": 7,
+      "byCity": [
+        {
+          "city": "Louisville, KY",
+          "count": 2
+        },
+        {
+          "city": "Ashland, KY",
+          "count": 1
+        },
+        {
+          "city": "1527 US 31W Bypass Bowling Green, KY",
+          "count": 1
+        },
+        {
+          "city": "Lexington, KY",
+          "count": 1
+        },
+        {
+          "city": "Lyndon, KY",
+          "count": 1
+        },
+        {
+          "city": "Florence, KY",
+          "count": 1
+        }
+      ]
+    },
+    "OR": {
+      "count": 7,
+      "byCity": [
+        {
+          "city": "Portland, OR",
+          "count": 2
+        },
+        {
+          "city": "Beaverton, OR",
+          "count": 1
+        },
+        {
+          "city": "Suite #F2 Bend, OR",
+          "count": 1
+        },
+        {
+          "city": "Eugene, OR",
+          "count": 1
+        },
+        {
+          "city": "Happy Valley, OR",
+          "count": 1
+        },
+        {
+          "city": "Salem, OR",
+          "count": 1
+        }
+      ]
+    },
+    "OK": {
+      "count": 6,
+      "byCity": [
+        {
+          "city": "Broken Arrow, OK",
+          "count": 1
+        },
+        {
+          "city": "Moore, OK",
+          "count": 1
+        },
+        {
+          "city": "Norman, OK",
+          "count": 1
+        },
+        {
+          "city": "Oklahoma City, OK",
+          "count": 1
+        },
+        {
+          "city": "Owasso, OK",
+          "count": 1
+        },
+        {
+          "city": "Tulsa, OK",
+          "count": 1
+        }
+      ]
+    },
+    "NV": {
+      "count": 5,
+      "byCity": [
+        {
+          "city": "Las Vegas, NV",
+          "count": 3
+        },
+        {
+          "city": "Henderson, NV",
+          "count": 1
+        },
+        {
+          "city": "Reno, NV",
+          "count": 1
+        }
+      ]
+    },
+    "NM": {
+      "count": 5,
+      "byCity": [
+        {
+          "city": "Albuquerque, NM",
+          "count": 3
+        },
+        {
+          "city": "736 East Main Farmington, NM",
+          "count": 1
+        },
+        {
+          "city": "Santa Fe, NM",
+          "count": 1
+        }
+      ]
+    },
+    "AR": {
+      "count": 4,
+      "byCity": [
+        {
+          "city": "240 S Shackleford, Suite D Little Rock, AR",
+          "count": 1
+        },
+        {
+          "city": "North Little Rock, AR",
+          "count": 1
+        },
+        {
+          "city": "300 West 5th North Little Rock, AR",
+          "count": 1
+        },
+        {
+          "city": "Springdale, AR",
+          "count": 1
+        }
+      ]
+    },
+    "MT": {
+      "count": 4,
+      "byCity": [
+        {
+          "city": "Black Eagle, MT",
+          "count": 1
+        },
+        {
+          "city": "Helena, MT",
+          "count": 1
+        },
+        {
+          "city": "Missoula, MT",
+          "count": 1
+        },
+        {
+          "city": "Whitefish, MT",
+          "count": 1
+        }
+      ]
+    },
+    "UT": {
+      "count": 4,
+      "byCity": [
+        {
+          "city": "656 East 11400 South, Suite L Draper, UT",
+          "count": 1
+        },
+        {
+          "city": "Murray, UT",
+          "count": 1
+        },
+        {
+          "city": "5758 S 1900 W Roy, UT",
+          "count": 1
+        },
+        {
+          "city": "231 W 1230 N Provo, UT",
+          "count": 1
+        }
+      ]
+    },
+    "ID": {
+      "count": 3,
+      "byCity": [
+        {
+          "city": "Garden City, ID",
+          "count": 1
+        },
+        {
+          "city": "Idaho Falls, ID",
+          "count": 1
+        },
+        {
+          "city": "Lewiston, ID",
+          "count": 1
+        }
+      ]
+    },
+    "IA": {
+      "count": 3,
+      "byCity": [
+        {
+          "city": "Clive, IA",
+          "count": 1
+        },
+        {
+          "city": "Council Bluffs, IA",
+          "count": 1
+        },
+        {
+          "city": "Sioux City, IA",
+          "count": 1
+        }
+      ]
+    },
+    "MA": {
+      "count": 3,
+      "byCity": [
+        {
+          "city": "Unit #4 Hanover, MA",
+          "count": 1
+        },
+        {
+          "city": "Seekonk, MA",
+          "count": 1
+        },
+        {
+          "city": "Woburn, MA",
+          "count": 1
+        }
+      ]
+    },
+    "WV": {
+      "count": 3,
+      "byCity": [
+        {
+          "city": "107 Beckley Plaza Beckley, WV",
+          "count": 1
+        },
+        {
+          "city": "Martinsburg, WV",
+          "count": 1
+        },
+        {
+          "city": "South Charleston, WV",
+          "count": 1
+        }
+      ]
+    },
+    "NE": {
+      "count": 2,
+      "byCity": [
+        {
+          "city": "Omaha, NE",
+          "count": 2
+        }
+      ]
+    },
+    "NH": {
+      "count": 2,
+      "byCity": [
+        {
+          "city": "Manchester, NH",
+          "count": 1
+        },
+        {
+          "city": "Plaistow, NH",
+          "count": 1
+        }
+      ]
+    },
+    "DE": {
+      "count": 1,
+      "byCity": [
+        {
+          "city": "Wilmington, DE",
+          "count": 1
+        }
+      ]
+    },
+    "MS": {
+      "count": 1,
+      "byCity": [
+        {
+          "city": "Hattiesburg, MS",
+          "count": 1
+        }
+      ]
+    },
+    "PR": {
+      "count": 1,
+      "byCity": [
+        {
+          "city": "Degetau D-8 Caguas, PR",
+          "count": 1
+        }
+      ]
+    },
+    "SD": {
+      "count": 1,
+      "byCity": [
+        {
+          "city": "Sioux Falls, SD",
+          "count": 1
+        }
+      ]
+    },
+    "VT": {
+      "count": 1,
+      "byCity": [
+        {
+          "city": "South Burlington, VT",
+          "count": 1
+        }
+      ]
+    },
+    "DC": {
+      "count": 1,
+      "byCity": [
+        {
+          "city": "Washington, DC",
+          "count": 1
+        }
+      ]
+    }
+  }
+}

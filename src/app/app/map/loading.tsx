@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/Skeleton";
 
-/** Shown while the map RSC auto-syncs / loads project pins. */
+/** Instant map chrome while the route RSC resolves (should be near-instant). */
 export default function MapLoading() {
   return (
     <main className="relative h-full min-h-0 w-full flex-1 overflow-hidden bg-[#dfe7ef]">
@@ -14,11 +14,6 @@ export default function MapLoading() {
         </div>
         <Skeleton className="min-h-0 w-full flex-1 rounded-none" />
         <Skeleton className="h-28 w-36 rounded-2xl" />
-      </div>
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="rounded-2xl border border-line bg-white/95 px-4 py-3 text-sm font-semibold text-slate shadow-md backdrop-blur">
-          Loading map data…
-        </div>
       </div>
     </main>
   );
