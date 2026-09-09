@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import {
   createSession,
   destroySession,
@@ -9,10 +10,23 @@ import { upsertUser, setUserZips } from "@/lib/db/store";
 import { PLAN_LIMITS } from "@/lib/db/types";
 import { verifyFirebaseIdToken } from "@/lib/firebase/verify-id-token";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
+import { CITY_COOKIE } from "@/lib/cities/picker";
 import { normalizeUsZip, zipToMetro } from "@/lib/geo/zip-to-metro";
 import { setCityCookie } from "@/lib/map/city-cookie";
 
-export async function startDemoSession() {
+async function persistPickerCity(city: string | null | undefined) {
+  if (!city) return;
+  const jar = await cookies();
+  jar.set(CITY_COOKIE, city, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+  // Also keep pc_city aligned for map page fallbacks
+  await setCityCookie(city);
+}
+
+export async function startDemoSession(city?: string) {
   await upsertUser({
     firebaseUid: "demo-uid",
     email: "demo@procurity.pro",
@@ -29,6 +43,10 @@ export async function startDemoSession() {
     name: "Demo Rep",
     demo: true,
   });
+  if (city) {
+    await persistPickerCity(city);
+    redirect(`/app/map?city=${encodeURIComponent(city)}`);
+  }
   await setCityCookie("nyc");
   redirect("/app/map?city=nyc");
 }
@@ -41,6 +59,9 @@ export async function establishFirebaseSession(input: {
   idToken: string;
   name?: string | null;
   mode?: "login" | "signup";
+  /** Paid funnel from teaser: skip zip onboarding and go to checkout / map */
+  skipOnboarding?: boolean;
+  city?: string | null;
   zip?: string | null;
 }): Promise<{ error?: string; redirectTo?: string }> {
   try {
@@ -49,7 +70,8 @@ export async function establishFirebaseSession(input: {
     const isSignup = input.mode === "signup";
     const zip = isSignup ? normalizeUsZip(input.zip || "") : null;
 
-    if (isSignup) {
+    // Organic signup (not teaser checkout): require zip → metro or waitlist
+    if (isSignup && !input.skipOnboarding) {
       if (!zip) {
         return { error: "Enter a valid 5-digit US zip code." };
       }
@@ -71,14 +93,16 @@ export async function establishFirebaseSession(input: {
         email: verified.email,
         name: name ?? undefined,
       });
-      await setCityCookie(metro.city);
+      await persistPickerCity(metro.city);
       return { redirectTo: `/app/map?city=${metro.city}` };
     }
 
+    // Teaser checkout funnel or login
     const user = await upsertUser({
       firebaseUid: verified.uid,
       email: verified.email,
       name,
+      ...(input.skipOnboarding ? { onboardingComplete: true } : {}),
     });
 
     await createSession({
@@ -87,8 +111,22 @@ export async function establishFirebaseSession(input: {
       name: name ?? undefined,
     });
 
+    if (input.city) {
+      await persistPickerCity(input.city);
+    }
+
+    if (input.skipOnboarding) {
+      return {
+        redirectTo: input.city
+          ? `/app/map?city=${encodeURIComponent(input.city)}`
+          : "/app/map",
+      };
+    }
+
     const redirectTo = user.onboardingComplete
-      ? "/app/home"
+      ? input.city
+        ? `/app/map?city=${encodeURIComponent(input.city)}`
+        : "/app/home"
       : "/app/onboarding";
     return { redirectTo };
   } catch (err) {
@@ -104,13 +142,14 @@ export async function establishFirebaseSession(input: {
 
 /**
  * Local/dev fallback when Firebase env vars are not set yet.
- * Production with Firebase configured should never hit this path from the UI.
  */
 export async function signInWithPassword(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
   const name = String(formData.get("name") || "").trim() || null;
   const mode = String(formData.get("mode") || "login");
+  const checkout = String(formData.get("checkout") || "") === "1";
+  const city = String(formData.get("city") || "").trim() || null;
   const zipRaw = String(formData.get("zip") || "");
 
   if (!email || !password) {
@@ -128,7 +167,8 @@ export async function signInWithPassword(formData: FormData) {
     };
   }
 
-  if (mode === "signup") {
+  // Organic signup: zip → metro (skip when teaser checkout funnel)
+  if (mode === "signup" && !checkout) {
     const zip = normalizeUsZip(zipRaw);
     if (!zip) {
       return { error: "Enter a valid 5-digit US zip code." };
@@ -148,7 +188,7 @@ export async function signInWithPassword(formData: FormData) {
     });
     await setUserZips(user.id, [zip]);
     await createSession({ uid, email, name: name ?? undefined });
-    await setCityCookie(metro.city);
+    await persistPickerCity(metro.city);
     redirect(`/app/map?city=${metro.city}`);
   }
 
@@ -157,15 +197,24 @@ export async function signInWithPassword(formData: FormData) {
     firebaseUid: uid,
     email,
     name,
-    onboardingComplete: true,
+    onboardingComplete: mode === "login" || checkout,
   });
 
   await createSession({ uid, email, name: name ?? undefined });
 
-  if (!user.onboardingComplete) {
+  if (city) {
+    await persistPickerCity(city);
+  }
+
+  if (checkout && mode === "signup") {
+    // Let the client start Stripe checkout while session cookie is set.
+    return { needsCheckout: true as const, city: city ?? undefined };
+  }
+
+  if (!user.onboardingComplete && !checkout) {
     redirect("/app/onboarding");
   }
-  redirect("/app/home");
+  redirect(city ? `/app/map?city=${encodeURIComponent(city)}` : "/app/home");
 }
 
 export async function signOutAction() {
@@ -195,7 +244,7 @@ export async function saveOnboardingZips(formData: FormData): Promise<void> {
   if (first) {
     const metro = zipToMetro(first);
     if (metro.covered) {
-      await setCityCookie(metro.city);
+      await persistPickerCity(metro.city);
       redirect(`/app/map?city=${metro.city}`);
     }
   }

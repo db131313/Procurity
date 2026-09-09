@@ -1,7 +1,8 @@
 "use client";
 
+import { useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   Home,
@@ -20,9 +21,23 @@ const TABS = [
   { href: "/app/settings", label: "More", icon: MoreHorizontal },
 ] as const;
 
+/**
+ * Bottom / side nav: navigate immediately via router.push in a transition.
+ * Raised z-index so map BottomSheet / filter backdrops never swallow taps.
+ */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const isMap = pathname.startsWith("/app/map");
+
+  function go(href: string) {
+    // Always navigate — even when "active" — so Home isn't a dead control.
+    // loading.tsx provides instant feedback while RSC data loads after arrival.
+    startTransition(() => {
+      router.push(href);
+    });
+  }
 
   return (
     <div
@@ -39,19 +54,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const active = pathname.startsWith(tab.href);
             const Icon = tab.icon;
             return (
-              <Link
+              <button
                 key={tab.href}
-                href={tab.href}
+                type="button"
+                onClick={() => go(tab.href)}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition",
                   active
                     ? "bg-offwhite text-ink"
                     : "text-slate hover:bg-offwhite hover:text-ink",
+                  pending && !active && "opacity-70",
                 )}
               >
                 <Icon className={cn("h-5 w-5", active && "text-purple")} />
                 {tab.label === "More" ? "Settings" : tab.label}
-              </Link>
+              </button>
             );
           })}
         </nav>
@@ -67,8 +84,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </div>
 
+      {/* z-[60]: above map BottomSheet (z-50) and filter scrim (z-40) */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-[60] border-t border-line bg-white/95 backdrop-blur md:hidden"
         style={{ paddingBottom: "var(--safe-bottom)" }}
         aria-label="Primary"
       >
@@ -77,21 +95,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const active = pathname.startsWith(tab.href);
             const Icon = tab.icon;
             return (
-              <Link
+              <button
                 key={tab.href}
-                href={tab.href}
+                type="button"
+                onClick={() => go(tab.href)}
                 className={cn(
                   "flex min-h-14 min-w-[64px] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-bold",
                   active ? "text-purple" : "text-slate",
+                  pending && !active && "opacity-60",
                 )}
               >
                 <Icon className="h-5 w-5" />
                 {tab.label}
-              </Link>
+              </button>
             );
           })}
         </div>
       </nav>
+
+      {/* Prefetch targets so the first tap is warm */}
+      <div className="hidden" aria-hidden>
+        {TABS.map((tab) => (
+          <Link key={tab.href} href={tab.href} prefetch />
+        ))}
+      </div>
     </div>
   );
 }

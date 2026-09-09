@@ -14,6 +14,7 @@ import {
   HeroCityBackground,
   HeroScorePins,
 } from "./HeroRouteMap";
+import { CityQuickPick } from "./CityQuickPick";
 
 const STEPS = [
   {
@@ -105,12 +106,7 @@ export function HomePage() {
               construction, and commercial building projects in your area.
             </p>
             <div className="mt-7 sm:mt-8">
-              <Link
-                href="/signup"
-                className="pc-gradient-bg inline-flex h-12 w-full items-center justify-center rounded-full px-7 text-[15px] font-bold text-white shadow-[0_16px_40px_rgba(56,217,201,0.28)] transition hover:brightness-110 active:scale-[0.98] sm:h-14 sm:w-auto"
-              >
-                Find My Opportunities
-              </Link>
+              <CityQuickPick variant="dark" />
             </div>
           </div>
         </div>

@@ -226,14 +226,14 @@ export function MapFilters({ value, onChange }: Props) {
             <button
               type="button"
               aria-label="Close filters"
-              className="fixed inset-0 z-40 cursor-default bg-black/20"
+              className="fixed inset-0 z-30 cursor-default bg-black/20"
               onClick={() => setOpen(false)}
             />
             <div
               id="map-filter-panel"
               role="dialog"
               aria-label="Map filters"
-              className="absolute right-0 top-full z-50 mt-2 max-h-[min(70vh,32rem)] w-[min(100vw-1.5rem,20rem)] overflow-y-auto rounded-2xl border-2 border-line bg-white p-4 shadow-xl"
+              className="absolute right-0 top-full z-40 mt-2 max-h-[min(70vh,32rem)] w-[min(100vw-1.5rem,20rem)] overflow-y-auto rounded-2xl border-2 border-line bg-white p-4 shadow-xl"
             >
               <section>
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate">

@@ -140,6 +140,16 @@ a {
 
 .maplibregl-ctrl-top-right {
   top: 3.25rem; /* clear filter chip row */
+  right: 0.75rem;
+  z-index: 5;
+}
+
+/* Keep map chrome clear of the mobile bottom tab bar */
+@media (max-width: 767px) {
+  .maplibregl-ctrl-bottom-right,
+  .maplibregl-ctrl-bottom-left {
+    bottom: 0.5rem;
+  }
 }
 
 /* Hide map attribution crowding on tiny screens */
