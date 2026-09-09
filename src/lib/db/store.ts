@@ -86,6 +86,14 @@ export async function updateUserPlan(
   return b.updateUserPlan(userId, plan, stripe);
 }
 
+export async function setDevPlanOverride(
+  userId: string,
+  override: PlanTier | null,
+) {
+  const b = await backend();
+  return b.setDevPlanOverride(userId, override);
+}
+
 export async function setUserZips(userId: string, zipCodes: string[]) {
   const b = await backend();
   return b.setUserZips(userId, zipCodes);
