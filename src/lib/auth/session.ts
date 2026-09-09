@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getDemoUser, getUserByFirebaseUid, upsertUser } from "@/lib/db/store";
 import type { UserRecord } from "@/lib/db/types";
+import { withEffectivePlan } from "@/lib/db/types";
 
 export const SESSION_COOKIE = "pc_session";
 
@@ -49,14 +50,16 @@ export async function getSession(): Promise<SessionPayload | null> {
 export async function getCurrentUser(): Promise<UserRecord | null> {
   const session = await getSession();
   if (!session) return null;
-  if (session.demo) return getDemoUser();
+  if (session.demo) return withEffectivePlan(await getDemoUser());
   const user = await getUserByFirebaseUid(session.uid);
-  if (user) return user;
-  return upsertUser({
-    firebaseUid: session.uid,
-    email: session.email,
-    name: session.name ?? null,
-  });
+  if (user) return withEffectivePlan(user);
+  return withEffectivePlan(
+    await upsertUser({
+      firebaseUid: session.uid,
+      email: session.email,
+      name: session.name ?? null,
+    }),
+  );
 }
 
 export async function requireUser() {
