@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "report:fastsigns": "tsx scripts/fastsigns-coverage.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

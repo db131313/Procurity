@@ -10,7 +10,7 @@ import type {
   TradeScores,
   UserRecord,
 } from "./types";
-import { PLAN_LIMITS } from "./types";
+import { PLAN_LIMITS, effectiveZipAllowance } from "./types";
 
 type DbShape = {
   projects: Project[];
@@ -50,6 +50,13 @@ function hydrateProject(raw: Project): Project {
     filerName: raw.filerName ?? null,
     filerFirm: raw.filerFirm ?? null,
     sourceDataset: raw.sourceDataset ?? null,
+  };
+}
+
+function hydrateUser(raw: UserRecord): UserRecord {
+  return {
+    ...raw,
+    devPlanOverride: raw.devPlanOverride ?? null,
   };
 }
 
@@ -98,6 +105,7 @@ async function ensureDb(): Promise<DbShape> {
     const raw = await fs.readFile(DATA_PATH, "utf8");
     const db = JSON.parse(raw) as DbShape;
     db.projects = (db.projects ?? []).map(hydrateProject);
+    db.users = (db.users ?? []).map(hydrateUser);
     memoryDb = db;
     return db;
   } catch {
@@ -254,6 +262,7 @@ export async function upsertUser(
     email: partial.email,
     name: partial.name ?? null,
     plan: partial.plan ?? "trial",
+    devPlanOverride: partial.devPlanOverride ?? null,
     zipCodes: partial.zipCodes ?? [],
     trialEndsAt:
       partial.trialEndsAt ??
@@ -292,15 +301,31 @@ export async function updateUserPlan(
   return user;
 }
 
+export async function setDevPlanOverride(
+  userId: string,
+  override: PlanTier | null,
+) {
+  const db = await ensureDb();
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) return null;
+  user.devPlanOverride = override;
+  user.zipAllowance = override
+    ? PLAN_LIMITS[override]
+    : PLAN_LIMITS[user.plan];
+  await save(db);
+  return user;
+}
+
 export async function setUserZips(userId: string, zipCodes: string[]) {
   const db = await ensureDb();
   const user = db.users.find((u) => u.id === userId);
   if (!user) return { ok: false as const, reason: "not_found" as const };
-  if (zipCodes.length > user.zipAllowance) {
+  const allowance = effectiveZipAllowance(user);
+  if (zipCodes.length > allowance) {
     return {
       ok: false as const,
       reason: "limit" as const,
-      allowance: user.zipAllowance,
+      allowance,
     };
   }
   user.zipCodes = zipCodes;
@@ -355,7 +380,7 @@ export async function getSyncMeta() {
   return { lastSyncAt: db.lastSyncAt, projectCount: db.projects.length };
 }
 
-/** Expand demo accounts to cover the densest live zip codes after a sync. */
+/** Expand demo accounts after sync. Demo/pro stay unrestricted (empty zip list). */
 export async function expandDemoCoverage(limit = 25) {
   const db = await ensureDb();
   const counts = new Map<string, number>();
@@ -370,10 +395,22 @@ export async function expandDemoCoverage(limit = 25) {
   if (!topZips.length) return db;
 
   for (const user of db.users) {
-    user.zipCodes = topZips.slice(0, Math.max(user.zipAllowance, 25));
-    user.zipAllowance = Math.max(user.zipAllowance, 25);
-    if (user.email === DEMO_USER.email || user.plan === "trial") {
-      user.plan = user.plan === "trial" ? "pro" : user.plan;
+    const isDemoOrPro =
+      user.email === DEMO_USER.email ||
+      user.plan === "trial" ||
+      user.plan === "pro";
+    if (isDemoOrPro) {
+      user.zipCodes = [];
+      user.zipAllowance = PLAN_LIMITS.pro;
+      if (user.email === DEMO_USER.email || user.plan === "trial") {
+        user.plan = "pro";
+      }
+    } else {
+      user.zipCodes = topZips.slice(
+        0,
+        Math.min(user.zipAllowance || PLAN_LIMITS.growth, topZips.length),
+      );
+      user.zipAllowance = Math.max(user.zipAllowance, PLAN_LIMITS.growth);
     }
   }
   await save(db);
@@ -381,14 +418,14 @@ export async function expandDemoCoverage(limit = 25) {
 }
 
 /**
- * Citywide demo mode: empty zip list = no filter in listProjects,
- * so Manhattan / Brooklyn / Queens / Bronx / Staten Island all show.
+ * Citywide demo mode: empty zip list = no filter (grandfather / Full US path).
+ * Demo user stays unrestricted.
  */
 export async function enableCitywideDemo() {
   const db = await ensureDb();
   for (const user of db.users) {
     user.zipCodes = [];
-    user.zipAllowance = Math.max(user.zipAllowance, 25);
+    user.zipAllowance = PLAN_LIMITS.pro;
     user.onboardingComplete = true;
     if (user.plan === "trial") user.plan = "pro";
   }

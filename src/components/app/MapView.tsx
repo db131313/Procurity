@@ -13,9 +13,10 @@ import {
   DEFAULT_MAP_FILTERS,
   MapFilters,
   getMapFilters,
+  scoreModeLabel,
   setMapFilters,
   type MapFilterState,
-  type TradeKey,
+  type ScoreMode,
 } from "@/components/app/MapFilters";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { ScoreRing } from "@/components/ui/ScoreRing";
@@ -25,6 +26,10 @@ import {
   getMapCamera,
   setMapCamera,
 } from "@/lib/map/cameraStore";
+import {
+  approxBoundsFromCamera,
+  boundsForCity,
+} from "@/lib/map/city-bounds";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -86,14 +91,14 @@ function tradeScoresFor(p: MapProject): TradeScores {
   };
 }
 
-/** When trades are enabled, pin score = max of those trade scores. */
+/** Pin score for coloring/filtering — overall Buy Score or one trade. */
 export function effectivePinScore(
   p: MapProject,
-  trades: TradeKey[],
+  scoreMode: ScoreMode,
 ): number {
-  if (!trades.length) return p.score;
+  if (scoreMode === "general") return p.score;
   const scores = tradeScoresFor(p);
-  return Math.max(...trades.map((t) => scores[t]));
+  return scores[scoreMode] ?? p.score;
 }
 
 function matchesQuick(
@@ -140,14 +145,26 @@ function captureCamera(map: MapLibreMap) {
 
 type Props = {
   projects: MapProject[];
+  /** Optional city scope for viewport refetch */
+  city?: string;
 };
 
-export function MapView({ projects }: Props) {
+export function MapView({ projects: initialProjects, city }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [filters, setFilters] = useState<MapFilterState>(DEFAULT_MAP_FILTERS);
+  const [projects, setProjects] = useState<MapProject[]>(initialProjects);
+  const [pinsLoading, setPinsLoading] = useState(initialProjects.length === 0);
+  const [pinCount, setPinCount] = useState<number | null>(
+    initialProjects.length ? initialProjects.length : null,
+  );
+  const fetchGen = useRef(0);
+
+  useEffect(() => {
+    setProjects(initialProjects);
+  }, [initialProjects]);
 
   // Restore filter state for this browser session
   useEffect(() => {
@@ -167,13 +184,13 @@ export function MapView({ projects }: Props) {
 
   const selected = selectedId ? byId.get(selectedId) ?? null : null;
   const selectedScore = selected
-    ? effectivePinScore(selected, filters.trades)
+    ? effectivePinScore(selected, filters.scoreMode)
     : 0;
 
   const visible = useMemo(() => {
     return projects
       .map((p) => {
-        const score = effectivePinScore(p, filters.trades);
+        const score = effectivePinScore(p, filters.scoreMode);
         return { p, score };
       })
       .filter(
@@ -206,6 +223,118 @@ export function MapView({ projects }: Props) {
     [visible],
   );
 
+  /** Shared pin fetch — used for instant first paint + pan/zoom. */
+  const fetchPins = (bounds: {
+    west: number;
+    south: number;
+    east: number;
+    north: number;
+  }) => {
+    const gen = ++fetchGen.current;
+    const qs = new URLSearchParams({
+      west: String(bounds.west),
+      south: String(bounds.south),
+      east: String(bounds.east),
+      north: String(bounds.north),
+        limit: "350",
+    });
+    if (city) qs.set("city", city);
+
+    return fetch(`/api/map/pins?${qs.toString()}`, {
+      credentials: "same-origin",
+    })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          pins?: MapProject[];
+          totalMatched?: number;
+        };
+        if (gen !== fetchGen.current) return;
+        if (Array.isArray(data.pins)) {
+          setProjects(data.pins);
+          setPinCount(
+            typeof data.totalMatched === "number"
+              ? data.totalMatched
+              : data.pins.length,
+          );
+        }
+      })
+      .catch(() => {
+        // Keep current pins on network failure
+      })
+      .finally(() => {
+        if (gen === fetchGen.current) setPinsLoading(false);
+      });
+  };
+
+  // Instant first fetch — don't wait for MapLibre style/tiles.
+  useEffect(() => {
+    const saved = getMapCamera();
+    let bounds: {
+      west: number;
+      south: number;
+      east: number;
+      north: number;
+    };
+    if (saved) {
+      const fromCamera = approxBoundsFromCamera(saved.center, saved.zoom);
+      const latPad = (fromCamera.north - fromCamera.south) * 0.15;
+      const lngPad = (fromCamera.east - fromCamera.west) * 0.15;
+      bounds = {
+        west: fromCamera.west - lngPad,
+        south: fromCamera.south - latPad,
+        east: fromCamera.east + lngPad,
+        north: fromCamera.north + latPad,
+      };
+    } else {
+      const cityBounds = boundsForCity(city);
+      bounds = {
+        west: cityBounds.west,
+        south: cityBounds.south,
+        east: cityBounds.east,
+        north: cityBounds.north,
+      };
+    }
+    setPinsLoading(true);
+    void fetchPins(bounds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- first load / city change only
+  }, [city]);
+
+  // Viewport refetch on pan/zoom once the map is ready.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const loadViewport = () => {
+      const mapBounds = map.getBounds();
+      const ne = mapBounds.getNorthEast();
+      const sw = mapBounds.getSouthWest();
+      const latPad = (ne.lat - sw.lat) * 0.15;
+      const lngPad = (ne.lng - sw.lng) * 0.15;
+      void fetchPins({
+        west: sw.lng - lngPad,
+        south: sw.lat - latPad,
+        east: ne.lng + lngPad,
+        north: ne.lat + latPad,
+      });
+    };
+
+    const onMoveEnd = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(loadViewport, 280);
+    };
+
+    map.on("moveend", onMoveEnd);
+
+    return () => {
+      map.off("moveend", onMoveEnd);
+      if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady, city]);
+
   // Init map once — restore session camera or NYC default (no fitBounds)
   useEffect(() => {
     const el = containerRef.current;
@@ -216,7 +345,6 @@ export function MapView({ projects }: Props) {
 
     const init = () => {
       if (cancelled || !containerRef.current) return;
-      // Ensure container has layout size before MapLibre measures it
       const { width, height } = containerRef.current.getBoundingClientRect();
       if (width < 2 || height < 2) {
         requestAnimationFrame(init);
@@ -239,7 +367,6 @@ export function MapView({ projects }: Props) {
 
       map.on("load", () => {
         if (cancelled || !map) return;
-        // MapLibre 6 inertia options (documented on DragPanHandler.enable)
         map.dragPan.enable({ deceleration: 2500, linearity: 0.3 });
         map.resize();
         setMapReady(true);
@@ -263,7 +390,7 @@ export function MapView({ projects }: Props) {
     };
   }, []);
 
-  // Push GeoJSON + layers whenever projects / filters change — do not refit camera
+  // Push GeoJSON + fixed-size pin layers (no clustering)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -273,22 +400,17 @@ export function MapView({ projects }: Props) {
     if (existing) {
       existing.setData(geojson);
     } else {
-      map.addSource(sourceId, { type: "geojson", data: geojson });
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: geojson,
+      });
 
       map.addLayer({
         id: "project-pins-halo",
         type: "circle",
         source: sourceId,
         paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            9,
-            6,
-            14,
-            14,
-          ],
+          "circle-radius": 12,
           "circle-color": ["get", "color"],
           "circle-opacity": 0.22,
         },
@@ -299,17 +421,7 @@ export function MapView({ projects }: Props) {
         type: "circle",
         source: sourceId,
         paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            9,
-            5,
-            12,
-            8,
-            15,
-            12,
-          ],
+          "circle-radius": 8,
           "circle-color": ["get", "color"],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
@@ -340,7 +452,7 @@ export function MapView({ projects }: Props) {
       const onLeave = () => {
         map.getCanvas().style.cursor = "";
       };
-      const onClick = (e: MapLayerMouseEvent) => {
+      const onClickPin = (e: MapLayerMouseEvent) => {
         const feature = e.features?.[0];
         const id = feature?.properties?.id as string | undefined;
         if (id) {
@@ -351,8 +463,8 @@ export function MapView({ projects }: Props) {
 
       map.on("mouseenter", "project-pins", onEnter);
       map.on("mouseleave", "project-pins", onLeave);
-      map.on("click", "project-pins", onClick);
-      map.on("click", "project-scores", onClick);
+      map.on("click", "project-pins", onClickPin);
+      map.on("click", "project-scores", onClickPin);
     }
 
     map.resize();
@@ -374,16 +486,36 @@ export function MapView({ projects }: Props) {
       <div
         ref={containerRef}
         className="absolute inset-0 h-full w-full bg-[#dfe7ef]"
-        aria-label="NYC construction opportunities map"
+        aria-label="Construction opportunities map"
         role="application"
       />
 
+      {city && (
+        <div className="pointer-events-none absolute left-3 top-3 z-30 md:left-5 md:top-4">
+          <p className="rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
+            {city.replace(/_/g, " ")}
+            {pinCount != null ? ` · ${pinCount.toLocaleString()} sites` : ""}
+          </p>
+        </div>
+      )}
+
+      {pinsLoading && projects.length === 0 && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+          <div className="rounded-2xl border border-line bg-white/95 px-4 py-3 text-sm font-semibold text-slate shadow-md backdrop-blur">
+            Loading pins…
+          </div>
+        </div>
+      )}
+
       <MapFilters value={filters} onChange={updateFilters} />
 
-      {/* Score legend — above map chrome; shell already pads above mobile tab bar */}
       <div className="pointer-events-none absolute bottom-3 left-3 z-30 md:bottom-6 md:left-5">
         <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
-          <p className="mb-1.5 font-bold text-ink">Buy Score</p>
+          <p className="mb-1.5 font-bold text-ink">
+            {filters.scoreMode === "general"
+              ? "Buy Score"
+              : `${scoreModeLabel(filters.scoreMode)} Score`}
+          </p>
           <ul className="space-y-1 font-semibold text-slate">
             {[
               { c: "#16A34A", t: "90+ Act now" },

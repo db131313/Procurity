@@ -1,6 +1,6 @@
 /**
- * Server-side map data freshness: render immediately when recent data exists;
- * otherwise auto-sync before the map page paints (no user-facing sync button).
+ * Server-side map data freshness.
+ * Prefer non-blocking use via next/server `after()` so map HTML can paint first.
  */
 
 import { syncAllCities } from "@/lib/cities/sync-all";
@@ -17,10 +17,7 @@ import { getSyncMeta, listProjects } from "@/lib/db/store";
 import type { CityCode } from "@/lib/db/types";
 import type { DataSource } from "@/lib/sources/types";
 
-/** Stale threshold: re-sync when last sync is older than this. */
 export const MAP_DATA_MAX_AGE_MS = 24 * 60 * 60 * 1000;
-
-/** Shorter permit window so Netlify SSR / functions can finish under 60s. */
 const AUTO_SYNC_DAYS = 21;
 
 const ACTIVE_CITIES = [
@@ -59,45 +56,74 @@ function isStale(lastSyncAt: string | null): boolean {
   return Date.now() - t > MAP_DATA_MAX_AGE_MS;
 }
 
+/** Fast metadata peek — does not sync. Avoids loading every project row. */
+export async function peekMapFreshness(): Promise<{
+  empty: boolean;
+  stale: boolean;
+  missing: CityCode[];
+  projectCount: number;
+  lastSyncAt: string | null;
+}> {
+  const meta = await getSyncMeta();
+  const stale = isStale(meta.lastSyncAt);
+
+  if (isDatabaseConfigured()) {
+    const { getPrisma } = await import("@/lib/db/prisma");
+    const prisma = getPrisma();
+    const [projectCount, cityGroups] = await Promise.all([
+      prisma.project.count(),
+      prisma.project.groupBy({ by: ["city"] }),
+    ]);
+    const present = new Set(cityGroups.map((g) => g.city));
+    const missing = ACTIVE_CITIES.filter((c) => !present.has(c)) as CityCode[];
+    return {
+      empty: projectCount === 0,
+      stale,
+      missing,
+      projectCount,
+      lastSyncAt: meta.lastSyncAt,
+    };
+  }
+
+  const existing = await listProjects();
+  const present = new Set(existing.map((p) => p.city));
+  const missing = ACTIVE_CITIES.filter((c) => !present.has(c)) as CityCode[];
+  return {
+    empty: existing.length === 0,
+    stale,
+    missing,
+    projectCount: existing.length,
+    lastSyncAt: meta.lastSyncAt,
+  };
+}
+
 /**
- * Ensure the store has recent projects for the map.
- * Call from the map RSC before listing projects.
- *
- * - Fresh + all active cities present → render immediately
- * - Empty or stale → full multi-city sync
- * - Fresh but missing cities (e.g. SF just added) → sync only the gaps
+ * Ensure the store has recent projects.
+ * Prefer calling this inside `after()` so the map page can paint first
+ * whenever any pins already exist.
  */
 export async function ensureMapDataFresh(): Promise<EnsureFreshResult> {
-  const meta = await getSyncMeta();
-  const existing = await listProjects();
-  const empty = existing.length === 0;
-  const stale = isStale(meta.lastSyncAt);
-  const present = new Set(existing.map((p) => p.city));
-  const missing = ACTIVE_CITIES.filter((c) => !present.has(c));
+  const peek = await peekMapFreshness();
+  const { empty, stale, missing } = peek;
 
   if (!empty && !stale && missing.length === 0) {
     return {
       synced: false,
       reason: "fresh",
-      projectCount: existing.length,
-      lastSyncAt: meta.lastSyncAt,
+      projectCount: peek.projectCount,
+      lastSyncAt: peek.lastSyncAt,
     };
   }
-
-  // On Netlify without a DB, memory store does not survive the next request,
-  // but syncing in this same request still lets the page render real pins.
-  void isDatabaseConfigured;
 
   try {
     if (empty || stale) {
       const result = await syncAllCities(AUTO_SYNC_DAYS);
-      const after = await getSyncMeta();
-      const listed = await listProjects();
+      const afterMeta = await getSyncMeta();
       return {
         synced: true,
         reason: empty ? "empty" : "stale",
-        projectCount: listed.length || after.projectCount,
-        lastSyncAt: after.lastSyncAt,
+        projectCount: afterMeta.projectCount,
+        lastSyncAt: afterMeta.lastSyncAt,
         error: result.ok
           ? undefined
           : Object.values(result.results)
@@ -108,7 +134,6 @@ export async function ensureMapDataFresh(): Promise<EnsureFreshResult> {
       };
     }
 
-    // Partial backfill for newly added cities without re-pulling everything.
     await Promise.all(
       missing.map(async (city) => {
         if (city === "nyc") {
@@ -120,13 +145,12 @@ export async function ensureMapDataFresh(): Promise<EnsureFreshResult> {
       }),
     );
 
-    const after = await getSyncMeta();
-    const listed = await listProjects();
+    const afterMeta = await getSyncMeta();
     return {
       synced: true,
       reason: "missing_cities",
-      projectCount: listed.length || after.projectCount,
-      lastSyncAt: after.lastSyncAt,
+      projectCount: afterMeta.projectCount,
+      lastSyncAt: afterMeta.lastSyncAt,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -134,8 +158,8 @@ export async function ensureMapDataFresh(): Promise<EnsureFreshResult> {
     return {
       synced: false,
       reason: "error",
-      projectCount: existing.length,
-      lastSyncAt: meta.lastSyncAt,
+      projectCount: peek.projectCount,
+      lastSyncAt: peek.lastSyncAt,
       error: message,
     };
   }

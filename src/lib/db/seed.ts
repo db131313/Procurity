@@ -1,4 +1,5 @@
 import type { Project, ProjectEvent, UserRecord } from "./types";
+import { PLAN_LIMITS } from "./types";
 
 /** Demo projects so the app is usable without a live DOB sync. */
 export const SEED_PROJECTS: Project[] = [
@@ -381,18 +382,19 @@ export const SEED_EVENTS: ProjectEvent[] = [
   },
 ];
 
-/** Top NYC coverage for demo — replaced at sync time with live hot zips when available. */
+/** Demo: empty zipCodes + pro = unrestricted (Full US / citywide). */
 export const DEMO_USER: UserRecord = {
   id: "user-demo",
   firebaseUid: "demo-uid",
   email: "demo@procurity.pro",
   name: "Demo Rep",
   plan: "pro",
+  devPlanOverride: null,
   zipCodes: [],
   trialEndsAt: new Date(Date.now() + 7 * 86400000).toISOString(),
   stripeCustomerId: null,
   stripeSubscriptionId: null,
-  zipAllowance: 25,
+  zipAllowance: PLAN_LIMITS.pro,
   notificationPrefs: {
     email: true,
     hotOpportunities: true,

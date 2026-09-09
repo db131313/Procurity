@@ -16,7 +16,7 @@ import type {
   TradeScores,
   UserRecord,
 } from "./types";
-import { PLAN_LIMITS } from "./types";
+import { PLAN_LIMITS, effectiveZipAllowance } from "./types";
 import type {
   PlanTier as PrismaPlan,
   ProjectPhase as PrismaPhase,
@@ -120,6 +120,7 @@ function mapUser(u: PrismaUser): UserRecord {
     email: u.email,
     name: u.name,
     plan: u.plan,
+    devPlanOverride: u.devPlanOverride ?? null,
     zipCodes: u.zipCodes ?? [],
     trialEndsAt: toIso(u.trialEndsAt),
     stripeCustomerId: u.stripeCustomerId,
@@ -336,7 +337,7 @@ export async function getDemoUser() {
     plan: "pro",
     onboardingComplete: true,
     zipCodes: [],
-    zipAllowance: 25,
+    zipAllowance: PLAN_LIMITS.pro,
   });
 }
 
@@ -356,6 +357,10 @@ export async function upsertUser(
     email,
     name: partial.name ?? existing?.name ?? null,
     plan: (partial.plan ?? existing?.plan ?? "trial") as PrismaPlan,
+    devPlanOverride:
+      partial.devPlanOverride !== undefined
+        ? (partial.devPlanOverride as PrismaPlan | null)
+        : existing?.devPlanOverride ?? null,
     zipCodes: partial.zipCodes ?? existing?.zipCodes ?? [],
     trialEndsAt: partial.trialEndsAt
       ? new Date(partial.trialEndsAt)
@@ -408,15 +413,39 @@ export async function updateUserPlan(
   return mapUser(row);
 }
 
+export async function setDevPlanOverride(
+  userId: string,
+  override: PlanTier | null,
+) {
+  const prisma = getPrisma();
+  const existing = await prisma.user.findUnique({ where: { id: userId } });
+  if (!existing) return null;
+  const zipAllowance = override
+    ? PLAN_LIMITS[override]
+    : PLAN_LIMITS[existing.plan];
+  const row = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      devPlanOverride: override as PrismaPlan | null,
+      zipAllowance,
+    },
+  });
+  return mapUser(row);
+}
+
 export async function setUserZips(userId: string, zipCodes: string[]) {
   const prisma = getPrisma();
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { ok: false as const, reason: "not_found" as const };
-  if (zipCodes.length > user.zipAllowance) {
+  const allowance = effectiveZipAllowance({
+    plan: user.plan,
+    devPlanOverride: user.devPlanOverride ?? null,
+  });
+  if (zipCodes.length > allowance) {
     return {
       ok: false as const,
       reason: "limit" as const,
-      allowance: user.zipAllowance,
+      allowance,
     };
   }
   const updated = await prisma.user.update({
@@ -487,11 +516,20 @@ export async function expandDemoCoverage(limit = 25) {
 
   const users = await prisma.user.findMany();
   for (const user of users) {
+    const isDemoOrPro =
+      user.email === DEMO_USER.email ||
+      user.plan === "trial" ||
+      user.plan === "pro";
+    // Keep demo/pro unrestricted (empty zipCodes). Paid starter/growth get densest zips.
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        zipCodes: topZips.slice(0, Math.max(user.zipAllowance, 25)),
-        zipAllowance: Math.max(user.zipAllowance, 25),
+        zipCodes: isDemoOrPro
+          ? []
+          : topZips.slice(0, Math.min(user.zipAllowance || PLAN_LIMITS.growth, topZips.length)),
+        zipAllowance: isDemoOrPro
+          ? PLAN_LIMITS.pro
+          : Math.max(user.zipAllowance, PLAN_LIMITS.growth),
         plan:
           user.email === DEMO_USER.email || user.plan === "trial"
             ? "pro"
@@ -506,7 +544,7 @@ export async function enableCitywideDemo() {
   await prisma.user.updateMany({
     data: {
       zipCodes: [],
-      zipAllowance: 25,
+      zipAllowance: PLAN_LIMITS.pro,
       onboardingComplete: true,
     },
   });
