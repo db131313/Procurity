@@ -18,6 +18,12 @@ const MapView = dynamic(
   },
 );
 
-export function MapViewLazy({ projects }: { projects: MapProject[] }) {
-  return <MapView projects={projects} />;
+export function MapViewLazy({
+  projects,
+  city,
+}: {
+  projects: MapProject[];
+  city?: string;
+}) {
+  return <MapView projects={projects} city={city} />;
 }

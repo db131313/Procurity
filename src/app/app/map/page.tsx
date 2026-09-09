@@ -1,34 +1,57 @@
 import { MapViewLazy } from "@/components/app/MapViewLazy";
-import { ensureMapDataFresh } from "@/lib/map/ensure-fresh";
+import { ensureMapDataFresh, peekMapFreshness } from "@/lib/map/ensure-fresh";
+import { listMapPins } from "@/lib/map/pins";
 import { getCurrentUser } from "@/lib/auth/session";
-import { listProjects } from "@/lib/db/store";
 import { isDatabaseConfigured } from "@/lib/db/prisma";
+import { after } from "next/server";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Map loads pins automatically: fresh DB data renders immediately;
- * empty / stale (>24h) triggers server-side sync before paint (skeleton via loading.tsx).
- * No user-facing sync button.
- */
-export default async function MapPage() {
-  await getCurrentUser();
-  const freshness = await ensureMapDataFresh();
-  const projects = await listProjects();
+type Props = {
+  searchParams: Promise<{ city?: string }>;
+};
 
-  const mapProjects = projects.map((p) => ({
+/**
+ * Map paints immediately when any pins exist.
+ * Freshness sync runs in `after()` so it never blocks the first HTML.
+ * Only cold-empty stores await sync before paint.
+ */
+export default async function MapPage({ searchParams }: Props) {
+  await getCurrentUser();
+  const sp = await searchParams;
+  const jar = await cookies();
+  const city =
+    (typeof sp.city === "string" && sp.city.trim()) ||
+    jar.get("pc_city")?.value ||
+    undefined;
+
+  const peek = await peekMapFreshness();
+
+  if (peek.empty) {
+    // First-ever load: must sync once so there is something to show.
+    await ensureMapDataFresh();
+  } else if (peek.stale || peek.missing.length > 0) {
+    // Have pins — paint now, refresh in background.
+    after(() => {
+      void ensureMapDataFresh().catch((err) =>
+        console.warn("[map] background ensureMapDataFresh", err),
+      );
+    });
+  }
+
+  const { pins, totalMatched, truncated } = await listMapPins({
+    city,
+    limit: 2000,
+  });
+
+  const mapProjects = pins.map((p) => ({
     id: p.id,
     latitude: p.latitude,
     longitude: p.longitude,
     score: p.score,
     scoreConfidence: p.scoreConfidence,
-    tradeScores: p.tradeScores ?? {
-      signage: p.score,
-      lighting: p.score,
-      glass: p.score,
-      security: p.score,
-      flooring: p.score,
-    },
+    tradeScores: p.tradeScores,
     address: p.address,
     estValueLow: p.estValueLow,
     estValueHigh: p.estValueHigh,
@@ -54,14 +77,15 @@ export default async function MapPage() {
           </p>
         </div>
       )}
-      {freshness.error && mapProjects.length === 0 && (
-        <div className="pointer-events-none absolute left-3 top-3 z-30 max-w-xs md:left-5 md:top-4">
-          <p className="rounded-xl border border-amber-200 bg-amber-50/95 px-2.5 py-1.5 text-[11px] font-medium text-amber-950 shadow-sm backdrop-blur">
-            Map data is temporarily unavailable. Retry shortly.
+      {city && (
+        <div className="pointer-events-none absolute left-3 top-3 z-30 md:left-5 md:top-4">
+          <p className="rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
+            {city.replace(/_/g, " ")} · {totalMatched.toLocaleString()}
+            {truncated ? "+" : ""} sites
           </p>
         </div>
       )}
-      <MapViewLazy projects={mapProjects} />
+      <MapViewLazy projects={mapProjects} city={city} />
     </main>
   );
 }

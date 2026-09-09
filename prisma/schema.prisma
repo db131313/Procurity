@@ -108,6 +108,9 @@ model Project {
   @@index([zip])
   @@index([score])
   @@index([bin, jobNumber])
+  @@index([city, score])
+  @@index([latitude, longitude])
+  @@index([city, latitude, longitude])
 }
 
 model Permit {
