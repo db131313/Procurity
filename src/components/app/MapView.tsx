@@ -13,9 +13,10 @@ import {
   DEFAULT_MAP_FILTERS,
   MapFilters,
   getMapFilters,
+  scoreModeLabel,
   setMapFilters,
   type MapFilterState,
-  type TradeKey,
+  type ScoreMode,
 } from "@/components/app/MapFilters";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { ScoreRing } from "@/components/ui/ScoreRing";
@@ -90,14 +91,14 @@ function tradeScoresFor(p: MapProject): TradeScores {
   };
 }
 
-/** When trades are enabled, pin score = max of those trade scores. */
+/** Pin score for coloring/filtering — overall Buy Score or one trade. */
 export function effectivePinScore(
   p: MapProject,
-  trades: TradeKey[],
+  scoreMode: ScoreMode,
 ): number {
-  if (!trades.length) return p.score;
+  if (scoreMode === "general") return p.score;
   const scores = tradeScoresFor(p);
-  return Math.max(...trades.map((t) => scores[t]));
+  return scores[scoreMode] ?? p.score;
 }
 
 function matchesQuick(
@@ -183,13 +184,13 @@ export function MapView({ projects: initialProjects, city }: Props) {
 
   const selected = selectedId ? byId.get(selectedId) ?? null : null;
   const selectedScore = selected
-    ? effectivePinScore(selected, filters.trades)
+    ? effectivePinScore(selected, filters.scoreMode)
     : 0;
 
   const visible = useMemo(() => {
     return projects
       .map((p) => {
-        const score = effectivePinScore(p, filters.trades);
+        const score = effectivePinScore(p, filters.scoreMode);
         return { p, score };
       })
       .filter(
@@ -589,7 +590,11 @@ export function MapView({ projects: initialProjects, city }: Props) {
 
       <div className="pointer-events-none absolute bottom-3 left-3 z-30 md:bottom-6 md:left-5">
         <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
-          <p className="mb-1.5 font-bold text-ink">Buy Score</p>
+          <p className="mb-1.5 font-bold text-ink">
+            {filters.scoreMode === "general"
+              ? "Buy Score"
+              : `${scoreModeLabel(filters.scoreMode)} Score`}
+          </p>
           <ul className="space-y-1 font-semibold text-slate">
             {[
               { c: "#16A34A", t: "90+ Act now" },
