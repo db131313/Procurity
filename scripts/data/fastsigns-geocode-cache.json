@@ -1,0 +1,2679 @@
+{
+  "4245 1st Ave N Birmingham, AL 35222 USA": {
+    "lat": 33.529579041343,
+    "lng": -86.773594663725
+  },
+  "2934 Point Mallard Parkway, SE, Suite A5 Decatur, AL 35603 USA": {
+    "lat": 34.541765486697,
+    "lng": -86.921820068945
+  },
+  "2711 John Hawkins Pkwy Hoover, AL 35244 USA": {
+    "lat": 33.361392535593,
+    "lng": -86.829692398275
+  },
+  "4668 Airport Blvd Mobile, AL 36608 USA": {
+    "lat": 30.676155661435,
+    "lng": -88.172439127004
+  },
+  "3160 W Main St, Ste 6 Dothan, AL 36305 USA": {
+    "lat": 31.228865034821,
+    "lng": -85.439062746486
+  },
+  "4294 University Dr. NW, Ste. A Huntsville, AL 35816 USA": {
+    "lat": 34.735074646563,
+    "lng": -86.632296361994
+  },
+  "1028 Lagoon Business Loop Montgomery, AL 36117 USA": {
+    "lat": 32.408937939643,
+    "lng": -86.218101976563
+  },
+  "6201 McFarland Blvd E. Tuscaloosa, AL 35405 USA": null,
+  "3205 N Arizona Ave, Ste 6 Chandler, AZ 85225 USA": {
+    "lat": 33.35244637033,
+    "lng": -111.841718804902
+  },
+  "2101 US Highway 98, Suite G Daphne, AL 36526 USA": {
+    "lat": 30.607838125278,
+    "lng": -87.898892071326
+  },
+  "7955 E. Broadway Blvd, Ste 157 Tucson, AZ 85710 USA": {
+    "lat": 32.221015289323,
+    "lng": -110.822311322133
+  },
+  "1981 E Pecos Rd, Ste 104 Gilbert, AZ 85295 USA": {
+    "lat": 33.294603085264,
+    "lng": -111.747133773976
+  },
+  "600 N Bullard Ave, Ste 7 Goodyear, AZ 85338-2517 USA": {
+    "lat": 33.440280759883,
+    "lng": -112.375670662594
+  },
+  "6020 W Bell Rd, Ste E101 Glendale, AZ 85308 USA": {
+    "lat": 33.638730026317,
+    "lng": -112.189080674711
+  },
+  "7415 E Southern Ave, Unit 104 Mesa, AZ 85209 USA": {
+    "lat": 33.39327227288,
+    "lng": -111.672466302331
+  },
+  "2517 N Central Ave Phoenix, AZ 85004 USA": {
+    "lat": 33.475786174882,
+    "lng": -112.073702789311
+  },
+  "4731 E Union Hills Dr, Ste 112 Phoenix, AZ 85050-3319 USA": {
+    "lat": 33.655158554124,
+    "lng": -111.980130926507
+  },
+  "1921 N Scottsdale Rd Scottsdale, AZ 85257-2118 USA": {
+    "lat": 33.469440991183,
+    "lng": -111.926134112337
+  },
+  "7650 E Redfield Rd, Ste C-2 Scottsdale, AZ 85260-6906 USA": {
+    "lat": 33.614007520111,
+    "lng": -111.915057933562
+  },
+  "15332 W Bell Rd, Ste 118 Surprise, AZ 85374-2464 USA": {
+    "lat": 33.638836987113,
+    "lng": -112.390494059324
+  },
+  "2924 N 30th St Phoenix, AZ 85016-8008 USA": {
+    "lat": 33.481014105379,
+    "lng": -112.01729318409
+  },
+  "1320 Priest Dr, Ste 104 Tempe, AZ 85281-6959 USA": {
+    "lat": 33.441725372803,
+    "lng": -111.958224163128
+  },
+  "3988 N Oracle Rd Tucson, AZ 85705 USA": {
+    "lat": 32.278989977413,
+    "lng": -110.97798253029
+  },
+  "3461 E Speedway Blvd Tucson, AZ 85716 USA": {
+    "lat": 32.236203708029,
+    "lng": -110.918845178548
+  },
+  "1911 W. Broadway, Suite 7 Mesa, AZ 85202 USA": {
+    "lat": 33.407540354291,
+    "lng": -111.872955504861
+  },
+  "9831 Maumelle Blvd. North Little Rock, AR 72113 USA": {
+    "lat": 34.822733292081,
+    "lng": -92.371142149117
+  },
+  "240 S Shackleford, Suite D Little Rock, AR 72211 USA": {
+    "lat": 34.752695535599,
+    "lng": -92.393958251702
+  },
+  "300 West 5th North Little Rock, AR 72114 USA": {
+    "lat": 34.758045510282,
+    "lng": -92.270152612594
+  },
+  "1916 W Sunset Ave Springdale, AR 72762 USA": {
+    "lat": 36.174834016369,
+    "lng": -94.151504111825
+  },
+  "5337 Hamner Ave, Ste 708 Eastvale, CA 91752 USA": null,
+  "3011 S. Harbor Blvd Santa Ana, CA 92704 USA": {
+    "lat": 33.70685734137,
+    "lng": -117.919503020663
+  },
+  "1414 S Azusa Avenue, Suite B06 West Covina, CA 91791 USA": {
+    "lat": 34.039835436424,
+    "lng": -117.912806220055
+  },
+  "100 W American Canyon Rd K-8 American Canyon, CA 94503 USA": {
+    "lat": 38.165379016604,
+    "lng": -122.250194920375
+  },
+  "2781 Saturn Street, Unit E Brea, CA 92821 USA": {
+    "lat": 33.90843485969,
+    "lng": -117.860399565061
+  },
+  "1388 Sunset Dr Antioch, CA 94509 USA": {
+    "lat": 37.997616614386,
+    "lng": -121.790299749679
+  },
+  "1877 E. Daily Dr., Suite E Camarillo, CA 93010 USA": {
+    "lat": 34.217830752692,
+    "lng": -119.045064205191
+  },
+  "1541 Railroad Ave Clovis, CA 93612 USA": {
+    "lat": 36.812691171383,
+    "lng": -119.699689167697
+  },
+  "4031 Sepulveda Blvd Culver City, CA 90230 USA": {
+    "lat": 34.008255822234,
+    "lng": -118.413646501756
+  },
+  "5153 Commercial Circle, Suite C Concord, CA 94520 USA": {
+    "lat": 38.019263737207,
+    "lng": -122.02900145899
+  },
+  "325 5th St Oakland, CA 94607 USA": {
+    "lat": 37.797683635804,
+    "lng": -122.274259607746
+  },
+  "7660 Amador Valley Blvd Dublin, CA 94568 USA": {
+    "lat": 37.707970892596,
+    "lng": -121.93296879926
+  },
+  "584 Broadway El Cajon, CA 92021 USA": {
+    "lat": 32.807743513374,
+    "lng": -116.955440215785
+  },
+  "9632 Emerald Oak Dr, Ste A Elk Grove, CA 95624-2258 USA": {
+    "lat": 38.4083768393,
+    "lng": -121.378929529123
+  },
+  "1441 Encinitas Blvd, Ste 120-122 Encinitas, CA 92024 USA": {
+    "lat": 33.045809579958,
+    "lng": -117.258382275748
+  },
+  "945 W Valley Pkwy, Ste A Escondido, CA 92025 USA": {
+    "lat": 33.117402001643,
+    "lng": -117.094407191352
+  },
+  "420 E Bidwell St Folsom, CA 95630-3117 USA": {
+    "lat": 38.673885717228,
+    "lng": -121.166720647821
+  },
+  "44755 S Grimmer Blvd, Ste G Fremont, CA 94538 USA": {
+    "lat": 37.502202032099,
+    "lng": -121.950459394499
+  },
+  "2745 W Shaw Ave, Ste 120 Fresno, CA 93711 USA": {
+    "lat": 36.808227005767,
+    "lng": -119.843243118332
+  },
+  "1133 S Placentia Ave Fullerton, CA 92831 USA": {
+    "lat": 33.860770398678,
+    "lng": -117.882913020054
+  },
+  "11938 South St. Artesia, CA 90703 USA": {
+    "lat": 33.858419397764,
+    "lng": -118.077976782573
+  },
+  "403 S La Brea Ave Inglewood, CA 90301-2321 USA": {
+    "lat": 33.959321893504,
+    "lng": -118.353358304236
+  },
+  "18021 Sky Park Circle, Ste J Irvine, CA 92614 USA": {
+    "lat": 33.688356925106,
+    "lng": -117.85816169513
+  },
+  "24282 Swartz Dr Lake Forest, CA 92630 USA": {
+    "lat": 33.615849624522,
+    "lng": -117.705854580149
+  },
+  "6961 Broadway Lemon Grove, CA 91945 USA": {
+    "lat": 32.742464717626,
+    "lng": -117.044633772805
+  },
+  "2335 Long Beach Blvd. Long Beach, CA 90806 USA": {
+    "lat": 33.799582345416,
+    "lng": -118.189433214043
+  },
+  "335 N. La Cienega Blvd. Los Angeles, CA 90048 USA": {
+    "lat": 34.077235745978,
+    "lng": -118.376664984677
+  },
+  "333 South Spring St, Ste F2 Los Angeles, CA 90013 USA": {
+    "lat": 34.049817184348,
+    "lng": -118.24745559661
+  },
+  "107 W Foothill Blvd Monrovia, CA 91016 USA": {
+    "lat": 34.151410649774,
+    "lng": -118.001341501941
+  },
+  "23209 Sunnymead Blvd Moreno Valley, CA 92553 USA": {
+    "lat": 33.93908143778,
+    "lng": -117.257597207735
+  },
+  "1469 E Plaza Blvd National City, CA 91950 USA": {
+    "lat": 32.676829535915,
+    "lng": -117.090940356353
+  },
+  "7306 Coldwater Canyon Ave., Suite 11 North Hollywood, CA 91605 USA": {
+    "lat": 34.202999722263,
+    "lng": -118.413719496319
+  },
+  "1351 S Grove Ave, Ste 107 Ontario, CA 91761 USA": {
+    "lat": 34.04909363528,
+    "lng": -117.628537179741
+  },
+  "1108 E Katella Ave, Suite C-1 Orange, CA 92867 USA": {
+    "lat": 33.809089946436,
+    "lng": -117.84190533413
+  },
+  "2339 N Oxnard Blvd Oxnard, CA 93036 USA": {
+    "lat": 34.228084047232,
+    "lng": -119.177966677792
+  },
+  "540 S Vella Rd Palm Springs, CA 92264 USA": {
+    "lat": 33.815341042768,
+    "lng": -116.497336670293
+  },
+  "1372 N McDowell Blvd, Ste B Petaluma, CA 94954 USA": {
+    "lat": 38.273653704358,
+    "lng": -122.665686329625
+  },
+  "3381 Vincent Rd , Ste J Pleasant Hill, CA 94523 USA": {
+    "lat": 37.939104062197,
+    "lng": -122.053913253404
+  },
+  "3503 W Temple Ave, Ste E Pomona, CA 91768-3264 USA": {
+    "lat": 34.048496933749,
+    "lng": -117.812444546913
+  },
+  "2246 Sunrise Blvd, Ste 8 Rancho Cordova, CA 95670 USA": {
+    "lat": 38.620934129774,
+    "lng": -121.26743425735
+  },
+  "9253 Hermosa Ave, Ste E Rancho Cucamonga, CA 91730 USA": {
+    "lat": 34.085343949946,
+    "lng": -117.584545240676
+  },
+  "1476 Oddstad Dr Redwood City, CA 94063-2607 USA": {
+    "lat": 37.490299801678,
+    "lng": -122.217776509769
+  },
+  "123 FASTSIGNS Ave. Riverside, CA 92516 USA": null,
+  "1900 Douglas Blvd, Ste E Roseville, CA 95661 USA": {
+    "lat": 38.744201969995,
+    "lng": -121.254943958209
+  },
+  "1720 Fulton Ave Sacramento, CA 95825-2416 USA": {
+    "lat": 38.596401489109,
+    "lng": -121.401354532585
+  },
+  "2580 Arena Blvd, Ste B110 Sacramento, CA 95834-7942 USA": {
+    "lat": 38.642940621051,
+    "lng": -121.519122195477
+  },
+  "1650 South E St, Ste D San Bernardino, CA 92408-2752 USA": {
+    "lat": 34.071618909393,
+    "lng": -117.294235642216
+  },
+  "1495 G Street, Suite B-2 San Diego, CA 92101 USA": {
+    "lat": 32.712570943283,
+    "lng": -117.150504559331
+  },
+  "7373 Clairemont Mesa Blvd San Diego, CA 92111 USA": {
+    "lat": 32.832617458094,
+    "lng": -117.159665012542
+  },
+  "8134 Miramar Rd San Diego, CA 92126 USA": {
+    "lat": 32.889132559944,
+    "lng": -117.143999304194
+  },
+  "12285 World Trade Dr, Ste H San Diego, CA 92128 USA": {
+    "lat": 32.987898625066,
+    "lng": -117.071911935344
+  },
+  "3166 Midway Dr, Ste 107 San Diego, CA 92110 USA": {
+    "lat": 32.750431381839,
+    "lng": -117.208278455871
+  },
+  "675 Saturn Blvd., STE E San Diego, CA 92154 USA": {
+    "lat": 32.584273375462,
+    "lng": -117.092607966242
+  },
+  "1630 Oakland Rd, Ste A111 San Jose, CA 95131-2461 USA": {
+    "lat": 37.379784803809,
+    "lng": -121.895414031937
+  },
+  "1228 S Bascom Ave, Ste A San Jose, CA 95128-3513 USA": {
+    "lat": 37.303374042332,
+    "lng": -121.931651787861
+  },
+  "705 Capitol Expressway Auto Mall, Ste 10 San Jose, CA 95136 USA": null,
+  "123 FASTSIGNS Ave. San Louis Obispo, CA 93401 USA": null,
+  "2130 S El Camino Real San Mateo, CA 94403 USA": {
+    "lat": 37.54707720015,
+    "lng": -122.308607283214
+  },
+  "625-C Du Bois St San Rafael, CA 94901 USA": {
+    "lat": 37.965929309091,
+    "lng": -122.519928969875
+  },
+  "2551 San Ramon Valley Blvd, Ste 110 San Ramon, CA 94583-1661 USA": {
+    "lat": 37.772471046666,
+    "lng": -121.974407697722
+  },
+  "21515 Centre Pointe Parkway Santa Clarita, CA 91350 USA": {
+    "lat": 34.412690518867,
+    "lng": -118.514341607538
+  },
+  "11875 Telegraph Rd Santa Fe Springs, CA 90670 USA": {
+    "lat": 33.945005479928,
+    "lng": -118.08006119259
+  },
+  "3768 Santa Rosa Ave. Santa Rosa, CA 95407 USA": {
+    "lat": 38.387641684357,
+    "lng": -122.71350507066
+  },
+  "14308 Ventura Blvd Sherman Oaks, CA 91423-2753 USA": {
+    "lat": 34.150107898423,
+    "lng": -118.444168898624
+  },
+  "546-2 Lawrence Expy Sunnyvale, CA 94085 USA": {
+    "lat": 37.384082281208,
+    "lng": -121.995672510731
+  },
+  "19229 Ventura Blvd Tarzana, CA 91356 USA": {
+    "lat": 34.172679090058,
+    "lng": -118.552201311454
+  },
+  "28165 Jefferson Ave, Ste A Temecula, CA 92590 USA": {
+    "lat": 33.500752228042,
+    "lng": -117.154542329269
+  },
+  "31344 Via Colinas, Unit 103 Westlake Village, CA 91362 USA": null,
+  "1103 Sartori Ave. Torrance, CA 90501 USA": {
+    "lat": 33.836210261771,
+    "lng": -118.316987203012
+  },
+  "1418 Mariani Ct, Suite 110 Tracy, CA 95376-2855 USA": {
+    "lat": 37.74369230946,
+    "lng": -121.413247725444
+  },
+  "3959 E Main St, Ste A Ventura, CA 93003-5248 USA": {
+    "lat": 34.263673612129,
+    "lng": -119.23926648746
+  },
+  "10725 W Goshen Ave Visalia, CA 93291 USA": {
+    "lat": 36.341694680471,
+    "lng": -119.410581883641
+  },
+  "2070 Hacienda Dr, Ste F Vista, CA 92081 USA": {
+    "lat": 33.184351124411,
+    "lng": -117.285970827205
+  },
+  "12207 Whittier Blvd., Suite A Whittier, CA 90602 USA": {
+    "lat": 33.976409415585,
+    "lng": -118.04738717175
+  },
+  "7694 Bell Road Windsor, CA 95492 USA": {
+    "lat": 38.536834572656,
+    "lng": -122.803401831454
+  },
+  "7320 W 52nd Ave, Unit A Arvada, CO 80002 USA": {
+    "lat": 39.791013578853,
+    "lng": -105.076265312257
+  },
+  "1690 S Abilene St, Ste 103 Aurora, CO 80012 USA": {
+    "lat": 39.684769294309,
+    "lng": -104.828190745288
+  },
+  "3140 Valmont Rd Boulder, CO 80301 USA": {
+    "lat": 40.029140487662,
+    "lng": -105.252099080716
+  },
+  "799 US Highway 287, Suite F Broomfield, CO 80020 USA": {
+    "lat": 39.926842868595,
+    "lng": -105.090962537258
+  },
+  "2510 E. Boulder St Colorado Springs, CO 80909 USA": {
+    "lat": 38.838220469424,
+    "lng": -104.779681647318
+  },
+  "1650 Champa St Denver, CO 80202 USA": {
+    "lat": 39.74695264869,
+    "lng": -104.993268474468
+  },
+  "5125 N Union Blvd, Ste 150 Colorado Springs, CO 80918-2066 USA": {
+    "lat": 38.906132163673,
+    "lng": -104.774625212336
+  },
+  "10697 E Briarwood Cir Centennial, CO 80112-1147 USA": {
+    "lat": 39.593454671655,
+    "lng": -104.864860682759
+  },
+  "67 Suttle St, Ste B Durango, CO 81303 USA": {
+    "lat": 37.246962941582,
+    "lng": -107.876538389148
+  },
+  "110 E Centennial Ave Englewood, CO 80113 USA": {
+    "lat": 39.621844795682,
+    "lng": -104.985952809992
+  },
+  "615 Colorado Ave Grand Junction, CO 81501 USA": {
+    "lat": 39.066272624245,
+    "lng": -108.562445451835
+  },
+  "2601 W 28th St Greeley, CO 80634 USA": {
+    "lat": 40.392496914135,
+    "lng": -104.722744969067
+  },
+  "9090 South Ridgeline Boulevard, Suite 105 Highlands Ranch, CO 80129 USA": {
+    "lat": 39.551233433265,
+    "lng": -104.996402178525
+  },
+  "10790 W Alameda Ave Lakewood, CO 80226 USA": {
+    "lat": 39.710681298208,
+    "lng": -105.118957198376
+  },
+  "203 S Main St, Ste B Longmont, CO 80501 USA": {
+    "lat": 40.154731444341,
+    "lng": -105.102623240578
+  },
+  "123 FASTSIGNS Ave Loveland, CO 80537 USA": null,
+  "1485 S Colorado Blvd, Ste 150 Denver, CO 80222 USA": {
+    "lat": 39.689617828794,
+    "lng": -104.940807611633
+  },
+  "18921 Plaza Dr, Ste 102 Parker, CO 80134 USA": {
+    "lat": 39.526740356307,
+    "lng": -104.770171883928
+  },
+  "1480 W 104th Ave Northglenn, CO 80234 USA": {
+    "lat": 39.88499759615,
+    "lng": -105.004477231679
+  },
+  "10 West Main St. Clinton, CT 06413 USA": {
+    "lat": 41.278620621849,
+    "lng": -72.528232342212
+  },
+  "942 Main St Hartford, CT 06103-1214 USA": {
+    "lat": 41.768002035705,
+    "lng": -72.672994396711
+  },
+  "101 Hale Rd, Ste B Manchester, CT 06042 USA": {
+    "lat": 41.811123462914,
+    "lng": -72.530099059252
+  },
+  "182 Court St Middletown, CT 06457 USA": {
+    "lat": 41.560301700095,
+    "lng": -72.650338979811
+  },
+  "1015 Bridgeport Ave Milford, CT 06460 USA": {
+    "lat": 41.215834500508,
+    "lng": -73.071151744863
+  },
+  "2434 Berlin Turnpike, Unit #5 Newington, CT 06111 USA": {
+    "lat": 41.688959255849,
+    "lng": -72.706471836995
+  },
+  "310 Washington Ave, Unit 1 North Haven, CT 06473 USA": {
+    "lat": 41.404000651968,
+    "lng": -72.847246684948
+  },
+  "583 Pacific Street Stamford, CT 06902 USA": {
+    "lat": 41.045423329259,
+    "lng": -73.5375501433
+  },
+  "217 Boston Post Rd Waterford, CT 06385 USA": {
+    "lat": 41.345528162757,
+    "lng": -72.137149172589
+  },
+  "3203 Concord Pike Wilmington, DE 19803 USA": {
+    "lat": 39.800268629965,
+    "lng": -75.547770130112
+  },
+  "3030 E Semoran Blvd, Ste 156 Apopka, FL 32703-5909 USA": {
+    "lat": 28.671114356928,
+    "lng": -81.454480002127
+  },
+  "1300 First State Blvd, Ste G Wilmington, DE 19804 USA": null,
+  "2401 N Federal Hwy, Ste E Boca Raton, FL 33431 USA": {
+    "lat": 26.371761926137,
+    "lng": -80.076711801186
+  },
+  "28440 Old US 41, Ste 6 Bonita Springs, FL 34135 USA": null,
+  "2020 W Brandon Blvd, Ste 170 Brandon, FL 33511-4706 USA": {
+    "lat": 27.937756570585,
+    "lng": -82.316883217774
+  },
+  "3615 14th St W Bradenton, FL 34205 USA": {
+    "lat": 27.468263654218,
+    "lng": -82.575202004115
+  },
+  "290 Nicholas Parkway NW, Ste 9 Cape Coral, FL 33991 USA": {
+    "lat": 26.647031245493,
+    "lng": -81.986849954768
+  },
+  "915 SR 436 Casselberry, FL 32707 USA": {
+    "lat": 28.649121727109,
+    "lng": -81.325630102883
+  },
+  "712 S Missouri Ave Clearwater, FL 33756 USA": {
+    "lat": 27.958175762141,
+    "lng": -82.787659369268
+  },
+  "602 East Highway 50, Unit D Clermont, FL 34711 USA": {
+    "lat": 28.551391456624,
+    "lng": -81.765212614341
+  },
+  "7565 W Sample Rd Coral Springs, FL 33065-4701 USA": null,
+  "19740 S Dixie Hwy Cutler Bay, FL 33157 USA": {
+    "lat": 25.586535276534,
+    "lng": -80.362068288212
+  },
+  "3328 Griffin Rd Dania, FL 33312 USA": {
+    "lat": 26.062224762707,
+    "lng": -80.187687744487
+  },
+  "7080 W State Rd 84, Ste 7 Davie, FL 33317 USA": {
+    "lat": 26.096095851399,
+    "lng": -80.240454719059
+  },
+  "1027 N. Nova Road, Suite 109 Holly Hill, FL 32117 USA": {
+    "lat": 29.225282063909,
+    "lng": -81.049716231955
+  },
+  "430 W Hillsboro Blvd Deerfield Beach, FL 33441 USA": {
+    "lat": 26.318323224336,
+    "lng": -80.109605881226
+  },
+  "1410 E Oak St Fernandina Beach, FL 32034 USA": {
+    "lat": 30.638568941268,
+    "lng": -81.455569048579
+  },
+  "12211 S. Cleveland Ave. Fort Myers, FL 33907 USA": {
+    "lat": 26.565015583334,
+    "lng": -81.871810677445
+  },
+  "903 N Beal Pkwy, Ste A Fort Walton Beach, FL 32547-3404 USA": null,
+  "211 E Oakland Park Blvd Oakland Park, FL 33334 USA": {
+    "lat": 26.166696132582,
+    "lng": -80.144166989579
+  },
+  "2841 Hollywood Blvd Hollywood, FL 33020 USA": {
+    "lat": 26.011106497633,
+    "lng": -80.163751929217
+  },
+  "1389 Cassat Ave Jacksonville, FL 32205 USA": {
+    "lat": 30.296134887924,
+    "lng": -81.730395201495
+  },
+  "8535 Baymeadows Rd, Ste 7 Jacksonville, FL 32256 USA": {
+    "lat": 30.220851310042,
+    "lng": -81.580293319065
+  },
+  "8102 Blanding Blvd, Ste 14 Jacksonville, FL 32244 USA": {
+    "lat": 30.203740929847,
+    "lng": -81.739592006515
+  },
+  "2141 St Johns Bluff Rd S Jacksonville, FL 32246 USA": {
+    "lat": 30.311991334292,
+    "lng": -81.52516913662
+  },
+  "250 West Indiantown Rd., Ste 105 Jupiter, FL 33458 USA": {
+    "lat": 26.9340619774,
+    "lng": -80.096840108657
+  },
+  "1902 West Vine St Kissimmee, FL 34741 USA": {
+    "lat": 28.304344774946,
+    "lng": -81.423205374247
+  },
+  "2001 10th Ave N, Ste 2 Lake Worth, FL 33461 USA": {
+    "lat": 26.627942652646,
+    "lng": -80.072505433235
+  },
+  "228 N Florida Ave Lakeland, FL 33801 USA": {
+    "lat": 28.04631571252,
+    "lng": -81.957337659125
+  },
+  "Lakewood Ranch, FL 34202 USA": null,
+  "1812 S. Hwy 77, Ste 102 Lynn Haven, FL 32444 USA": {
+    "lat": 30.231875208813,
+    "lng": -85.649130845682
+  },
+  "7640 N Wickham Rd, Ste 115 Melbourne, FL 32940-8147 USA": null,
+  "7713 Ulmerton Rd Largo, FL 33771 USA": null,
+  "315 S. Courtenay Parkway, Suite 108 Merritt Island, FL 32952 USA": {
+    "lat": 28.351613030081,
+    "lng": -80.700218877785
+  },
+  "40 NW 3rd St Miami, FL 33128 USA": {
+    "lat": 25.776963836654,
+    "lng": -80.194364527475
+  },
+  "8690 Biscayne Blvd, Suite #6 Miami, FL 33138 USA": {
+    "lat": 25.85506964823,
+    "lng": -80.184968965197
+  },
+  "15925 NW 57th Ave Miami Lakes, FL 33014 USA": null,
+  "8355 NW 36th St Doral, FL 33166 USA": {
+    "lat": 25.809856603207,
+    "lng": -80.334098220843
+  },
+  "12942 SW 120th St Miami, FL 33186 USA": {
+    "lat": 25.656574695848,
+    "lng": -80.405071055958
+  },
+  "8227 S Dixie Hwy Miami, FL 33143 USA": null,
+  "2650 Airport Road South, Suite A Naples, FL 34112 USA": {
+    "lat": 26.144536690415,
+    "lng": -81.76760203427
+  },
+  "19651 Bruce B Downs Blvd, Ste C1 Tampa, FL 33647-2479 USA": {
+    "lat": 28.15205720254,
+    "lng": -82.353213565514
+  },
+  "15405 W Dixie Hwy North Miami Beach, FL 33181 USA": {
+    "lat": 25.917310012358,
+    "lng": -80.160854549643
+  },
+  "5135 Adanson St Orlando, FL 32804 USA": {
+    "lat": 28.603562090563,
+    "lng": -81.393447624726
+  },
+  "12763 Tamiami Trl S North Port, FL 34287 USA": null,
+  "2370 SW College Rd., Suite 103 Ocala, FL 34471 USA": null,
+  "3898 Tampa Rd Oldsmar, FL 34677 USA": {
+    "lat": 28.040675366469,
+    "lng": -82.669386131823
+  },
+  "4835 E Colonial Dr. Orlando, FL 32803 USA": {
+    "lat": 28.553473354396,
+    "lng": -81.32600416149
+  },
+  "326 E Michigan St Orlando, FL 32806 USA": {
+    "lat": 28.512878983678,
+    "lng": -81.373554008059
+  },
+  "9900 Universal Blvd, Ste 114 Orlando, FL 32819-8716 USA": {
+    "lat": 28.428744683566,
+    "lng": -81.443991722116
+  },
+  "2200 Winter Springs Blvd, Ste 118 Oviedo, FL 32765-9475 USA": {
+    "lat": 28.668131673688,
+    "lng": -81.226439897483
+  },
+  "8360 Currency Dr., Suite 4 West Palm Beach, FL 33404 USA": {
+    "lat": 26.79897004017,
+    "lng": -80.092558895519
+  },
+  "9909 Pines Blvd. Pembroke Pines, FL 33024 USA": {
+    "lat": 26.008459551707,
+    "lng": -80.276915125702
+  },
+  "35863 US Highway 19 N Palm Harbor, FL 34684 USA": {
+    "lat": 28.097956858787,
+    "lng": -82.739621061361
+  },
+  "6060 Tippin Ave. Pensacola, FL 32504 USA": {
+    "lat": 30.484747626627,
+    "lng": -87.196870671903
+  },
+  "3151 W Atlantic Blvd Pompano Beach, FL 33069 USA": {
+    "lat": 26.232002119625,
+    "lng": -80.169905072499
+  },
+  "6484 Ridge Rd Port Richey, FL 34668-6748 USA": {
+    "lat": 28.280556458638,
+    "lng": -82.707426580192
+  },
+  "10000 S US Hwy 1 Port St. Lucie, FL 34952 USA": {
+    "lat": 27.281983929616,
+    "lng": -80.29448640185
+  },
+  "11120 HWY 41 S. Gibsonton, FL 33534 USA": {
+    "lat": 27.840961854545,
+    "lng": -82.381615410485
+  },
+  "408 33rd Ave N, Ste A Saint Petersburg, FL 33704-1384 USA": {
+    "lat": 27.80208057207,
+    "lng": -82.6388190547
+  },
+  "4058 Park Street Saint Petersburg, FL 33709 USA": {
+    "lat": 27.808879942047,
+    "lng": -82.75389011646
+  },
+  "1265 Upsala Rd, Ste 1133 Sanford, FL 32771 USA": {
+    "lat": 28.810014886438,
+    "lng": -81.322667009423
+  },
+  "3050 N Washington Blvd Sarasota, FL 34234 USA": {
+    "lat": 27.363216829025,
+    "lng": -82.530533405894
+  },
+  "5164 Mariner Blvd Spring Hill, FL 34609-1802 USA": {
+    "lat": 28.502810943518,
+    "lng": -82.524101311454
+  },
+  "2303 N Ponce de Leon Blvd, Ste A Saint Augustine, FL 32084-2606 USA": {
+    "lat": 29.9138338193,
+    "lng": -81.323713056735
+  },
+  "5025 W Tharpe St Tallahassee, FL 32303 USA": {
+    "lat": 30.463196149565,
+    "lng": -84.361686424936
+  },
+  "10131 W Commercial Blvd Sunrise, FL 33351-4327 USA": {
+    "lat": 26.193875758874,
+    "lng": -80.285842301359
+  },
+  "14618 N Dale Mabry Hwy Tampa, FL 33618 USA": {
+    "lat": 28.080942115227,
+    "lng": -82.506805591472
+  },
+  "3901 W Kennedy Blvd Tampa, FL 33609 USA": {
+    "lat": 27.944872408164,
+    "lng": -82.507903120868
+  },
+  "10770 N. 46th Street, Suite C-900 Tampa, FL 33617 USA": {
+    "lat": 28.046692104708,
+    "lng": -82.409965527808
+  },
+  "1925 14th Ave Vero Beach, FL 32960 USA": {
+    "lat": 27.637043432973,
+    "lng": -80.399464861117
+  },
+  "7154 W Colonial Dr Orlando, FL 32818 USA": {
+    "lat": 28.551873311358,
+    "lng": -81.478536855497
+  },
+  "4275 Okeechobee Blvd, Ste H West Palm Beach, FL 33409 USA": {
+    "lat": 26.706919452633,
+    "lng": -80.107438409809
+  },
+  "1649 Bonaventure Blvd Weston, FL 33326 USA": {
+    "lat": 26.099237900134,
+    "lng": -80.377513058272
+  },
+  "Winter Haven, FL 33839 USA": null,
+  "248 East Crogan Street, Building 50, Suite 5 Lawrenceville, GA 30046 USA": {
+    "lat": 33.958413296061,
+    "lng": -83.97466219498
+  },
+  "2565 Atlanta Hwy Athens, GA 30606 USA": {
+    "lat": 33.946449660754,
+    "lng": -83.425715379275
+  },
+  "3131 E Shadowlawn Ave NE Atlanta, GA 30305 USA": {
+    "lat": 33.840689791408,
+    "lng": -84.374031927753
+  },
+  "141 North Avenue, NE Atlanta, GA 30308 USA": {
+    "lat": 33.771228569705,
+    "lng": -84.382844224837
+  },
+  "87 Walton St NW Atlanta, GA 30303 USA": {
+    "lat": 33.756920756178,
+    "lng": -84.391207174083
+  },
+  "528 Plasters Ave Atlanta, GA 30324 USA": {
+    "lat": 33.812040817464,
+    "lng": -84.370915834969
+  },
+  "1206 Greene St Augusta, GA 30901 USA": {
+    "lat": 33.4776621708,
+    "lng": -81.979490546271
+  },
+  "1961 Buford Hwy NE, Ste A/B Buford, GA 30518 USA": {
+    "lat": 34.106763208435,
+    "lng": -84.002314349706
+  },
+  "1750 Marietta Hwy, Ste 180 Canton, GA 30114 USA": null,
+  "875 Flat Shoals Rd SE, Suite 160 Conyers, GA 30094 USA": {
+    "lat": 33.642628891616,
+    "lng": -84.016169807861
+  },
+  "907 Buford Rd, Ste 700 Cumming, GA 30041 USA": {
+    "lat": 34.179167716124,
+    "lng": -84.132946709037
+  },
+  "7421 Douglas Blvd, Ste E Douglasville, GA 30135-1564 USA": {
+    "lat": 33.728190889757,
+    "lng": -84.755141582268
+  },
+  "2148 Duluth Hwy, Ste 107 Duluth, GA 30097 USA": {
+    "lat": 33.977653441383,
+    "lng": -84.094141673517
+  },
+  "235 Pearl Nix Pkwy, Ste 1-A Gainesville, GA 30501 USA": null,
+  "10900 Medlock Bridge Rd, Ste 302 Johns Creek, GA 30097-1505 USA": {
+    "lat": 34.04326697708,
+    "lng": -84.181853678291
+  },
+  "501 Roberts Ct NW, #7 Kennesaw, GA 30144 USA": {
+    "lat": 34.009006226254,
+    "lng": -84.564676359333
+  },
+  "2356 Pio Nono Ave. Macon, GA 31206 USA": {
+    "lat": 32.817855952819,
+    "lng": -83.662723983849
+  },
+  "2121 Newmarket Parkway SE, Suite 122 Marietta, GA 30067 USA": {
+    "lat": 33.920399874918,
+    "lng": -84.493593878776
+  },
+  "2710 East Highway 34, Ste D Newnan, GA 30265 USA": {
+    "lat": 33.408461143547,
+    "lng": -84.683454620558
+  },
+  "6760 Jimmy Carter Blvd, Ste 135 Norcross, GA 30071 USA": {
+    "lat": 33.938723839964,
+    "lng": -84.236018811273
+  },
+  "11660 Alpharetta Hwy, Ste 355 Roswell, GA 30076 USA": {
+    "lat": 34.064519529556,
+    "lng": -84.321541645847
+  },
+  "220 Hammond Dr NE, Ste 304 Sandy Springs, GA 30328-5009 USA": {
+    "lat": 33.919055724071,
+    "lng": -84.381853920556
+  },
+  "11136A Abercorn St Savannah, GA 31419 USA": null,
+  "1215 East US Highway 80, Suite 800 Savannah, GA 31322 USA": {
+    "lat": 32.103107134124,
+    "lng": -81.224997747302
+  },
+  "2180 Scenic Hwy N Snellville, GA 30078 USA": {
+    "lat": 33.861366175219,
+    "lng": -84.018282814398
+  },
+  "4135 LaVista Rd, Ste 300 Tucker, GA 30084 USA": {
+    "lat": 33.846365008927,
+    "lng": -84.249592305746
+  },
+  "3920 Jonesboro Road, Suite 200 Union City, GA 30291 USA": null,
+  "4082 Chinden Blvd Garden City, ID 83714 USA": {
+    "lat": 43.629816264882,
+    "lng": -116.249258989088
+  },
+  "Coeur d'Alene, ID 83814 USA": null,
+  "370 E Elva St Idaho Falls, ID 83401 USA": {
+    "lat": 43.503988458342,
+    "lng": -112.027113208169
+  },
+  "826 21st St Lewiston, ID 83501 USA": {
+    "lat": 46.412211592293,
+    "lng": -117.00200449608
+  },
+  "520 W Lake St, Unit E Addison, IL 60101 USA": {
+    "lat": 41.928769414884,
+    "lng": -87.976716102184
+  },
+  "1814 N Arlington Heights Rd Arlington Heights, IL 60004 USA": {
+    "lat": 42.108495683868,
+    "lng": -87.98051365948
+  },
+  "2908 Gill St, Unit 1 Bloomington, IL 61704 USA": {
+    "lat": 40.50090475247,
+    "lng": -88.928683647689
+  },
+  "188 S Western Ave Carpentersville, IL 60110 USA": {
+    "lat": 42.105022424519,
+    "lng": -88.291088806769
+  },
+  "313 N Mattis, Ste 114 Champaign, IL 61821 USA": {
+    "lat": 40.119371936924,
+    "lng": -88.276965153285
+  },
+  "1315 S Michigan Ave Chicago, IL 60605 USA": {
+    "lat": 41.865357057887,
+    "lng": -87.623947338673
+  },
+  "1820 W Webster Ave Chicago, IL 60614 USA": {
+    "lat": 41.921519582897,
+    "lng": -87.673620693609
+  },
+  "447 E Ohio St Chicago, IL 60611 USA": {
+    "lat": 41.892599308433,
+    "lng": -87.616812621628
+  },
+  "5517 N. Cumberland Avenue, Suite 913 Chicago, IL 60656 USA": {
+    "lat": 41.980040965734,
+    "lng": -87.836497104336
+  },
+  "229 N. Damen Avenue Chicago, IL 60612 USA": {
+    "lat": 41.885595913842,
+    "lng": -87.676682890313
+  },
+  "901 W. Jackson Blvd, Suite 101 Chicago, IL 60607 USA": {
+    "lat": 41.877852851833,
+    "lng": -87.649658195873
+  },
+  "580 E Terra Cotta Ave, Ste A Crystal Lake, IL 60014 USA": {
+    "lat": 42.24863241685,
+    "lng": -88.298829889377
+  },
+  "408 75th St Downers Grove, IL 60516-4454 USA": {
+    "lat": 41.751720174844,
+    "lng": -87.997090972329
+  },
+  "886 Cambridge Dr Elk Grove Vlllage, IL 60007 USA": {
+    "lat": 42.011949114195,
+    "lng": -87.956297834657
+  },
+  "1115 Randall Ct Geneva, IL 60134 USA": {
+    "lat": 41.875862759119,
+    "lng": -88.341575567097
+  },
+  "4215 IL-159, Route 159 Glen Carbon, IL 62034 USA": {
+    "lat": 38.771805480085,
+    "lng": -89.956683425243
+  },
+  "601 N Fifth Ave, Ste A Kankakee, IL 60901 USA": {
+    "lat": 41.126781715763,
+    "lng": -87.871557953598
+  },
+  "1350 S Milwaukee Ave Libertyville, IL 60048 USA": {
+    "lat": 42.261478707397,
+    "lng": -87.948614440864
+  },
+  "3514 W Devon Ave Lincolnwood, IL 60712 USA": {
+    "lat": 41.997343426547,
+    "lng": -87.716969138069
+  },
+  "3420 Grand Ave Waukegan, IL 60085 USA": {
+    "lat": 42.370570483756,
+    "lng": -87.885722929652
+  },
+  "7911 Golf Rd Morton Grove, IL 60053 USA": {
+    "lat": 42.054878672632,
+    "lng": -87.822936707365
+  },
+  "1552 N AURORA RD , STE 102 Naperville, IL 60563-8744 USA": {
+    "lat": 41.779634735393,
+    "lng": -88.1861929278
+  },
+  "3065 Dundee Rd Northbrook, IL 60062 USA": {
+    "lat": 42.13830812415,
+    "lng": -87.854997068921
+  },
+  "17W608 14th St Oakbrook Terrace, IL 60181-3717 USA": {
+    "lat": 41.85702922061,
+    "lng": -87.973437461505
+  },
+  "2430 N Main St East Peoria, IL 61611 USA": {
+    "lat": 40.692427929984,
+    "lng": -89.542633129565
+  },
+  "7310 Walton St, Ste C Rockford, IL 61108-4614 USA": {
+    "lat": 42.268927452316,
+    "lng": -88.972902611679
+  },
+  "1084 National Parkway Schaumburg, IL 60173 USA": null,
+  "3437 Dempster St Skokie, IL 60076-2441 USA": {
+    "lat": 42.040818596241,
+    "lng": -87.714673533285
+  },
+  "2112 S MacArthur Blvd, Ste A Springfield, IL 62704-4552 USA": {
+    "lat": 39.776806608999,
+    "lng": -89.668153183275
+  },
+  "7038 W 183rd St. Tinley Park, IL 60477 USA": {
+    "lat": 41.558660294768,
+    "lng": -87.789831246099
+  },
+  "74 West New York Street, # 110 Indianapolis, IN 46204 USA": {
+    "lat": 39.771404482101,
+    "lng": -86.159477945212
+  },
+  "2454 S Walnut St Bloomington, IN 47401-7735 USA": {
+    "lat": 39.136692169595,
+    "lng": -86.5308917276
+  },
+  "1307 12th St Columbus, IN 47201 USA": {
+    "lat": 39.210523239292,
+    "lng": -85.910546819669
+  },
+  "815 John Street, Suite 130 Evansville, IN 47713 USA": {
+    "lat": 37.976281215703,
+    "lng": -87.55276980274
+  },
+  "3014 N Clinton St Fort Wayne, IN 46805 USA": {
+    "lat": 41.103212344314,
+    "lng": -85.138259546191
+  },
+  "6646 W. Jefferson Blvd Fort Wayne, IN 46804 USA": {
+    "lat": 41.054242520463,
+    "lng": -85.228075410709
+  },
+  "1280 US Highway 31 N Greenwood, IN 46142 USA": {
+    "lat": 39.600147325649,
+    "lng": -86.105370989792
+  },
+  "9433 E Washington St Indianapolis, IN 46229 USA": {
+    "lat": 39.774309947279,
+    "lng": -86.000855284894
+  },
+  "9668 Allisonville Rd Indianapolis, IN 46250 USA": {
+    "lat": 39.928102345077,
+    "lng": -86.064813392623
+  },
+  "3702 W 86th St, Ste B Indianapolis, IN 46268-1903 USA": {
+    "lat": 39.911703234241,
+    "lng": -86.224901389967
+  },
+  "215 Quartermaster Ct Jeffersonville, IN 47130-3669 USA": {
+    "lat": 38.283245821982,
+    "lng": -85.739915967405
+  },
+  "1791 Northwest 86th St Clive, IA 50325 USA": {
+    "lat": 41.607923178864,
+    "lng": -93.736255491785
+  },
+  "20 Power Drive, Suite 4 Council Bluffs, IA 51501 USA": {
+    "lat": 41.223864721928,
+    "lng": -95.845545348229
+  },
+  "312 West 28th Street Sioux City, IA 51104 USA": {
+    "lat": 42.51872945647,
+    "lng": -96.417810557574
+  },
+  "16012 Metcalf Ave, Suite 100 Overland Park, KS 66085 USA": {
+    "lat": 38.837984458725,
+    "lng": -94.667797367861
+  },
+  "1830 W 6th Street Lawrence, KS 66044 USA": {
+    "lat": 38.973218372888,
+    "lng": -95.256192808834
+  },
+  "905 E Park St Olathe, KS 66061 USA": {
+    "lat": 38.881987770729,
+    "lng": -94.803970461742
+  },
+  "8844 W 95th St Overland Park, KS 66212 USA": {
+    "lat": 38.956725455813,
+    "lng": -94.687938241238
+  },
+  "5999 SW 22nd Park St Topeka, KS 66614 USA": {
+    "lat": 39.026121780186,
+    "lng": -95.762183344111
+  },
+  "150 S Rock Rd Wichita, KS 67207 USA": {
+    "lat": 37.685869880333,
+    "lng": -97.24441228065
+  },
+  "232 S West St Wichita, KS 67213 USA": {
+    "lat": 37.681523866149,
+    "lng": -97.389341667203
+  },
+  "1613 Greenup Ave Ashland, KY 41101-7615 USA": {
+    "lat": 38.479590992678,
+    "lng": -82.638529485618
+  },
+  "1527 US 31W Bypass Bowling Green, KY 42101 USA": {
+    "lat": 36.980643447468,
+    "lng": -86.446364876108
+  },
+  "3080 Richmond Rd., Suite 110 Lexington, KY 40509 USA": {
+    "lat": 38.003511427565,
+    "lng": -84.448569138945
+  },
+  "4604 Shepherdsville Rd Louisville, KY 40218 USA": {
+    "lat": 38.18340449626,
+    "lng": -85.659678974596
+  },
+  "812 Lyndon Lane, Suite 106 Lyndon, KY 40222 USA": {
+    "lat": 38.263442583274,
+    "lng": -85.608349041924
+  },
+  "600 E Main St, Ste 102 Louisville, KY 40202-1011 USA": {
+    "lat": 38.25494119246,
+    "lng": -85.741758188059
+  },
+  "8605 Haines Drive Florence, KY 41042 USA": {
+    "lat": 38.973403425414,
+    "lng": -84.664546345904
+  },
+  "8350 Florida Blvd, Ste A-1 Baton Rouge, LA 70806 USA": {
+    "lat": 30.451942319805,
+    "lng": -91.101335350911
+  },
+  "610 N Burnside Ave Gonzales, LA 70737 USA": {
+    "lat": 30.236410038912,
+    "lng": -90.920648355639
+  },
+  "11135 Industriplex Boulevard, Suite 800 Baton Rouge, LA 70809 USA": null,
+  "5421 Johnston St, Ste B Lafayette, LA 70503 USA": {
+    "lat": 30.181083538912,
+    "lng": -92.071455977358
+  },
+  "1721 W Sale Rd, Ste B Lake Charles, LA 70605-2521 USA": {
+    "lat": 30.183422751361,
+    "lng": -93.248404079388
+  },
+  "6601 Veterans Memorial Blvd Metairie, LA 70003 USA": {
+    "lat": 30.004953875149,
+    "lng": -90.212271975985
+  },
+  "3508 21st St Metairie, LA 70002 USA": {
+    "lat": 30.006006873202,
+    "lng": -90.159577661287
+  },
+  "5347 Tchoupitoulas St. New Orleans, LA 70115 USA": {
+    "lat": 29.916537891202,
+    "lng": -90.114542084642
+  },
+  "1914 E 70th St, Ste A Shreveport, LA 71105 USA": {
+    "lat": 32.443740247676,
+    "lng": -93.709825065129
+  },
+  "13413 Highway 90 Boutte, LA 70039-3007 USA": {
+    "lat": 29.901550126343,
+    "lng": -90.385965589913
+  },
+  "1812 Margaret Ave Annapolis, MD 21401-4108 USA": {
+    "lat": 38.976857386133,
+    "lng": -76.52238414758
+  },
+  "1589 Sulphur Spring Rd, Ste 107 Baltimore, MD 21227 USA": {
+    "lat": 39.248643322652,
+    "lng": -76.686183748494
+  },
+  "3 Bethesda Metro Center, Suite B002 Bethesda, MD 20814 USA": {
+    "lat": 38.984135081904,
+    "lng": -77.094469642621
+  },
+  "312 W Lombard St Baltimore, MD 21201 USA": {
+    "lat": 39.287640177222,
+    "lng": -76.619646663675
+  },
+  "6935 Oakland Mills Rd, Suite K Columbia, MD 21045 USA": {
+    "lat": 39.180879418245,
+    "lng": -76.82790749594
+  },
+  "4950 North Point Blvd Baltimore, MD 21219 USA": {
+    "lat": 39.241524486091,
+    "lng": -76.455321440254
+  },
+  "2190 Old Farm Drive, Unit E Frederick, MD 21702 USA": {
+    "lat": 39.443227970399,
+    "lng": -77.437046899198
+  },
+  "14300 Cherry Lane Court, Suite 212 Laurel, MD 20707 USA": {
+    "lat": 39.087482580333,
+    "lng": -76.855829554614
+  },
+  "1701 Midway Rd Odenton, MD 21113 USA": {
+    "lat": 39.108283499037,
+    "lng": -76.692833571494
+  },
+  "1 Easter Ct, Suite AB Owings Mills, MD 21117 USA": {
+    "lat": 39.420511891248,
+    "lng": -76.808076492251
+  },
+  "1518 York Rd Timonium, MD 21093 USA": {
+    "lat": 39.421606832513,
+    "lng": -76.61730635511
+  },
+  "413 Pulaski Hwy Joppa, MD 21085-3610 USA": {
+    "lat": 39.425673342637,
+    "lng": -76.36776096755
+  },
+  "1271 Washington Street, Unit #4 Hanover, MA 02339 USA": {
+    "lat": 42.139863060742,
+    "lng": -70.84267224507
+  },
+  "1211 Taft Street Rockville, MD 20850 USA": {
+    "lat": 39.093627987546,
+    "lng": -77.134099671297
+  },
+  "15 Kearney Rd Needham, MA 02494 USA": {
+    "lat": 42.306211339645,
+    "lng": -71.227730563405
+  },
+  "70 Quincy Ave Quincy, MA 02169-6714 USA": {
+    "lat": 42.243992602898,
+    "lng": -70.997831780349
+  },
+  "150 Highland Ave, Unit 3 Seekonk, MA 02771 USA": {
+    "lat": 41.804391893949,
+    "lng": -71.33922594487
+  },
+  "922 Main St. Waltham, MA 02451 USA": {
+    "lat": 42.376232170221,
+    "lng": -71.248131096291
+  },
+  "155A New Boston St Woburn, MA 01801 USA": {
+    "lat": 42.509604029033,
+    "lng": -71.143882108952
+  },
+  "120 Stafford St Worcester, MA 01603 USA": null,
+  "830 Phoenix Drive Ann Arbor, MI 48108 USA": {
+    "lat": 42.231026886753,
+    "lng": -83.726786057937
+  },
+  "3957 Baldwin Rd Auburn Hills, MI 48326-1220 USA": null,
+  "33322 Woodward Ave Birmingham, MI 48009 USA": {
+    "lat": 42.534070873169,
+    "lng": -83.201538753223
+  },
+  "533 W Grand River Ave Brighton, MI 48116-1143 USA": {
+    "lat": 42.533674463809,
+    "lng": -83.782681517016
+  },
+  "2431 4th St Detroit, MI 48201 USA": {
+    "lat": 42.336526784992,
+    "lng": -83.061768559385
+  },
+  "3582 29th St SE, Ste 101 Grand Rapids, MI 49512 USA": {
+    "lat": 42.909159182426,
+    "lng": -85.579168299903
+  },
+  "403 Balch St Kalamazoo, MI 49001 USA": {
+    "lat": 42.276030670617,
+    "lng": -85.587366614936
+  },
+  "406 E. Elm St Lansing, MI 48921 USA": {
+    "lat": 42.721833926174,
+    "lng": -84.546879878629
+  },
+  "3962 Dix Highway Lincoln Park, MI 48146 USA": {
+    "lat": 42.226464656093,
+    "lng": -83.194466070981
+  },
+  "11918 Farmington Rd Livonia, MI 48150 USA": {
+    "lat": 42.371401663339,
+    "lng": -83.372244392581
+  },
+  "15521 S Dixie Hwy Monroe, MI 48161 USA": {
+    "lat": 41.903423467407,
+    "lng": -83.408761031643
+  },
+  "2232 Crooks Road Rochester Hills, MI 48309 USA": {
+    "lat": 42.64871983177,
+    "lng": -83.17118736923
+  },
+  "22554 Telegraph Rd Southfield, MI 48033-4107 USA": {
+    "lat": 42.456105324838,
+    "lng": -83.278169149896
+  },
+  "38120 Van Dyke Ave. Sterling Heights, MI 48312 USA": {
+    "lat": 42.573829355399,
+    "lng": -83.02979839307
+  },
+  "1420 Trade Centre Dr Traverse City, MI 49696 USA": {
+    "lat": 44.713766587253,
+    "lng": -85.603203939836
+  },
+  "15903 Lincoln Street NE Ham Lake, MN 55304 USA": {
+    "lat": 45.25892526606,
+    "lng": -93.238129027078
+  },
+  "720 W 94th St Bloomington, MN 55420 USA": {
+    "lat": 44.833551510287,
+    "lng": -93.288938534432
+  },
+  "3270 W County Road 42 Burnsville, MN 55337 USA": {
+    "lat": 44.746309613683,
+    "lng": -93.318705366993
+  },
+  "110 S 8th St, Ste 101 Minneapolis, MN 55402-5786 USA": {
+    "lat": 44.975274827769,
+    "lng": -93.271468258011
+  },
+  "10340 Viking Dr, Ste 140 Eden Prairie, MN 55344 USA": {
+    "lat": 44.859777336187,
+    "lng": -93.409681140551
+  },
+  "5440 S Robert Trl Inver Grove Heights, MN 55077-1406 USA": {
+    "lat": 44.870320302266,
+    "lng": -93.080328218242
+  },
+  "300 Central Avenue Osseo, MN 55369 USA": {
+    "lat": 45.119316245482,
+    "lng": -93.402071536993
+  },
+  "2455 Xenium Ln N Plymouth, MN 55441-3625 USA": {
+    "lat": 45.006643526396,
+    "lng": -93.451560470833
+  },
+  "3717 Commercial Dr SW Rochester, MN 55902-1290 USA": {
+    "lat": 43.968191320702,
+    "lng": -92.463847604668
+  },
+  "2727 Lincoln Dr Roseville, MN 55113 USA": {
+    "lat": 45.023846846336,
+    "lng": -93.169135331097
+  },
+  "5708 W 36th St St Louis Park, MN 55416 USA": {
+    "lat": 44.937825586359,
+    "lng": -93.351736270447
+  },
+  "221 East 7th St St. Paul, MN 55101-2379 USA": null,
+  "2911 Clearwater Road St Cloud, MN 56301 USA": {
+    "lat": 45.522925084978,
+    "lng": -94.159127777876
+  },
+  "3590 Hoffman Road East White Bear Lake, MN 55110 USA": {
+    "lat": 45.050107485838,
+    "lng": -93.031530715376
+  },
+  "2902 Hardy St, Ste 60 Hattiesburg, MS 39401-7031 USA": {
+    "lat": 31.324697969317,
+    "lng": -89.332906325628
+  },
+  "1001 Fay St, Ste 101 Columbia, MO 65201 USA": {
+    "lat": 38.961107353667,
+    "lng": -92.322686278198
+  },
+  "70 Meramec Valley Plaza Dr Valley Park, MO 63088 USA": {
+    "lat": 38.54797350114,
+    "lng": -90.492576409629
+  },
+  "17331 E US Hwy 40, Ste 104 Independence, MO 64055 USA": {
+    "lat": 39.033950939883,
+    "lng": -94.376425380863
+  },
+  "5714 N Antioch Rd Gladstone, MO 64119 USA": {
+    "lat": 39.198098725911,
+    "lng": -94.548723019532
+  },
+  "1600 W 16th St Kansas City, MO 64102 USA": null,
+  "6293 Ronald Reagan Dr Lake St. Louis, MO 63367 USA": {
+    "lat": 38.76897739248,
+    "lng": -90.784802455073
+  },
+  "1163 SE Oldham Pkwy Lee's Summit, MO 64081 USA": {
+    "lat": 38.90196052511,
+    "lng": -94.345967133472
+  },
+  "3783 Rider Trail South Earth City, MO 63045 USA": {
+    "lat": 38.763666114316,
+    "lng": -90.473914760141
+  },
+  "650 East Battlefield, Ste A Springfield, MO 65807-4806 USA": {
+    "lat": 37.159917439735,
+    "lng": -93.287613191021
+  },
+  "3150 S Brentwood Blvd. St Louis, MO 63119 USA": {
+    "lat": 38.606367725097,
+    "lng": -90.350345459604
+  },
+  "2616 N Belt St Joseph, MO 64506 USA": {
+    "lat": 39.791174197622,
+    "lng": -94.809738302673
+  },
+  "3949 Lindell Blvd, Ste 2A Saint Louis, MO 63108-3251 USA": {
+    "lat": 38.63922266752,
+    "lng": -90.242063755365
+  },
+  "12325 Olive Blvd Saint Louis, MO 63141 USA": {
+    "lat": 38.673489696741,
+    "lng": -90.456116194722
+  },
+  "4101 Mexico Rd Saint Peters, MO 63376-6414 USA": {
+    "lat": 38.791070767045,
+    "lng": -90.57210422697
+  },
+  "10 Innovation Lane, Unit B Bozeman, MT 59718 USA": null,
+  "2600 16th Street Black Eagle, MT 59414 USA": {
+    "lat": 47.529421342872,
+    "lng": -111.280563373606
+  },
+  "2800 N Montana Ave Helena, MT 59601 USA": {
+    "lat": 46.612364493378,
+    "lng": -112.02091993502
+  },
+  "2825 Stockyard Rd, Ste F-5 Missoula, MT 59808 USA": {
+    "lat": 46.9010625722,
+    "lng": -114.034641173473
+  },
+  "803 Spokane Ave. Whitefish, MT 59937 USA": {
+    "lat": 48.404132483469,
+    "lng": -114.335166231979
+  },
+  "9620 M St Omaha, NE 68127 USA": {
+    "lat": 41.21155405959,
+    "lng": -96.062850844334
+  },
+  "751 N 114th St Omaha, NE 68154 USA": {
+    "lat": 41.265655570719,
+    "lng": -96.090893754618
+  },
+  "1331 W Warm Springs Rd, Ste 140 Henderson, NV 89014 USA": {
+    "lat": 36.056172660563,
+    "lng": -115.043229339829
+  },
+  "3973 S Maryland Pkwy, Ste B-109 Las Vegas, NV 89119 USA": {
+    "lat": 36.116535262375,
+    "lng": -115.137802879235
+  },
+  "6431 W Charleston Blvd, Ste 110 Las Vegas, NV 89146 USA": {
+    "lat": 36.159036563734,
+    "lng": -115.235507457931
+  },
+  "7145 W. Ann Road, Ste 110 Las Vegas, NV 89130 USA": {
+    "lat": 36.26305241775,
+    "lng": -115.24938228996
+  },
+  "123 FASTSIGNS Ave. North Las Vegas, NV 89086 USA": null,
+  "4750 Longley Ln, Ste 103 Reno, NV 89502-5981 USA": {
+    "lat": 39.486048347136,
+    "lng": -119.760694023256
+  },
+  "140 March Ave Manchester, NH 03103 USA": {
+    "lat": 42.960849250519,
+    "lng": -71.445197332626
+  },
+  "160 Plaistow Rd, Unit 15 Plaistow, NH 03865 USA": {
+    "lat": 42.849866613824,
+    "lng": -71.104101429515
+  },
+  "198 Fries Mill Rd, Suite 112 Turnersville, NJ 08012 USA": null,
+  "810 Broadway Bayonne, NJ 07002 USA": {
+    "lat": 40.674766158405,
+    "lng": -74.109010933083
+  },
+  "523 Hollywood Ave, Suite 102 Cherry Hill, NJ 08002 USA": {
+    "lat": 39.936825905678,
+    "lng": -75.037893924144
+  },
+  "285 State Route 18 East Brunswick, NJ 08816-1900 USA": {
+    "lat": 40.457266572925,
+    "lng": -74.401430531949
+  },
+  "50 Route 10 W East Hanover, NJ 07936 USA": {
+    "lat": 40.812073305567,
+    "lng": -74.388708197729
+  },
+  "1743 Route 88 West Brick, NJ 08724 USA": {
+    "lat": 40.069002518065,
+    "lng": -74.128873531731
+  },
+  "151 Industrial Way East Eatontown, NJ 07724 USA": {
+    "lat": 40.281438732662,
+    "lng": -74.042317853045
+  },
+  "485 Route 1 Edison, NJ 08817 USA": null,
+  "1 State Highway 12, Ste 104 Flemington, NJ 08822 USA": {
+    "lat": 40.502643847517,
+    "lng": -74.854252062032
+  },
+  "187 US Highway 46 W Lodi, NJ 07644 USA": {
+    "lat": 40.87527373685,
+    "lng": -74.070478756601
+  },
+  "3121 Rt 73 South Maple Shade, NJ 08052-1063 USA": {
+    "lat": 39.969376982985,
+    "lng": -75.00479856061
+  },
+  "12 E Stow Rd, Ste 130 Marlton, NJ 08053-3163 USA": {
+    "lat": 39.913360283179,
+    "lng": -74.929715530854
+  },
+  "2901 Brunswick Pike Lawrenceville, NJ 08648 USA": {
+    "lat": 40.27326623776,
+    "lng": -74.708556729897
+  },
+  "480 Hwy 33 W, Ste 5-6 Millstone Township, NJ 08535 USA": {
+    "lat": 40.259506790152,
+    "lng": -74.403210406131
+  },
+  "210 Market St Newark, NJ 07102 USA": {
+    "lat": 40.734883695822,
+    "lng": -74.169979942799
+  },
+  "9 State Hwy 206 S Raritan, NJ 08869 USA": {
+    "lat": 40.570323398753,
+    "lng": -74.625879755145
+  },
+  "476 Route 35, Union Square Shopping Center Red Bank, NJ 07701 USA": null,
+  "255 State Route 3 E Secaucus, NJ 07094 USA": null,
+  "3885 Route 27, Suite 150A Princeton, NJ 08540 USA": {
+    "lat": 40.416415626473,
+    "lng": -74.586073068615
+  },
+  "367 Chestnut St. Union, NJ 07083 USA": {
+    "lat": 40.679465941987,
+    "lng": -74.26817419268
+  },
+  "346 State Route 17 North Saddle River, NJ 07458 USA": {
+    "lat": 41.05207268802,
+    "lng": -74.118779880406
+  },
+  "1392 St. Georges Avenue Avenel, NJ 07001 USA": {
+    "lat": 40.586357348766,
+    "lng": -74.291831125303
+  },
+  "407 Second St SW Albuquerque, NM 87102 USA": {
+    "lat": 35.0811903131,
+    "lng": -106.649862438454
+  },
+  "1529 Eubank Blvd NE, Ste F Albuquerque, NM 87112 USA": {
+    "lat": 35.096813709279,
+    "lng": -106.532830804072
+  },
+  "9664 Eagle Ranch Road NW, Suite 6 Albuquerque, NM 87114 USA": {
+    "lat": 35.187837784605,
+    "lng": -106.665978102161
+  },
+  "736 East Main Farmington, NM 87401 USA": {
+    "lat": 36.732694482573,
+    "lng": -108.193884739413
+  },
+  "720 Saint Michaels Dr, Unit 2-I Santa Fe, NM 87505 USA": {
+    "lat": 35.659263679108,
+    "lng": -105.96023178504
+  },
+  "New York, NY 10016 USA": null,
+  "New Rochelle, NY 10801 USA": null,
+  "3917 15th Ave Brooklyn, NY 11218 USA": {
+    "lat": 40.63780486685,
+    "lng": -73.981951084159
+  },
+  "80 McGuiness Blvd - South Brooklyn, NY 11222 USA": null,
+  "123 FASTSIGNS Ave. Brooklyn, NY 11220 USA": null,
+  "1065 Islip Ave Central Islip, NY 11722 USA": {
+    "lat": 40.767091949693,
+    "lng": -73.210739243819
+  },
+  "4913 Genesee St Cheektowaga, NY 14225-2411 USA": {
+    "lat": 42.936781794726,
+    "lng": -78.705401798682
+  },
+  "1593 Central Ave Colonie, NY 12205 USA": {
+    "lat": 42.717269282518,
+    "lng": -73.832383115017
+  },
+  "88-16 77th Ave Glendale, NY 11385 USA": {
+    "lat": 40.706497893718,
+    "lng": -73.861331080864
+  },
+  "921 Lincoln Avenue, Suite 6 Holbrook, NY 11741 USA": {
+    "lat": 40.771789116061,
+    "lng": -73.083184083519
+  },
+  "520 Albany Ave Kingston, NY 12401 USA": {
+    "lat": 41.943141446204,
+    "lng": -73.997830792681
+  },
+  "196 West Sunrise Highway Lindenhurst, NY 11757 USA": {
+    "lat": 40.694220830527,
+    "lng": -73.392162526509
+  },
+  "504 LaGuardia Place New York, NY 10012 USA": {
+    "lat": 40.727929303864,
+    "lng": -73.999165540955
+  },
+  "260 W 35th St, Ste 300 New York, NY 10001-2526 USA": {
+    "lat": 40.752335249523,
+    "lng": -73.991898374039
+  },
+  "153 West 27th Street, 3rd Floor New York, NY 10001 USA": {
+    "lat": 40.746126271288,
+    "lng": -73.992487757417
+  },
+  "400 Hempstead Turnpike West Hempstead, NY 11552 USA": {
+    "lat": 40.705229029584,
+    "lng": -73.65394421169
+  },
+  "1800 Brighton-Henrietta Townline Rd Rochester, NY 14623 USA": {
+    "lat": 43.094194316019,
+    "lng": -77.629877432102
+  },
+  "40 Plaza Rd., Ste 113 Saratoga Springs, NY 12866 USA": null,
+  "3801 Victory Blvd, Ste E Staten Island, NY 10314 USA": {
+    "lat": 40.596737663699,
+    "lng": -74.182665892175
+  },
+  "1401 Erie Blvd East, Suite 3 Syracuse, NY 13210 USA": {
+    "lat": 43.050452874561,
+    "lng": -76.12752746917
+  },
+  "1839 South Rd, Ste 2B Wappingers Falls, NY 12590 USA": {
+    "lat": 41.614631412319,
+    "lng": -73.914707244375
+  },
+  "11109 Rockaway Blvd South Ozone Park, NY 11420 USA": {
+    "lat": 40.677530493311,
+    "lng": -73.827425910877
+  },
+  "46A Kean Street West Babylon, NY 11704 USA": {
+    "lat": 40.735481866646,
+    "lng": -73.379224004247
+  },
+  "77 Lafayette Ave White Plains, NY 10603-1064 USA": {
+    "lat": 41.062655739447,
+    "lng": -73.772633886455
+  },
+  "1202 Patton Ave Asheville, NC 28806 USA": {
+    "lat": 35.586419671527,
+    "lng": -82.599387253882
+  },
+  "481 James Jackson Ave Cary, NC 27513 USA": {
+    "lat": 35.798652686776,
+    "lng": -78.810845508359
+  },
+  "2905 Queen City Drive, Suite F Charlotte, NC 28208 USA": {
+    "lat": 35.238809612177,
+    "lng": -80.913634845905
+  },
+  "4845-B E Independence Blvd Charlotte, NC 28212 USA": {
+    "lat": 35.192061378805,
+    "lng": -80.763835705809
+  },
+  "7407 N. Tryon St. Charlotte, NC 28262 USA": {
+    "lat": 35.288706743774,
+    "lng": -80.759110084161
+  },
+  "7510 Pineville-Matthews Rd., Ste 8A Charlotte, NC 28226 USA": {
+    "lat": 35.087806638342,
+    "lng": -80.845541736684
+  },
+  "3400 South Tryon St, Ste A Charlotte, NC 28217-1314 USA": {
+    "lat": 35.197229421497,
+    "lng": -80.876235510658
+  },
+  "147 Union St S Concord, NC 28025 USA": {
+    "lat": 35.407700034097,
+    "lng": -80.578002357677
+  },
+  "700 Ramsey St Fayetteville, NC 28301 USA": {
+    "lat": 35.063326067125,
+    "lng": -78.878003538346
+  },
+  "4015 University Dr, Ste D2 Durham, NC 27707-2548 USA": {
+    "lat": 35.965873250005,
+    "lng": -78.955478904481
+  },
+  "1432 Garner Station Blvd Raleigh, NC 27603-3600 USA": {
+    "lat": 35.724885027847,
+    "lng": -78.652658767854
+  },
+  "1409 E Franklin Blvd Gastonia, NC 28054 USA": {
+    "lat": 35.262207540956,
+    "lng": -81.15549633438
+  },
+  "1305 N Main St High Point, NC 27262 USA": {
+    "lat": 35.971813263583,
+    "lng": -80.01679205226
+  },
+  "2294 County Home Rd, Ste A Greenville, NC 27858-7932 USA": {
+    "lat": 35.561098500344,
+    "lng": -77.355085055949
+  },
+  "14229 Reese Blvd W Ste B1 Huntersville, NC 28078 USA": {
+    "lat": 35.407599468968,
+    "lng": -80.862898959681
+  },
+  "2336 Concord Hwy Monroe, NC 28110 USA": {
+    "lat": 35.014545369841,
+    "lng": -80.542944649599
+  },
+  "119 Midnight Lane Mooresville, NC 28117 USA": {
+    "lat": 35.598294922875,
+    "lng": -80.863756833899
+  },
+  "2621 Spring Forest Rd Raleigh, NC 27616 USA": {
+    "lat": 35.859244860905,
+    "lng": -78.595967016326
+  },
+  "4305 Oleander Dr Wilmington, NC 28403-5007 USA": {
+    "lat": 34.210854875017,
+    "lng": -77.889845215797
+  },
+  "1783 Brittain Rd Akron, OH 44310 USA": {
+    "lat": 41.110711620589,
+    "lng": -81.466006397199
+  },
+  "5221 Northfield Rd, Ste 1 Bedford Heights, OH 44146 USA": null,
+  "11109 Kenwood Rd Blue Ash, OH 45242 USA": {
+    "lat": 39.266156218229,
+    "lng": -84.37365783331
+  },
+  "1100 W Royalton Rd, Ste A Broadview Heights, OH 44147-3947 USA": {
+    "lat": 41.31386523873,
+    "lng": -81.6876724133
+  },
+  "2417 Tuscarawas St W Canton, OH 44708-4739 USA": {
+    "lat": 40.799334272789,
+    "lng": -81.401607254456
+  },
+  "7219 Whipple Ave NW North Canton, OH 44720 USA": {
+    "lat": 40.885415702485,
+    "lng": -81.422902803836
+  },
+  "3111 W Galbraith Rd Cincinnati, OH 45239 USA": {
+    "lat": 39.219908044999,
+    "lng": -84.585109426228
+  },
+  "3248 Highland Ave Cincinnati, OH 45213 USA": {
+    "lat": 39.167560729101,
+    "lng": -84.42853676294
+  },
+  "12125 Montgomery Rd Cincinnati, OH 45249 USA": {
+    "lat": 39.28995098576,
+    "lng": -84.30022508193
+  },
+  "111 W Nationwide Blvd, Ste 3 Columbus, OH 43215-2547 USA": {
+    "lat": 39.968567679014,
+    "lng": -83.00497884967
+  },
+  "6020 N Dixie Dr Dayton, OH 45414 USA": {
+    "lat": 39.823741397938,
+    "lng": -84.198239461533
+  },
+  "3979 Indian Ripple Rd, Unit H Beavercreek, OH 45440-5107 USA": {
+    "lat": 39.695023109439,
+    "lng": -84.084229671273
+  },
+  "6212 Executive Blvd Dayton, OH 45424 USA": {
+    "lat": 39.870044726519,
+    "lng": -84.118388777521
+  },
+  "120 W. 7th St. Cincinnati, OH 45202 USA": {
+    "lat": 39.103453552266,
+    "lng": -84.515632750473
+  },
+  "2102 St Clair Ave Cleveland, OH 44114 USA": {
+    "lat": 41.508984265781,
+    "lng": -81.679763081433
+  },
+  "978 Miamisburg Centerville Rd Dayton, OH 45459 USA": {
+    "lat": 39.627459313933,
+    "lng": -84.18683525086
+  },
+  "2829 Festival Ln Dublin, OH 43017 USA": {
+    "lat": 40.092613258187,
+    "lng": -83.090783069472
+  },
+  "6560 Dixie Hwy, Ste E Fairfield, OH 45014 USA": {
+    "lat": 39.320246149775,
+    "lng": -84.498821307004
+  },
+  "303 E Sandusky St Findlay, OH 45840 USA": {
+    "lat": 41.036938905106,
+    "lng": -83.645820722107
+  },
+  "2155 Elida Rd Lima, OH 45805 USA": {
+    "lat": 40.760695448059,
+    "lng": -84.144780096377
+  },
+  "4440 Reynolds Dr, # 101 Hilliard, OH 43026 USA": {
+    "lat": 40.039152529251,
+    "lng": -83.136057496392
+  },
+  "5369 Mayfield Rd Lyndhurst, OH 44124 USA": {
+    "lat": 41.520010191484,
+    "lng": -81.486241719929
+  },
+  "314 W Dussel Dr Maumee, OH 43537-1671 USA": {
+    "lat": 41.582119961178,
+    "lng": -83.674101386807
+  },
+  "2755 Medina Road Medina, OH 44256 USA": {
+    "lat": 41.136251728054,
+    "lng": -81.786549314737
+  },
+  "7896 Tyler Blvd Mentor, OH 44060 USA": {
+    "lat": 41.679287681574,
+    "lng": -81.358785696275
+  },
+  "24181 Lorain Rd North Olmsted, OH 44070 USA": {
+    "lat": 41.428802271632,
+    "lng": -81.890045237385
+  },
+  "201 Clint Dr, Suite 500 Pickerington, OH 43147-7876 USA": {
+    "lat": 39.920199083931,
+    "lng": -82.781166712185
+  },
+  "12245 Pearl Rd Strongsville, OH 44136-3410 USA": {
+    "lat": 41.32341286643,
+    "lng": -81.836493914209
+  },
+  "1012 N McCord Rd Toledo, OH 43615 USA": {
+    "lat": 41.65174624138,
+    "lng": -83.70357472473
+  },
+  "8900 Darrow Rd, Suite H101 Twinsburg, OH 44087 USA": {
+    "lat": 41.308492047114,
+    "lng": -81.440330185508
+  },
+  "654A Brooksedge Blvd Westerville, OH 43081 USA": {
+    "lat": 40.108230516073,
+    "lng": -82.930686956346
+  },
+  "7340 Market St Boardman, OH 44512 USA": {
+    "lat": 41.022915301356,
+    "lng": -80.662815609671
+  },
+  "927 N Elm Pl Broken Arrow, OK 74012 USA": {
+    "lat": 36.061299496366,
+    "lng": -95.797366129954
+  },
+  "301 SE Wallock St Lawton, OK 73501 USA": null,
+  "2990 SE 19th Street, Suite 7 Moore, OK 73160 USA": {
+    "lat": 35.319662187709,
+    "lng": -97.443066343915
+  },
+  "900 24th Ave NW, Ste 2 Norman, OK 73069 USA": {
+    "lat": 35.229351053702,
+    "lng": -97.480433950147
+  },
+  "4419 SW 21st St Oklahoma City, OK 73108 USA": {
+    "lat": 35.443415058191,
+    "lng": -97.599722272705
+  },
+  "8751 N 117th East Ave, Ste D Owasso, OK 74055 USA": {
+    "lat": 36.27936244908,
+    "lng": -95.843612066386
+  },
+  "4727-A S. Memorial Dr Tulsa, OK 74145 USA": {
+    "lat": 36.095912688442,
+    "lng": -95.88647404828
+  },
+  "20332 Empire Avenue, Suite #F2 Bend, OR 97701 USA": {
+    "lat": 44.091216655662,
+    "lng": -121.307681683328
+  },
+  "12700 SW Canyon Rd Beaverton, OR 97005 USA": {
+    "lat": 45.488268088444,
+    "lng": -122.807374114228
+  },
+  "475 W. 5th Ave Eugene, OR 97401 USA": {
+    "lat": 44.054398440223,
+    "lng": -123.099409039859
+  },
+  "10309 SE 82nd Ave, Ste C Happy Valley, OR 97086-2309 USA": {
+    "lat": 45.448634674769,
+    "lng": -122.578988233837
+  },
+  "3259 NW 29th Ave Portland, OR 97210-1711 USA": {
+    "lat": 45.546205558564,
+    "lng": -122.71099499737
+  },
+  "2290 Commercial St SE, Ste 101 Salem, OR 97302 USA": {
+    "lat": 44.919260355132,
+    "lng": -123.04466347043
+  },
+  "15889 S.W. 72nd Ave Portland, OR 97224 USA": {
+    "lat": 45.405322187375,
+    "lng": -122.749064641292
+  },
+  "396 Schantz Rd. Allentown, PA 18104 USA": {
+    "lat": 40.574244272427,
+    "lng": -75.55351849981
+  },
+  "1940 Main Ave Conshohocken, PA 19428 USA": {
+    "lat": 40.096840374742,
+    "lng": -75.292486402566
+  },
+  "826 N Easton Rd Doylestown, PA 18902 USA": {
+    "lat": 40.33412124797,
+    "lng": -75.129758064802
+  },
+  "East Norriton, PA 19401 USA": null,
+  "10 Hilton Street Easton, PA 18042 USA": {
+    "lat": 40.670652104462,
+    "lng": -75.220078250818
+  },
+  "307 E Lincoln Hwy Exton, PA 19341 USA": {
+    "lat": 40.029484463013,
+    "lng": -75.614930964685
+  },
+  "436 W 12th St Erie, PA 16501-1506 USA": {
+    "lat": 42.120076502806,
+    "lng": -80.090698103353
+  },
+  "463 S Oxford Valley Rd Fairless Hills, PA 19030-4202 USA": {
+    "lat": 40.169183237154,
+    "lng": -74.85005090992
+  },
+  "20 Commerce Ave Greencastle, PA 17225 USA": {
+    "lat": 39.767107218322,
+    "lng": -77.728629171686
+  },
+  "6150 Route 30 W, Suite 500 Greensburg, PA 15601 USA": {
+    "lat": 40.304940743493,
+    "lng": -79.58702245028
+  },
+  "500 Colonial Rd Harrisburg, PA 17112 USA": {
+    "lat": 40.306612151367,
+    "lng": -76.823442656811
+  },
+  "1811 Rohrerstown Rd., Suite 2 Lancaster, PA 17601 USA": {
+    "lat": 40.09028979728,
+    "lng": -76.355824688631
+  },
+  "921 Montgomery Ave Narberth, PA 19072 USA": {
+    "lat": 40.011461860247,
+    "lng": -75.260259493517
+  },
+  "110 W McMurray Rd McMurray, PA 15317-2496 USA": {
+    "lat": 40.273207077675,
+    "lng": -80.127342250391
+  },
+  "110 South Sporting Hill Rd., Ste 500 Mechanicsburg, PA 17050 USA": {
+    "lat": 40.234907708056,
+    "lng": -76.9719371725
+  },
+  "4400 Old William Penn Highway, Ste 106 Monroeville, PA 15146 USA": {
+    "lat": 40.445422069942,
+    "lng": -79.765115821339
+  },
+  "724 Bethlehem Pike Montgomeryville, PA 18936 USA": {
+    "lat": 40.258176808338,
+    "lng": -75.248326151806
+  },
+  "1701 Welsh Rd, Unit 3 Philadelphia, PA 19115-3172 USA": null,
+  "200 N 16th Street Philadelphia, PA 19102 USA": {
+    "lat": 39.956701358568,
+    "lng": -75.166056266295
+  },
+  "257 Schuylkill Rd Phoenixville, PA 19460-1879 USA": {
+    "lat": 40.135365696591,
+    "lng": -75.541791118945
+  },
+  "150 Lake Drive Wexford, PA 15090 USA": {
+    "lat": 40.617009214182,
+    "lng": -80.053256652321
+  },
+  "2831 Banksville Rd Pittsburgh, PA 15216 USA": {
+    "lat": 40.405874496438,
+    "lng": -80.03626815282
+  },
+  "7425 Washington Ave Pittsburgh, PA 15218 USA": {
+    "lat": 40.420233480457,
+    "lng": -79.888762666139
+  },
+  "180 Shoemaker Rd, Unit B Pottstown, PA 19464 USA": {
+    "lat": 40.253082913145,
+    "lng": -75.659111281069
+  },
+  "205 Scranton Carbondale Hwy Scranton, PA 18508 USA": {
+    "lat": 41.460493159484,
+    "lng": -75.657695099278
+  },
+  "Spirk - Butler, PA 16001 USA": null,
+  "123 FASTSIGNS Ave. South Hills/Brentwood, PA 15216 USA": null,
+  "164 Baltimore Pike Springfield, PA 19064 USA": {
+    "lat": 39.923482722004,
+    "lng": -75.315035190486
+  },
+  "140 Morgantown St. Uniontown, PA 15401 USA": {
+    "lat": 39.897339117874,
+    "lng": -79.72974857729
+  },
+  "66 Mall Pkwy Muncy, PA 17756 USA": {
+    "lat": 41.238633922517,
+    "lng": -76.829241940426
+  },
+  "707 Easton Rd Willow Grove, PA 19090-2003 USA": {
+    "lat": 40.150908792852,
+    "lng": -75.120574414812
+  },
+  "100 Leader Heights Rd York, PA 17403 USA": {
+    "lat": 39.909601707052,
+    "lng": -76.7080746727
+  },
+  "Ave Degetau D-8 Caguas, PR 00725 USA": {
+    "lat": 18.222580298064,
+    "lng": -66.039461154854
+  },
+  "677 Kidder St, Ste B Wilkes Barre, PA 18702 USA": {
+    "lat": 41.251015750372,
+    "lng": -75.851427701385
+  },
+  "3000 Ave Roberto Sanchez Vilella, Ste 2 Carolina, PR 00983 USA": null,
+  "Carretera #2 , #136 Guaynabo, PR 00966 USA": null,
+  "PR-183 Km. 20.60, Intersection PR-917 Bo. Montones GF-4 Las Piedras, PR 00771 USA": null,
+  "3501 Clemson Blvd, Suite 6 Anderson, SC 29621 USA": {
+    "lat": 34.549460900011,
+    "lng": -82.674381648388
+  },
+  "2467 Savannah Hwy, Suite 540 Charleston, SC 29414 USA": {
+    "lat": 32.792973189509,
+    "lng": -80.051560047248
+  },
+  "2569 Whiskey Rd Aiken, SC 29803 USA": {
+    "lat": 33.505851358943,
+    "lng": -81.709670865217
+  },
+  "252A Harbison Blvd Columbia, SC 29212 USA": {
+    "lat": 34.072137813268,
+    "lng": -81.159658058817
+  },
+  "7124 Two Notch Rd Columbia, SC 29223 USA": {
+    "lat": 34.063964558043,
+    "lng": -80.958017598021
+  },
+  "717 Airport Rd Greenville, SC 29607-2618 USA": null,
+  "157 William Hilton Pkwy Hilton Head Island, SC 29926 USA": {
+    "lat": 32.216278152287,
+    "lng": -80.751633427025
+  },
+  "1110 Clarity Rd Mt. Pleasant, SC 29464 USA": null,
+  "685 Robert M Grissom Pkwy Myrtle Beach, SC 29577 USA": {
+    "lat": 33.70281182506,
+    "lng": -78.900084273529
+  },
+  "2080 Northbrook Blvd, Unit A Charleston, SC 29406 USA": {
+    "lat": 32.949014797493,
+    "lng": -80.041028226744
+  },
+  "2117 Farlow Street Rock Hill, SC 29732 USA": {
+    "lat": 34.964287236412,
+    "lng": -81.001924487722
+  },
+  "700 N Western Ave Sioux Falls, SD 57104-2031 USA": {
+    "lat": 43.555569944612,
+    "lng": -96.751144057219
+  },
+  "220 E Henry St Spartanburg, SC 29306 USA": {
+    "lat": 34.947613303997,
+    "lng": -81.925542430953
+  },
+  "3081 Lois Lane Alcoa, TN 37701 USA": {
+    "lat": 35.827724607841,
+    "lng": -83.976552161571
+  },
+  "1945 Mallory Ln, Ste 165 Franklin, TN 37067-2839 USA": {
+    "lat": 35.954447990404,
+    "lng": -86.81778159428
+  },
+  "3763 Powers Ct Chattanooga, TN 37416 USA": {
+    "lat": 35.073263101226,
+    "lng": -85.196237843864
+  },
+  "119 West Dunbar Cave Road Clarksville, TN 37040 USA": {
+    "lat": 36.55523131744,
+    "lng": -87.325655373083
+  },
+  "220-B Rotary Centennial Drive Cookeville, TN 38501 USA": null,
+  "112 Saundersville Rd, Ste C-302 Hendersonville, TN 37075 USA": {
+    "lat": 36.326486951565,
+    "lng": -86.593494298645
+  },
+  "2708 N Roan St Johnson City, TN 37601 USA": {
+    "lat": 36.354760069636,
+    "lng": -82.382347224241
+  },
+  "8333 Gleason Dr Knoxville, TN 37919-5440 USA": {
+    "lat": 35.917283489063,
+    "lng": -84.055104543967
+  },
+  "16 N Mclean Blvd Memphis, TN 38104 USA": {
+    "lat": 35.13810416461,
+    "lng": -89.999531548633
+  },
+  "834 Mount Moriah Rd Memphis, TN 38117 USA": {
+    "lat": 35.108277748275,
+    "lng": -89.895265379753
+  },
+  "410 W Burton St Murfreesboro, TN 37130-3605 USA": {
+    "lat": 35.849510186744,
+    "lng": -86.394746274226
+  },
+  "2010 Glen Echo Rd Nashville, TN 37215 USA": {
+    "lat": 36.108410298538,
+    "lng": -86.810949391548
+  },
+  "604 Gallatin Ave, Ste 104 Nashville, TN 37206-3237 USA": {
+    "lat": 36.182271164873,
+    "lng": -86.749092940997
+  },
+  "5504 Old Hickory Blvd Hermitage, TN 37076 USA": {
+    "lat": 36.182155068696,
+    "lng": -86.60788976339
+  },
+  "250 Middle Creek Rd, Suite 1 Sevierville, TN 37862 USA": {
+    "lat": 35.861552598152,
+    "lng": -83.54605820652
+  },
+  "2009 RR 620 N, Suite 720 Lakeway, TX 78734 USA": {
+    "lat": 30.356434341424,
+    "lng": -97.973840736577
+  },
+  "15932 Cypress North, Houston Rd Cypress, TX 77429 USA": null,
+  "16220 North Freeway Houston, TX 77090-3517 USA": {
+    "lat": 30.00100784235,
+    "lng": -95.425525711636
+  },
+  "604A N Central Expy Allen, TX 75013-1559 USA": {
+    "lat": 33.110021437625,
+    "lng": -96.673827063124
+  },
+  "2921 I-40 W, Ste 500 Amarillo, TX 79109 USA": null,
+  "13497 US-183 #301 Austin, TX 78750 USA": null,
+  "8820 Burnet Rd, Ste 504 Austin, TX 78757 USA": {
+    "lat": 30.370335954936,
+    "lng": -97.727126969417
+  },
+  "2815 Guadalupe St Austin, TX 78705 USA": {
+    "lat": 30.294167713801,
+    "lng": -97.742141853602
+  },
+  "4108 N. Dowlen Beaumont, TX 77706 USA": {
+    "lat": 30.119228201028,
+    "lng": -94.167258653217
+  },
+  "4806 A I-10 East Fwy Baytown, TX 77521 USA": {
+    "lat": 29.803752819332,
+    "lng": -94.985234640511
+  },
+  "2717 E Belt Line Rd, Ste 113 Carrollton, TX 75006 USA": {
+    "lat": 32.953338653597,
+    "lng": -96.859781662918
+  },
+  "404 University Dr E, Ste C College Station, TX 77840 USA": {
+    "lat": 30.630848480282,
+    "lng": -96.331488566756
+  },
+  "1151 N Loop 336 E Conroe, TX 77301 USA": {
+    "lat": 30.339992813822,
+    "lng": -95.438816734461
+  },
+  "1220 Airline Rd, Ste 170 Corpus Christi, TX 78412 USA": {
+    "lat": 27.709411518443,
+    "lng": -97.362505540139
+  },
+  "10225 N Central Expy Dallas, TX 75231 USA": {
+    "lat": 32.8799085949,
+    "lng": -96.7707787006
+  },
+  "701 Commerce St, Ste 100B Dallas, TX 75202 USA": {
+    "lat": 32.778506964494,
+    "lng": -96.805815082114
+  },
+  "1555 Prudential Dr Dallas, TX 75235-4111 USA": {
+    "lat": 32.824041552844,
+    "lng": -96.859749279474
+  },
+  "5409 N Jim Miller Rd, Ste 201 Dallas, TX 75227-1500 USA": {
+    "lat": 32.789871020374,
+    "lng": -96.700192209158
+  },
+  "9742 Skillman Dallas, TX 75243 USA": {
+    "lat": 32.908666563539,
+    "lng": -96.705830688827
+  },
+  "2629 Oak Lawn Ave Dallas, TX 75219 USA": {
+    "lat": 32.80556882608,
+    "lng": -96.812724557254
+  },
+  "6940 Marvin D Love Fwy Dallas, TX 75237 USA": {
+    "lat": 32.667396995738,
+    "lng": -96.864577289625
+  },
+  "1417 N Cockrell Hill Rd, Ste 104 Dallas, TX 75211-1308 USA": {
+    "lat": 32.726280548073,
+    "lng": -96.891560345834
+  },
+  "3401 E. University, #301 Denton, TX 76208 USA": {
+    "lat": 33.233880956543,
+    "lng": -97.084361298774
+  },
+  "4714 Greenville Ave Dallas, TX 75206 USA": {
+    "lat": 32.844849889122,
+    "lng": -96.76992678035
+  },
+  "1201 Airway, Ste D3 El Paso, TX 79925 USA": {
+    "lat": 31.782206705231,
+    "lng": -106.39442789323
+  },
+  "1355 George Dieter Dr, Bldg A Ste 103 El Paso, TX 79936-7410 USA": {
+    "lat": 31.72834677141,
+    "lng": -106.302997200046
+  },
+  "4224 N Mesa, Ste F El Paso, TX 79902 USA": {
+    "lat": 31.795607218634,
+    "lng": -106.510953298254
+  },
+  "2400 Westport Parkway, Ste 900 Fort Worth, TX 76177 USA": {
+    "lat": 32.972120953296,
+    "lng": -97.312316037892
+  },
+  "5925 Camp Bowie Blvd Fort Worth, TX 76107 USA": {
+    "lat": 32.729981849033,
+    "lng": -97.412109888774
+  },
+  "2603 8th Ave, Ste 109 Fort Worth, TX 76110 USA": {
+    "lat": 32.714233605003,
+    "lng": -97.343703743843
+  },
+  "4901 S Hulen St Fort Worth, TX 76132 USA": {
+    "lat": 32.676268492336,
+    "lng": -97.396463784539
+  },
+  "9411 Preston Rd, Ste 105 Frisco, TX 75033 USA": {
+    "lat": 33.155051567498,
+    "lng": -96.803430147656
+  },
+  "1021 61st St, Ste 600-B Galveston, TX 77551 USA": {
+    "lat": 29.287871927992,
+    "lng": -94.837667603137
+  },
+  "5255 N President George Bush Hwy, Ste 300 Garland, TX 75040 USA": null,
+  "505 W University Ave., Suite G Georgetown, TX 78626 USA": {
+    "lat": 30.633270004488,
+    "lng": -97.680811450108
+  },
+  "2116 E US Highway 377 Granbury, TX 76049-5917 USA": null,
+  "217 W Main St Grand Prairie, TX 75050 USA": {
+    "lat": 32.745353379032,
+    "lng": -97.005898973506
+  },
+  "1009 S 77 Sunshine Strip Harlingen, TX 78550 USA": {
+    "lat": 26.18411161205,
+    "lng": -97.680050721956
+  },
+  "11430 East Fwy, Ste 304 Jacinto City, TX 77029 USA": {
+    "lat": 29.772124833694,
+    "lng": -95.230446075329
+  },
+  "9612 Highway 6, Ste 130 Missouri City, TX 77459-5153 USA": null,
+  "6115 Westheimer Houston, TX 77057 USA": {
+    "lat": 29.737614910911,
+    "lng": -95.490326962547
+  },
+  "12817-D Gulf Fwy Houston, TX 77034 USA": {
+    "lat": 29.615221158187,
+    "lng": -95.214446211242
+  },
+  "2929A Milam St Houston, TX 77006 USA": {
+    "lat": 29.7443069829,
+    "lng": -95.377417328814
+  },
+  "10622 Northwest Fwy Houston, TX 77092 USA": {
+    "lat": 29.812855871101,
+    "lng": -95.460891447793
+  },
+  "11003 Antoine Dr, Suite J Houston, TX 77086 USA": {
+    "lat": 29.935902356045,
+    "lng": -95.48330590414
+  },
+  "9020 Kirby Dr Houston, TX 77054 USA": {
+    "lat": 29.672804021828,
+    "lng": -95.412283927908
+  },
+  "8373 Southwest Fwy Houston, TX 77074 USA": {
+    "lat": 29.688209478233,
+    "lng": -95.529940472097
+  },
+  "946 N Shepherd Dr, Ste C Houston, TX 77008 USA": {
+    "lat": 29.788298142284,
+    "lng": -95.409778696359
+  },
+  "3895 Southwest Fwy, Ste A Houston, TX 77027-7515 USA": {
+    "lat": 29.728518101935,
+    "lng": -95.43940271308
+  },
+  "2535 Blue Willow Dr Houston, TX 77042 USA": {
+    "lat": 29.737719585672,
+    "lng": -95.563066813079
+  },
+  "258 FM 1960 E, Ste A Humble, TX 77338 USA": null,
+  "4070 N. Belt Line Road, Suite 156 Irving, TX 75038 USA": {
+    "lat": 32.863719903781,
+    "lng": -96.991665696796
+  },
+  "22511 Katy Fwy Katy, TX 77450 USA": {
+    "lat": 29.784906515592,
+    "lng": -95.763356425274
+  },
+  "507 Priest Dr Killeen, TX 76541 USA": {
+    "lat": 31.114843438324,
+    "lng": -97.735599516185
+  },
+  "15441 Ronald Reagan Blvd, Bldg 2 Leander, TX 78641 USA": {
+    "lat": 30.562662103732,
+    "lng": -97.80002422506
+  },
+  "1306 W. Main St. Lewisville, TX 75067 USA": {
+    "lat": 33.042051914666,
+    "lng": -97.027569929301
+  },
+  "128 Beechwood Dr Longview, TX 75605-0011 USA": null,
+  "4825 50th, #B Lubbock, TX 79414 USA": {
+    "lat": 33.548704862154,
+    "lng": -101.914321764208
+  },
+  "3900 N 23rd St McAllen, TX 78501 USA": {
+    "lat": 26.239919956828,
+    "lng": -98.239433911471
+  },
+  "401 S Central Expy, Ste 101 McKinney, TX 75070 USA": {
+    "lat": 33.195286976813,
+    "lng": -96.638561753451
+  },
+  "1765 N Town East Blvd, Ste 153 Mesquite, TX 75150 USA": {
+    "lat": 32.8104881524,
+    "lng": -96.626013475455
+  },
+  "3504 W. Wall Street, Suite A Midland, TX 79701 USA": {
+    "lat": 31.981896941387,
+    "lng": -102.110226745472
+  },
+  "1415 S Highway 69 Nederland, TX 77627 USA": {
+    "lat": 29.965419233879,
+    "lng": -94.018807324809
+  },
+  "1671 S IH35, Ste 306 New Braunfels, TX 78130-6823 USA": null,
+  "2131 N Collins St, Unit 401 Arlington, TX 76011 USA": {
+    "lat": 32.767883720956,
+    "lng": -97.096984354284
+  },
+  "5920 Belt Line Rd, Ste 300 Dallas, TX 75254 USA": {
+    "lat": 32.953850884633,
+    "lng": -96.805915115351
+  },
+  "6823 Spencer Hwy, Ste B Pasadena, TX 77505-1770 USA": {
+    "lat": 29.663519676493,
+    "lng": -95.135136561786
+  },
+  "15424 FM 1825, Ste 117 Pflugerville, TX 78660-3142 USA": {
+    "lat": 30.448359099744,
+    "lng": -97.662007166867
+  },
+  "1915 N Central Expy, Ste 900 Plano, TX 75075 USA": {
+    "lat": 33.027241640477,
+    "lng": -96.710013517873
+  },
+  "743 Brick Row Dr, Ste 300 Richardson, TX 75081-4947 USA": {
+    "lat": 32.941128306538,
+    "lng": -96.736033059214
+  },
+  "3100 Handley-Ederville Rd, Ste C Richland Hills, TX 76118 USA": {
+    "lat": 32.805756955723,
+    "lng": -97.221105618886
+  },
+  "28000 Southwest Fwy, Ste H-1 Rosenberg, TX 77471-7155 USA": null,
+  "270 Texas Ave Round Rock, TX 78664 USA": {
+    "lat": 30.529799140396,
+    "lng": -97.685391848744
+  },
+  "720 Knickerbocker Rd San Angelo, TX 76903 USA": {
+    "lat": 31.438927890806,
+    "lng": -100.445308727246
+  },
+  "11923 Culebra Rd San Antonio, TX 78253 USA": {
+    "lat": 29.503273430923,
+    "lng": -98.728659291381
+  },
+  "10118 San Pedro Ave San Antonio, TX 78216 USA": {
+    "lat": 29.533090771195,
+    "lng": -98.495653803681
+  },
+  "1149 E. Commerce St, Suite 105 San Antonio, TX 78205 USA": {
+    "lat": 29.421836785899,
+    "lng": -98.478977527991
+  },
+  "2897 NE Loop 410 , Suite 109 San Antonio, TX 78218 USA": {
+    "lat": 29.516416251136,
+    "lng": -98.408617035745
+  },
+  "8714 Fredericksburg Rd San Antonio, TX 78240-1223 USA": {
+    "lat": 29.5237288652,
+    "lng": -98.574245766979
+  },
+  "1714 SW Military Dr, Ste 106 San Antonio, TX 78221-1418 USA": {
+    "lat": 29.356596695004,
+    "lng": -98.519969536127
+  },
+  "209 N Edward Gary St San Marcos, TX 78666 USA": {
+    "lat": 29.883504933129,
+    "lng": -97.938929741733
+  },
+  "1602 E Houston St Sherman, TX 75090 USA": {
+    "lat": 33.640275496601,
+    "lng": -96.591245749541
+  },
+  "1140 W Bardin Rd, Ste 100 Arlington, TX 76017 USA": {
+    "lat": 32.670328893766,
+    "lng": -97.131476183452
+  },
+  "2101 W Ben White Blvd, Ste 103 Austin, TX 78704 USA": {
+    "lat": 30.230332825125,
+    "lng": -97.790108799765
+  },
+  "2300 Dean Way, Ste 120 Southlake, TX 76092 USA": {
+    "lat": 32.930822444896,
+    "lng": -97.115870509827
+  },
+  "13444 Southwest Fwy, Ste 3 Sugar Land, TX 77478 USA": null,
+  "904 S 31st St Temple, TX 76504 USA": {
+    "lat": 31.092100014343,
+    "lng": -97.361042888056
+  },
+  "3735 Mall Dr Texarkana, TX 75501 USA": null,
+  "26311 Interstate 45 The Woodlands, TX 77380 USA": {
+    "lat": 30.144619231594,
+    "lng": -95.447360999707
+  },
+  "715 E Main St, Ste 300 Tomball, TX 77375-6720 USA": null,
+  "1813 Capital Dr, Ste 400 Tyler, TX 75701 USA": {
+    "lat": 32.296761853639,
+    "lng": -95.325333043615
+  },
+  "307 Lake Air Dr Waco, TX 76710-5835 USA": {
+    "lat": 31.522306086751,
+    "lng": -97.182698397795
+  },
+  "512 East NASA Parkway, Suite E Webster, TX 77598 USA": {
+    "lat": 29.534690242966,
+    "lng": -95.122298779005
+  },
+  "8100 Dallas Pkwy, 109 Plano, TX 75024-4010 USA": null,
+  "656 East 11400 South, Suite L Draper, UT 84020 USA": {
+    "lat": 40.544270689997,
+    "lng": -111.873533195546
+  },
+  "6570 S State St Murray, UT 84107 USA": {
+    "lat": 40.629225501312,
+    "lng": -111.88984063542
+  },
+  "5758 S 1900 W Roy, UT 84067 USA": {
+    "lat": 41.158705846493,
+    "lng": -112.025954080994
+  },
+  "231 W 1230 N Provo, UT 84604 USA": {
+    "lat": 40.25053159673,
+    "lng": -111.662646550117
+  },
+  "1335 Shelburne Rd South Burlington, VT 05403-7714 USA": {
+    "lat": 44.434437563538,
+    "lng": -73.210784818151
+  },
+  "5852 Washington Blvd, Ste 4 Arlington, VA 22205 USA": {
+    "lat": 38.885141444955,
+    "lng": -77.140806788419
+  },
+  "662 Prosperity Way Chesapeake, VA 23320 USA": {
+    "lat": 36.744847532121,
+    "lng": -76.258164499254
+  },
+  "10341-A Democracy Ln Fairfax, VA 22030 USA": {
+    "lat": 38.849321249616,
+    "lng": -77.301433453615
+  },
+  "3 Millrace Drive Lynchburg, VA 24502 USA": {
+    "lat": 37.375978077451,
+    "lng": -79.239994244481
+  },
+  "3940 Plank Rd. , Suite X Fredericksburg, VA 22407 USA": {
+    "lat": 38.290727720822,
+    "lng": -77.527368853623
+  },
+  "21240 Ashburn Crossing Dr, Suite 145 Ashburn, VA 20147 USA": null,
+  "934 Edwards Ferry Rd NE Leesburg, VA 20176-3324 USA": {
+    "lat": 39.113747510972,
+    "lng": -77.539108539267
+  },
+  "7612 Stream Walk Ln Manassas, VA 20109 USA": {
+    "lat": 38.795416623655,
+    "lng": -77.521860325254
+  },
+  "2000 Colonial Ave, Ste 5 Norfolk, VA 23517 USA": {
+    "lat": 36.868284758701,
+    "lng": -76.292101294675
+  },
+  "532 E Main St Richmond, VA 23219 USA": {
+    "lat": 37.540220819299,
+    "lng": -77.439539512453
+  },
+  "1217 Carmia Way Bon Air, VA 23235 USA": {
+    "lat": 37.508439611404,
+    "lng": -77.603020506868
+  },
+  "10817 W Broad St Richmond, VA 23058 USA": null,
+  "3148 Williamson Road NW Roanoke, VA 24012 USA": {
+    "lat": 37.299797880492,
+    "lng": -79.94118040332
+  },
+  "146 W 4th St Salem, VA 24153-5035 USA": {
+    "lat": 37.285941704408,
+    "lng": -80.060763330783
+  },
+  "7200 Telegraph Square Drive, Unit N Lorton, VA 22079 USA": {
+    "lat": 38.717119186065,
+    "lng": -77.193654037539
+  },
+  "2142 Richmond Hwy., Suite 103 Stafford, VA 22554 USA": null,
+  "1980 Chain Bridge Rd McLean, VA 22102 USA": {
+    "lat": 38.919729955724,
+    "lng": -77.228800917366
+  },
+  "800 Seahawk Circle, Suite 119 Virginia Beach, VA 23452 USA": {
+    "lat": 36.813749010228,
+    "lng": -76.065877489152
+  },
+  "1720 Valley Ave Winchester, VA 22601-3140 USA": {
+    "lat": 39.170779545018,
+    "lng": -78.177503899139
+  },
+  "1215 George Washington Mem Hwy, Ste H Yorktown, VA 23693 USA": {
+    "lat": 37.102364657244,
+    "lng": -76.458095457369
+  },
+  "1835 Auburn Way N, Ste B Auburn, WA 98002-3348 USA": {
+    "lat": 47.323946522598,
+    "lng": -122.221617266078
+  },
+  "13279 NE 20th St Bellevue, WA 98005 USA": {
+    "lat": 47.62797455613,
+    "lng": -122.163217655915
+  },
+  "922 SW 151st St Burien, WA 98166 USA": {
+    "lat": 47.467730144588,
+    "lng": -122.345955010924
+  },
+  "2902 Rucker Ave Everett, WA 98201 USA": {
+    "lat": 47.97922409479,
+    "lng": -122.211553385921
+  },
+  "32610 Pacific Hwy S, Ste B-4 Federal Way, WA 98003 USA": {
+    "lat": 47.309609142132,
+    "lng": -122.313238742699
+  },
+  "60 NW Gilman Blvd, Ste C Issaquah, WA 98027-2480 USA": {
+    "lat": 47.538993996629,
+    "lng": -122.037749719155
+  },
+  "1409 N Pittsburgh, Ste A Kennewick, WA 99336 USA": {
+    "lat": 46.224397975605,
+    "lng": -119.238619068674
+  },
+  "7825 S 180th St Kent, WA 98032 USA": {
+    "lat": 47.441120438477,
+    "lng": -122.235980240489
+  },
+  "12644 NE 85th St Kirkland, WA 98033-8045 USA": {
+    "lat": 47.679427413529,
+    "lng": -122.171973916795
+  },
+  "2921 Alderwood Mall Blvd, Ste 104 Lynnwood, WA 98036 USA": {
+    "lat": 47.825696134975,
+    "lng": -122.272172111562
+  },
+  "12700 Aurora Ave, Suite A Seattle, WA 98133 USA": {
+    "lat": 47.721445054839,
+    "lng": -122.344874477641
+  },
+  "4609 Lacey Blvd SE Lacey, WA 98503 USA": {
+    "lat": 47.035807244751,
+    "lng": -122.82307590119
+  },
+  "1515 9th Ave, Ste 4 Seattle, WA 98101 USA": {
+    "lat": 47.612856935162,
+    "lng": -122.331537978285
+  },
+  "1735 Westlake Avenue N., Suite 120 Seattle, WA 98109 USA": {
+    "lat": 47.63461684158,
+    "lng": -122.340495637473
+  },
+  "7100 Roosevelt Way NE , Ste B Seattle, WA 98115 USA": {
+    "lat": 47.680225666656,
+    "lng": -122.317344491144
+  },
+  "9460 Silverdale Way NW Silverdale, WA 98383-8343 USA": {
+    "lat": 47.64930082629,
+    "lng": -122.695257234005
+  },
+  "11712 E Montgomery Dr, Ste C1 Spokane, WA 99206-6163 USA": {
+    "lat": 47.679909467875,
+    "lng": -117.268703717382
+  },
+  "3502 S 74th St Tacoma, WA 98409 USA": {
+    "lat": 47.190117137025,
+    "lng": -122.482477537408
+  },
+  "123 FASTSIGNS Ave. Vancouver, WA 98668 USA": null,
+  "2859 V Street NE Washington, DC 20018 USA": {
+    "lat": 38.918966399429,
+    "lng": -76.969169603832
+  },
+  "107 Beckley Plaza Beckley, WV 25801 USA": {
+    "lat": 37.773441584277,
+    "lng": -81.195283688039
+  },
+  "14415 SE Mill Plain Blvd, Ste 114B Vancouver, WA 98684 USA": {
+    "lat": 45.61772731054,
+    "lng": -122.524809382988
+  },
+  "212 Viking Way, Ste 2 Martinsburg, WV 25401 USA": {
+    "lat": 39.46166643797,
+    "lng": -77.988519576064
+  },
+  "5137 MacCorkle Ave SW South Charleston, WV 25309 USA": {
+    "lat": 38.353723214861,
+    "lng": -81.737086236417
+  },
+  "2600 Middletown Commons, Suite 225 White Hall, WV 26554 USA": null,
+  "135 South Casaloma Dr Appleton, WI 54914 USA": {
+    "lat": 44.260489582936,
+    "lng": -88.475996186081
+  },
+  "3622 Mall Drive Eau Claire, WI 54701 USA": {
+    "lat": 44.780201466193,
+    "lng": -91.460887684487
+  },
+  "7536 Pershing Plaza Kenosha, WI 53142-3701 USA": {
+    "lat": 42.565768315444,
+    "lng": -87.858453987259
+  },
+  "2665 S Oneida St, Ste C Green Bay, WI 54304-5268 USA": {
+    "lat": 44.478179558565,
+    "lng": -88.072855760183
+  },
+  "6101 Odana Rd Madison, WI 53719 USA": {
+    "lat": 43.053549762123,
+    "lng": -89.486723030961
+  },
+  "W173N9170 Saint Francis Dr, Ste 1 Menomonee Falls, WI 53051-1995 USA": null,
+  "5318 N Port Washington Milwaukee, WI 53217 USA": {
+    "lat": 43.113813883653,
+    "lng": -87.916650605782
+  },
+  "6700 W Layton Ave Greenfield, WI 53220 USA": {
+    "lat": 42.959375708532,
+    "lng": -87.997383159471
+  },
+  "11020 W Plank Ct Wauwatosa, WI 53226 USA": {
+    "lat": 43.046864535726,
+    "lng": -88.0514558038
+  },
+  "1122 S Airline Rd, Ste 103 Mount Pleasant, WI 53406-3889 USA": {
+    "lat": 42.720282041919,
+    "lng": -87.875905274902
+  },
+  "3118 S. Business Drive Sheboygan, WI 53081 USA": {
+    "lat": 43.719884994443,
+    "lng": -87.737527552578
+  },
+  "2326 Post Road Stevens Point, WI 54481 USA": {
+    "lat": 44.491306036586,
+    "lng": -89.551870217839
+  },
+  "2100 Pewaukee Rd, Suite A Waukesha, WI 53188 USA": {
+    "lat": 43.030202226205,
+    "lng": -88.225959522911
+  }
+}
