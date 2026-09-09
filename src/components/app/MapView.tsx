@@ -140,14 +140,22 @@ function captureCamera(map: MapLibreMap) {
 
 type Props = {
   projects: MapProject[];
+  /** Optional city scope for viewport refetch */
+  city?: string;
 };
 
-export function MapView({ projects }: Props) {
+export function MapView({ projects: initialProjects, city }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [filters, setFilters] = useState<MapFilterState>(DEFAULT_MAP_FILTERS);
+  const [projects, setProjects] = useState<MapProject[]>(initialProjects);
+  const fetchGen = useRef(0);
+
+  useEffect(() => {
+    setProjects(initialProjects);
+  }, [initialProjects]);
 
   // Restore filter state for this browser session
   useEffect(() => {
@@ -206,6 +214,68 @@ export function MapView({ projects }: Props) {
     [visible],
   );
 
+  // Viewport refetch — bbox + buffer so pans don't require shipping every city.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const loadViewport = () => {
+      const bounds = map.getBounds();
+      const ne = bounds.getNorthEast();
+      const sw = bounds.getSouthWest();
+      // ~15% buffer
+      const latPad = (ne.lat - sw.lat) * 0.15;
+      const lngPad = (ne.lng - sw.lng) * 0.15;
+      const west = sw.lng - lngPad;
+      const south = sw.lat - latPad;
+      const east = ne.lng + lngPad;
+      const north = ne.lat + latPad;
+
+      const gen = ++fetchGen.current;
+      const qs = new URLSearchParams({
+        west: String(west),
+        south: String(south),
+        east: String(east),
+        north: String(north),
+        limit: "2000",
+      });
+      if (city) qs.set("city", city);
+
+      void fetch(`/api/map/pins?${qs.toString()}`, {
+        credentials: "same-origin",
+      })
+        .then(async (res) => {
+          if (!res.ok) return;
+          const data = (await res.json()) as {
+            pins?: MapProject[];
+          };
+          if (gen !== fetchGen.current) return;
+          if (Array.isArray(data.pins) && data.pins.length) {
+            setProjects(data.pins);
+          }
+        })
+        .catch(() => {
+          // Keep current pins on network failure
+        });
+    };
+
+    const onMoveEnd = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(loadViewport, 280);
+    };
+
+    map.on("moveend", onMoveEnd);
+    // Initial viewport refine after first paint
+    timer = setTimeout(loadViewport, 400);
+
+    return () => {
+      map.off("moveend", onMoveEnd);
+      if (timer) clearTimeout(timer);
+    };
+  }, [mapReady, city]);
+
   // Init map once — restore session camera or NYC default (no fitBounds)
   useEffect(() => {
     const el = containerRef.current;
@@ -216,7 +286,6 @@ export function MapView({ projects }: Props) {
 
     const init = () => {
       if (cancelled || !containerRef.current) return;
-      // Ensure container has layout size before MapLibre measures it
       const { width, height } = containerRef.current.getBoundingClientRect();
       if (width < 2 || height < 2) {
         requestAnimationFrame(init);
@@ -239,7 +308,6 @@ export function MapView({ projects }: Props) {
 
       map.on("load", () => {
         if (cancelled || !map) return;
-        // MapLibre 6 inertia options (documented on DragPanHandler.enable)
         map.dragPan.enable({ deceleration: 2500, linearity: 0.3 });
         map.resize();
         setMapReady(true);
@@ -263,7 +331,7 @@ export function MapView({ projects }: Props) {
     };
   }, []);
 
-  // Push GeoJSON + layers whenever projects / filters change — do not refit camera
+  // Push GeoJSON + clustered layers whenever projects / filters change
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -273,12 +341,61 @@ export function MapView({ projects }: Props) {
     if (existing) {
       existing.setData(geojson);
     } else {
-      map.addSource(sourceId, { type: "geojson", data: geojson });
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      });
+
+      map.addLayer({
+        id: "clusters",
+        type: "circle",
+        source: sourceId,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": [
+            "step",
+            ["get", "point_count"],
+            "#0D9488",
+            25,
+            "#2563EB",
+            80,
+            "#7C3AED",
+          ],
+          "circle-radius": [
+            "step",
+            ["get", "point_count"],
+            16,
+            25,
+            22,
+            80,
+            28,
+          ],
+          "circle-opacity": 0.88,
+        },
+      });
+
+      map.addLayer({
+        id: "cluster-count",
+        type: "symbol",
+        source: sourceId,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-size": 12,
+        },
+        paint: {
+          "text-color": "#ffffff",
+        },
+      });
 
       map.addLayer({
         id: "project-pins-halo",
         type: "circle",
         source: sourceId,
+        filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-radius": [
             "interpolate",
@@ -298,6 +415,7 @@ export function MapView({ projects }: Props) {
         id: "project-pins",
         type: "circle",
         source: sourceId,
+        filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-radius": [
             "interpolate",
@@ -320,6 +438,7 @@ export function MapView({ projects }: Props) {
         id: "project-scores",
         type: "symbol",
         source: sourceId,
+        filter: ["!", ["has", "point_count"]],
         minzoom: 12,
         layout: {
           "text-field": ["to-string", ["get", "score"]],
@@ -340,7 +459,7 @@ export function MapView({ projects }: Props) {
       const onLeave = () => {
         map.getCanvas().style.cursor = "";
       };
-      const onClick = (e: MapLayerMouseEvent) => {
+      const onClickPin = (e: MapLayerMouseEvent) => {
         const feature = e.features?.[0];
         const id = feature?.properties?.id as string | undefined;
         if (id) {
@@ -348,11 +467,24 @@ export function MapView({ projects }: Props) {
           setSelectedId(id);
         }
       };
+      const onClickCluster = async (e: MapLayerMouseEvent) => {
+        const feature = e.features?.[0];
+        if (!feature || feature.geometry.type !== "Point") return;
+        const clusterId = feature.properties?.cluster_id as number | undefined;
+        const source = map.getSource(sourceId) as GeoJSONSource;
+        if (clusterId == null || !source.getClusterExpansionZoom) return;
+        const zoom = await source.getClusterExpansionZoom(clusterId);
+        const coords = feature.geometry.coordinates as [number, number];
+        map.easeTo({ center: coords, zoom });
+      };
 
       map.on("mouseenter", "project-pins", onEnter);
       map.on("mouseleave", "project-pins", onLeave);
-      map.on("click", "project-pins", onClick);
-      map.on("click", "project-scores", onClick);
+      map.on("click", "project-pins", onClickPin);
+      map.on("click", "project-scores", onClickPin);
+      map.on("mouseenter", "clusters", onEnter);
+      map.on("mouseleave", "clusters", onLeave);
+      map.on("click", "clusters", onClickCluster);
     }
 
     map.resize();
@@ -374,13 +506,12 @@ export function MapView({ projects }: Props) {
       <div
         ref={containerRef}
         className="absolute inset-0 h-full w-full bg-[#dfe7ef]"
-        aria-label="NYC construction opportunities map"
+        aria-label="Construction opportunities map"
         role="application"
       />
 
       <MapFilters value={filters} onChange={updateFilters} />
 
-      {/* Score legend — above map chrome; shell already pads above mobile tab bar */}
       <div className="pointer-events-none absolute bottom-3 left-3 z-30 md:bottom-6 md:left-5">
         <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
           <p className="mb-1.5 font-bold text-ink">Buy Score</p>
