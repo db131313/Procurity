@@ -337,7 +337,7 @@ export async function getDemoUser() {
     plan: "pro",
     onboardingComplete: true,
     zipCodes: [],
-    zipAllowance: 25,
+    zipAllowance: PLAN_LIMITS.pro,
   });
 }
 
@@ -516,11 +516,20 @@ export async function expandDemoCoverage(limit = 25) {
 
   const users = await prisma.user.findMany();
   for (const user of users) {
+    const isDemoOrPro =
+      user.email === DEMO_USER.email ||
+      user.plan === "trial" ||
+      user.plan === "pro";
+    // Keep demo/pro unrestricted (empty zipCodes). Paid starter/growth get densest zips.
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        zipCodes: topZips.slice(0, Math.max(user.zipAllowance, 25)),
-        zipAllowance: Math.max(user.zipAllowance, 25),
+        zipCodes: isDemoOrPro
+          ? []
+          : topZips.slice(0, Math.min(user.zipAllowance || PLAN_LIMITS.growth, topZips.length)),
+        zipAllowance: isDemoOrPro
+          ? PLAN_LIMITS.pro
+          : Math.max(user.zipAllowance, PLAN_LIMITS.growth),
         plan:
           user.email === DEMO_USER.email || user.plan === "trial"
             ? "pro"
@@ -535,7 +544,7 @@ export async function enableCitywideDemo() {
   await prisma.user.updateMany({
     data: {
       zipCodes: [],
-      zipAllowance: 25,
+      zipAllowance: PLAN_LIMITS.pro,
       onboardingComplete: true,
     },
   });

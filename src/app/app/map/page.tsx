@@ -13,6 +13,7 @@ type Props = {
 /**
  * Map HTML paints immediately — no pin dump, no sync await.
  * Pins load client-side against the live viewport; freshness sync runs in `after()`.
+ * Zip allowlists are enforced on `/api/map/pins` (not SSR).
  */
 export default async function MapPage({ searchParams }: Props) {
   const sp = await searchParams;

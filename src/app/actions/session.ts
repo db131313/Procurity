@@ -6,6 +6,7 @@ import {
   destroySession,
 } from "@/lib/auth/session";
 import { upsertUser, setUserZips } from "@/lib/db/store";
+import { PLAN_LIMITS } from "@/lib/db/types";
 import { verifyFirebaseIdToken } from "@/lib/firebase/verify-id-token";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
 
@@ -15,9 +16,9 @@ export async function startDemoSession() {
     email: "demo@procurity.pro",
     name: "Demo Rep",
     onboardingComplete: true,
-    // Empty zip list = citywide (all five boroughs) in listProjects
+    // Empty zip list + pro = unrestricted map access (demo stays citywide / Full US)
     zipCodes: [],
-    zipAllowance: 25,
+    zipAllowance: PLAN_LIMITS.pro,
     plan: "pro",
   });
   await createSession({
@@ -133,5 +134,23 @@ export async function saveOnboardingZips(formData: FormData): Promise<void> {
     }
     redirect("/app/settings?error=save_failed");
   }
+  redirect("/app/home");
+}
+
+/** Pro onboarding: no zip pick required — mark complete and enter the app. */
+export async function completeProOnboarding(): Promise<void> {
+  const { getCurrentUser } = await import("@/lib/auth/session");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  await upsertUser({
+    firebaseUid: user.firebaseUid,
+    email: user.email,
+    name: user.name,
+    plan: user.plan,
+    zipCodes: user.zipCodes,
+    zipAllowance: user.zipAllowance,
+    onboardingComplete: true,
+  });
   redirect("/app/home");
 }

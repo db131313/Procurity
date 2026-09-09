@@ -112,12 +112,19 @@ export type UserRecord = {
   name: string | null;
   /** Stripe-derived (or trial) plan stored in DB. Prefer `effectivePlan()`. */
   plan: PlanTier;
+  /**
+   * Allowed zip list for map/project filtering (starter / growth / trial).
+   * There is no separate `allowedZipCodes` column — `zipCodes` IS the allowlist.
+   * Empty list = grandfather unrestricted access until the user picks zips
+   * (demo users stay empty + pro = unrestricted).
+   */
   /** Admin-only override; when set, takes precedence over `plan`. */
   devPlanOverride: PlanTier | null;
   zipCodes: string[];
   trialEndsAt: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
+  /** Cap from PLAN_LIMITS for the user's plan (pro uses a high sentinel). */
   zipAllowance: number;
   notificationPrefs: {
     email: boolean;
@@ -178,15 +185,56 @@ export const PHASE_LABELS: Record<ProjectPhase, string> = {
   signage_filed: "Signage Filed",
 };
 
+/**
+ * Zip allowances by plan.
+ * Pro is effectively unrestricted ("Full US"); 9999 is a high sentinel for
+ * zip pick UI / setUserZips rather than a hard product cap.
+ * Trial matches Starter (1 zip).
+ */
 export const PLAN_LIMITS: Record<PlanTier, number> = {
-  trial: 3,
-  starter: 3,
-  growth: 10,
-  pro: 25,
+  trial: 1,
+  starter: 1,
+  growth: 5,
+  pro: 9999,
 };
 
 export const PLAN_PRICING = {
-  starter: { monthly: 99, annual: 79, zips: 3, name: "Starter" },
-  growth: { monthly: 199, annual: 159, zips: 10, name: "Growth" },
-  pro: { monthly: 299, annual: 239, zips: 25, name: "Pro" },
+  starter: { monthly: 99, annual: 79, zips: 1, name: "Starter" },
+  growth: { monthly: 199, annual: 159, zips: 5, name: "Growth" },
+  /** zips sentinel matches PLAN_LIMITS.pro; marketing copy uses "Full US". */
+  pro: { monthly: 299, annual: 239, zips: 9999, name: "Pro" },
 } as const;
+
+/** Marketing / settings label for a plan's zip access. */
+export function formatPlanZipAccess(
+  tier: PlanTier | keyof typeof PLAN_PRICING,
+): string {
+  if (tier === "pro") return "Full US";
+  const n = PLAN_LIMITS[tier];
+  return n === 1 ? "1 zip code" : `${n} zip codes`;
+}
+
+/**
+ * Whether map/project queries should skip zip filtering for this user.
+ * - Pro: Full US (no zip restriction)
+ * - Empty zipCodes: grandfather unrestricted until they pick zips
+ * - Demo stays unrestricted via empty zipCodes + pro
+ */
+export function isZipUnrestricted(
+  user: Pick<UserRecord, "plan" | "zipCodes">,
+): boolean {
+  if (user.plan === "pro") return true;
+  if (!user.zipCodes.length) return true;
+  return false;
+}
+
+/**
+ * Zip allowlist for server-side map filtering, or undefined when unrestricted.
+ * Apply for trial / starter / growth when zipCodes is non-empty.
+ */
+export function allowedZipFilter(
+  user: Pick<UserRecord, "plan" | "zipCodes">,
+): string[] | undefined {
+  if (isZipUnrestricted(user)) return undefined;
+  return user.zipCodes;
+}

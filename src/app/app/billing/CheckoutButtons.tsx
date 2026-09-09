@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PLAN_PRICING } from "@/lib/db/types";
+import { formatPlanZipAccess, PLAN_PRICING } from "@/lib/db/types";
 
 const TIERS = ["starter", "growth", "pro"] as const;
 
@@ -39,7 +39,7 @@ export function CheckoutButtons() {
         >
           <p className="text-sm font-bold text-ink">{PLAN_PRICING[tier].name}</p>
           <p className="mt-1 text-xs text-slate">
-            ${PLAN_PRICING[tier].monthly}/mo ·{" "}
+            ${PLAN_PRICING[tier].monthly}/mo · {formatPlanZipAccess(tier)} ·{" "}
             {loading === tier ? "Redirecting…" : "Checkout"}
           </p>
         </button>
