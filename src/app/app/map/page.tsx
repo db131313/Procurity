@@ -2,6 +2,7 @@ import { MapViewLazy } from "@/components/app/MapViewLazy";
 import { ensureMapDataFresh, peekMapFreshness } from "@/lib/map/ensure-fresh";
 import { listMapPins } from "@/lib/map/pins";
 import { getCurrentUser } from "@/lib/auth/session";
+import { allowedZipFilter } from "@/lib/db/types";
 import { isDatabaseConfigured } from "@/lib/db/prisma";
 import { after } from "next/server";
 import { cookies } from "next/headers";
@@ -16,9 +17,11 @@ type Props = {
  * Map paints immediately when any pins exist.
  * Freshness sync runs in `after()` so it never blocks the first HTML.
  * Only cold-empty stores await sync before paint.
+ * Pins honor the user's zipCodes allowlist (trial/starter/growth);
+ * Pro and empty grandfathered lists stay unrestricted.
  */
 export default async function MapPage({ searchParams }: Props) {
-  await getCurrentUser();
+  const user = await getCurrentUser();
   const sp = await searchParams;
   const jar = await cookies();
   const city =
@@ -40,9 +43,11 @@ export default async function MapPage({ searchParams }: Props) {
     });
   }
 
+  const zipCodes = user ? allowedZipFilter(user) : undefined;
   const { pins, totalMatched, truncated } = await listMapPins({
     city,
     limit: 2000,
+    zipCodes,
   });
 
   const mapProjects = pins.map((p) => ({

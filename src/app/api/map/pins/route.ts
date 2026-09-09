@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { allowedZipFilter } from "@/lib/db/types";
 import { listMapPins } from "@/lib/map/pins";
 import { ensureMapDataFresh } from "@/lib/map/ensure-fresh";
 import { after } from "next/server";
@@ -10,6 +11,8 @@ export const dynamic = "force-dynamic";
  * Authenticated map pin feed.
  * Query: city, west,south,east,north (bbox), limit
  * Cached briefly via Cache-Control for repeat pans.
+ * Pins are filtered by the user's zipCodes allowlist for trial/starter/growth
+ * when set; Pro and empty (grandfathered) lists are unrestricted.
  */
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -48,10 +51,12 @@ export async function GET(request: Request) {
   });
 
   const started = Date.now();
+  const zipCodes = allowedZipFilter(user);
   const result = await listMapPins({
     city,
     bbox,
     limit: Number.isFinite(limit) ? limit : 2000,
+    zipCodes,
   });
 
   return NextResponse.json(
@@ -63,6 +68,7 @@ export async function GET(request: Request) {
       totalMatched: result.totalMatched,
       truncated: result.truncated,
       elapsedMs: Date.now() - started,
+      zipFiltered: Boolean(zipCodes?.length),
       pins: result.pins,
     },
     {

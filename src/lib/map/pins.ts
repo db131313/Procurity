@@ -1,6 +1,7 @@
 /**
  * Lightweight map pin queries — only fields the map needs.
  * Supports city + optional viewport bbox so we don't ship every metro on every load.
+ * Optional zipCodes filters pins for starter/growth/trial allowlists.
  */
 
 import { isDatabaseConfigured } from "@/lib/db/prisma";
@@ -31,6 +32,12 @@ export type MapPinQuery = {
   /** Soft cap to protect payloads (viewport queries should stay well under this) */
   limit?: number;
   minScore?: number;
+  /**
+   * When set (non-empty), only return pins in these zip codes.
+   * Callers should pass `allowedZipFilter(user)` — undefined for Pro / empty
+   * grandfathered lists (no filter).
+   */
+  zipCodes?: string[];
 };
 
 const DEFAULT_LIMIT = 2500;
@@ -63,6 +70,7 @@ async function listMapPinsFile(opts: MapPinQuery, limit: number) {
   let items = await listProjects({
     city: opts.city,
     minScore: opts.minScore,
+    zipCodes: opts.zipCodes,
   });
   if (opts.bbox) {
     const [w, s, e, n] = opts.bbox;
@@ -105,6 +113,7 @@ async function listMapPinsPrisma(opts: MapPinQuery, limit: number) {
   const where: Record<string, unknown> = {};
   if (opts.city) where.city = opts.city;
   if (opts.minScore) where.score = { gte: opts.minScore };
+  if (opts.zipCodes?.length) where.zip = { in: opts.zipCodes };
   if (opts.bbox) {
     const [w, s, e, n] = opts.bbox;
     where.longitude = { gte: w, lte: e };

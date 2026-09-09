@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { PLAN_PRICING } from "@/lib/db/types";
+import { formatPlanZipAccess, PLAN_PRICING } from "@/lib/db/types";
 import { cn } from "@/lib/cn";
 
 const FEATURES = {
@@ -11,21 +11,21 @@ const FEATURES = {
     "Daily permit data refresh",
     "Pipeline tracking",
     "Email alerts",
-    "Up to 3 zip codes",
+    "1 zip code",
   ],
   growth: [
     "Everything in Starter",
     "Priority hot opportunity alerts",
     "Deal analytics dashboard",
     "CSV export",
-    "Up to 10 zip codes",
+    "5 zip codes",
   ],
   pro: [
     "Everything in Growth",
     "Team pipeline sharing (5 seats)",
     "API access (coming soon)",
     "Dedicated account support",
-    "Up to 25 zip codes",
+    "Full US access",
   ],
 } as const;
 
@@ -96,6 +96,7 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
           const plan = PLAN_PRICING[tier];
           const price = annual ? plan.annual : plan.monthly;
           const featured = tier === "growth";
+          const zipLabel = formatPlanZipAccess(tier);
           return (
             <article
               key={tier}
@@ -114,7 +115,7 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
                 <span className={featured ? "text-white/75" : "text-slate"}>/mo</span>
               </p>
               <p className={cn("mt-1 text-sm", featured ? "text-white/80" : "text-slate")}>
-                Up to {plan.zips} zip codes
+                {tier === "pro" ? "Full US access" : zipLabel}
               </p>
               <ul className="mt-5 space-y-2.5">
                 {FEATURES[tier].map((f) => (

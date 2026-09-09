@@ -41,11 +41,13 @@ model User {
   email                String         @unique
   name                 String?
   plan                 PlanTier       @default(trial)
+  /// Allowed zip list for map filtering (starter/growth/trial). Empty = grandfather unrestricted until picked. No separate allowedZipCodes column.
   zipCodes             String[]       @default([])
   trialEndsAt          DateTime?
   stripeCustomerId     String?
   stripeSubscriptionId String?
-  zipAllowance         Int            @default(3)
+  /// Cap from PLAN_LIMITS (trial/starter:1, growth:5, pro:9999 sentinel for Full US)
+  zipAllowance         Int            @default(1)
   notificationPrefs    Json           @default("{\"email\":true,\"hotOpportunities\":true,\"phaseChanges\":true}")
   onboardingComplete   Boolean        @default(false)
   createdAt            DateTime       @default(now())
