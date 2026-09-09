@@ -236,7 +236,7 @@ export function MapView({ projects: initialProjects, city }: Props) {
       south: String(bounds.south),
       east: String(bounds.east),
       north: String(bounds.north),
-      limit: "2000",
+        limit: "350",
     });
     if (city) qs.set("city", city);
 
@@ -390,7 +390,7 @@ export function MapView({ projects: initialProjects, city }: Props) {
     };
   }, []);
 
-  // Push GeoJSON + clustered layers whenever projects / filters change
+  // Push GeoJSON + fixed-size pin layers (no clustering)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -403,68 +403,14 @@ export function MapView({ projects: initialProjects, city }: Props) {
       map.addSource(sourceId, {
         type: "geojson",
         data: geojson,
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50,
-      });
-
-      map.addLayer({
-        id: "clusters",
-        type: "circle",
-        source: sourceId,
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-color": [
-            "step",
-            ["get", "point_count"],
-            "#0D9488",
-            25,
-            "#2563EB",
-            80,
-            "#7C3AED",
-          ],
-          "circle-radius": [
-            "step",
-            ["get", "point_count"],
-            16,
-            25,
-            22,
-            80,
-            28,
-          ],
-          "circle-opacity": 0.88,
-        },
-      });
-
-      map.addLayer({
-        id: "cluster-count",
-        type: "symbol",
-        source: sourceId,
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": ["get", "point_count_abbreviated"],
-          "text-size": 12,
-        },
-        paint: {
-          "text-color": "#ffffff",
-        },
       });
 
       map.addLayer({
         id: "project-pins-halo",
         type: "circle",
         source: sourceId,
-        filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            9,
-            6,
-            14,
-            14,
-          ],
+          "circle-radius": 12,
           "circle-color": ["get", "color"],
           "circle-opacity": 0.22,
         },
@@ -474,19 +420,8 @@ export function MapView({ projects: initialProjects, city }: Props) {
         id: "project-pins",
         type: "circle",
         source: sourceId,
-        filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            9,
-            5,
-            12,
-            8,
-            15,
-            12,
-          ],
+          "circle-radius": 8,
           "circle-color": ["get", "color"],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
@@ -497,7 +432,6 @@ export function MapView({ projects: initialProjects, city }: Props) {
         id: "project-scores",
         type: "symbol",
         source: sourceId,
-        filter: ["!", ["has", "point_count"]],
         minzoom: 12,
         layout: {
           "text-field": ["to-string", ["get", "score"]],
@@ -526,24 +460,11 @@ export function MapView({ projects: initialProjects, city }: Props) {
           setSelectedId(id);
         }
       };
-      const onClickCluster = async (e: MapLayerMouseEvent) => {
-        const feature = e.features?.[0];
-        if (!feature || feature.geometry.type !== "Point") return;
-        const clusterId = feature.properties?.cluster_id as number | undefined;
-        const source = map.getSource(sourceId) as GeoJSONSource;
-        if (clusterId == null || !source.getClusterExpansionZoom) return;
-        const zoom = await source.getClusterExpansionZoom(clusterId);
-        const coords = feature.geometry.coordinates as [number, number];
-        map.easeTo({ center: coords, zoom });
-      };
 
       map.on("mouseenter", "project-pins", onEnter);
       map.on("mouseleave", "project-pins", onLeave);
       map.on("click", "project-pins", onClickPin);
       map.on("click", "project-scores", onClickPin);
-      map.on("mouseenter", "clusters", onEnter);
-      map.on("mouseleave", "clusters", onLeave);
-      map.on("click", "clusters", onClickCluster);
     }
 
     map.resize();

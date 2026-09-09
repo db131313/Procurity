@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const city = url.searchParams.get("city") || undefined;
-  const limit = Number(url.searchParams.get("limit") || "2000");
+  const limit = Number(url.searchParams.get("limit") || "350");
   const w = url.searchParams.get("west");
   const s = url.searchParams.get("south");
   const e = url.searchParams.get("east");
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   const result = await listMapPins({
     city,
     bbox,
-    limit: Number.isFinite(limit) ? limit : 2000,
+    limit: Number.isFinite(limit) ? Math.min(limit, 400) : 350,
     zipCodes,
   });
 

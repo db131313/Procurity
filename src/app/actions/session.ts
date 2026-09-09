@@ -9,6 +9,8 @@ import { upsertUser, setUserZips } from "@/lib/db/store";
 import { PLAN_LIMITS } from "@/lib/db/types";
 import { verifyFirebaseIdToken } from "@/lib/firebase/verify-id-token";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
+import { normalizeUsZip, zipToMetro } from "@/lib/geo/zip-to-metro";
+import { setCityCookie } from "@/lib/map/city-cookie";
 
 export async function startDemoSession() {
   await upsertUser({
@@ -27,7 +29,8 @@ export async function startDemoSession() {
     name: "Demo Rep",
     demo: true,
   });
-  redirect("/app/home");
+  await setCityCookie("nyc");
+  redirect("/app/map?city=nyc");
 }
 
 /**
@@ -38,10 +41,40 @@ export async function establishFirebaseSession(input: {
   idToken: string;
   name?: string | null;
   mode?: "login" | "signup";
+  zip?: string | null;
 }): Promise<{ error?: string; redirectTo?: string }> {
   try {
     const verified = await verifyFirebaseIdToken(input.idToken);
     const name = input.name?.trim() || verified.name || null;
+    const isSignup = input.mode === "signup";
+    const zip = isSignup ? normalizeUsZip(input.zip || "") : null;
+
+    if (isSignup) {
+      if (!zip) {
+        return { error: "Enter a valid 5-digit US zip code." };
+      }
+      const metro = zipToMetro(zip);
+      if (!metro.covered) {
+        return { redirectTo: `/waitlist?zip=${encodeURIComponent(zip)}` };
+      }
+
+      const user = await upsertUser({
+        firebaseUid: verified.uid,
+        email: verified.email,
+        name,
+        zipCodes: [zip],
+        onboardingComplete: true,
+      });
+      await setUserZips(user.id, [zip]);
+      await createSession({
+        uid: verified.uid,
+        email: verified.email,
+        name: name ?? undefined,
+      });
+      await setCityCookie(metro.city);
+      return { redirectTo: `/app/map?city=${metro.city}` };
+    }
+
     const user = await upsertUser({
       firebaseUid: verified.uid,
       email: verified.email,
@@ -78,6 +111,7 @@ export async function signInWithPassword(formData: FormData) {
   const password = String(formData.get("password") || "");
   const name = String(formData.get("name") || "").trim() || null;
   const mode = String(formData.get("mode") || "login");
+  const zipRaw = String(formData.get("zip") || "");
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -87,8 +121,6 @@ export async function signInWithPassword(formData: FormData) {
     return { error: "Password must be at least 6 characters." };
   }
 
-  // Prefer Firebase path — client should call establishFirebaseSession instead.
-  // This remains for demo/dev when Firebase keys are absent.
   if (isFirebaseConfigured()) {
     return {
       error:
@@ -96,12 +128,36 @@ export async function signInWithPassword(formData: FormData) {
     };
   }
 
+  if (mode === "signup") {
+    const zip = normalizeUsZip(zipRaw);
+    if (!zip) {
+      return { error: "Enter a valid 5-digit US zip code." };
+    }
+    const metro = zipToMetro(zip);
+    if (!metro.covered) {
+      redirect(`/waitlist?zip=${encodeURIComponent(zip)}`);
+    }
+
+    const uid = `local-${Buffer.from(email).toString("base64url").slice(0, 24)}`;
+    const user = await upsertUser({
+      firebaseUid: uid,
+      email,
+      name,
+      zipCodes: [zip],
+      onboardingComplete: true,
+    });
+    await setUserZips(user.id, [zip]);
+    await createSession({ uid, email, name: name ?? undefined });
+    await setCityCookie(metro.city);
+    redirect(`/app/map?city=${metro.city}`);
+  }
+
   const uid = `local-${Buffer.from(email).toString("base64url").slice(0, 24)}`;
   const user = await upsertUser({
     firebaseUid: uid,
     email,
     name,
-    onboardingComplete: mode === "login",
+    onboardingComplete: true,
   });
 
   await createSession({ uid, email, name: name ?? undefined });
@@ -133,6 +189,15 @@ export async function saveOnboardingZips(formData: FormData): Promise<void> {
       redirect(`/app/settings?error=zip_limit&allowance=${result.allowance}`);
     }
     redirect("/app/settings?error=save_failed");
+  }
+
+  const first = zips[0];
+  if (first) {
+    const metro = zipToMetro(first);
+    if (metro.covered) {
+      await setCityCookie(metro.city);
+      redirect(`/app/map?city=${metro.city}`);
+    }
   }
   redirect("/app/home");
 }
