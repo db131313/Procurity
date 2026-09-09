@@ -81,7 +81,7 @@ export function AuthForm({
     const zip = String(formData.get("zip") || "").trim();
 
     startTransition(async () => {
-      if (mode === "signup") {
+      if (mode === "signup" && !checkout) {
         const digits = zip.replace(/\D/g, "");
         if (digits.length !== 5) {
           setError("Enter a valid 5-digit US zip code.");
@@ -166,7 +166,7 @@ export function AuthForm({
             />
           </label>
         )}
-        {mode === "signup" && (
+        {mode === "signup" && !checkout && (
           <label className="block space-y-1.5 text-sm font-semibold text-ink">
             <span>Work zip code</span>
             <input
