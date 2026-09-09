@@ -40,7 +40,9 @@ export type MapPinQuery = {
   zipCodes?: string[];
 };
 
-const DEFAULT_LIMIT = 2500;
+const DEFAULT_LIMIT = 350;
+/** Hard cap — never ship more than this many pins for a viewport. */
+const MAX_LIMIT = 400;
 
 function defaultTrades(score: number): TradeScores {
   return {
@@ -57,7 +59,7 @@ export async function listMapPins(opts: MapPinQuery = {}): Promise<{
   truncated: boolean;
   totalMatched: number;
 }> {
-  const limit = Math.min(opts.limit ?? DEFAULT_LIMIT, 5000);
+  const limit = Math.min(opts.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
 
   if (isDatabaseConfigured()) {
     return listMapPinsPrisma(opts, limit);
@@ -82,6 +84,8 @@ async function listMapPinsFile(opts: MapPinQuery, limit: number) {
         p.latitude <= n,
     );
   }
+  // Highest Buy Score first when capping dense viewports
+  items = [...items].sort((a, b) => b.score - a.score);
   const totalMatched = items.length;
   const slice = items.slice(0, limit);
   return {

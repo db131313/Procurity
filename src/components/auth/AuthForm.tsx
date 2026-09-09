@@ -27,8 +27,17 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     const email = String(formData.get("email") || "").trim().toLowerCase();
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim() || undefined;
+    const zip = String(formData.get("zip") || "").trim();
 
     startTransition(async () => {
+      if (mode === "signup") {
+        const digits = zip.replace(/\D/g, "");
+        if (digits.length !== 5) {
+          setError("Enter a valid 5-digit US zip code.");
+          return;
+        }
+      }
+
       if (isFirebaseConfigured()) {
         try {
           const cred =
@@ -40,6 +49,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             idToken,
             name: name || cred.user.displayName,
             mode,
+            zip: mode === "signup" ? zip : undefined,
           });
           if (result.error) {
             setError(result.error);
@@ -78,6 +88,24 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
               placeholder="Jordan Lee"
             />
+          </label>
+        )}
+        {mode === "signup" && (
+          <label className="block space-y-1.5 text-sm font-semibold text-ink">
+            <span>Work zip code</span>
+            <input
+              name="zip"
+              inputMode="numeric"
+              pattern="[0-9]{5}"
+              maxLength={10}
+              required
+              autoComplete="postal-code"
+              className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
+              placeholder="10001"
+            />
+            <span className="block text-xs font-medium text-slate">
+              We&apos;ll open the map for your metro when we cover it.
+            </span>
           </label>
         )}
         <label className="block space-y-1.5 text-sm font-semibold text-ink">
