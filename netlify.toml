@@ -6,6 +6,12 @@
   command = "npm run build"
   publish = ".next"
 
+# Firebase web API keys are intentionally public (NEXT_PUBLIC_*).
+# Netlify smart secret scanning otherwise fails the deploy on AIza… patterns.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_FIREBASE_API_KEY,NEXT_PUBLIC_FIREBASE_APP_ID,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID"
+  SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
