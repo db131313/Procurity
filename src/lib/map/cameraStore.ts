@@ -5,14 +5,18 @@ export type MapCamera = {
   bearing: number;
 };
 
-export const MAP_CAMERA_KEY = "pc_map_camera";
+export const MAP_CAMERA_KEY = "pc_map_camera_v2";
 
-/** NYC default — pitched 3D overview for first visit. */
+/**
+ * Fallback camera when fitBounds isn't available yet.
+ * Intentionally wide (zoom ~9.6) so all five boroughs are in frame —
+ * the old default (zoom 10.5 @ Williamsburg) cropped to ~Brooklyn-only.
+ */
 export const DEFAULT_MAP_CAMERA: MapCamera = {
-  center: [-73.94, 40.72],
-  zoom: 10.5,
-  pitch: 50,
-  bearing: -20,
+  center: [-73.98, 40.71],
+  zoom: 9.6,
+  pitch: 30,
+  bearing: -12,
 };
 
 function isCamera(value: unknown): value is MapCamera {
@@ -50,5 +54,15 @@ export function setMapCamera(camera: MapCamera): void {
     window.sessionStorage.setItem(MAP_CAMERA_KEY, JSON.stringify(camera));
   } catch {
     // Quota / private mode — ignore
+  }
+}
+
+/** Clear saved camera (e.g. when switching metro so we re-fit city bounds). */
+export function clearMapCamera(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(MAP_CAMERA_KEY);
+  } catch {
+    // ignore
   }
 }

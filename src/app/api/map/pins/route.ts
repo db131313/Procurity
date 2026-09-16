@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { allowedZipFilter } from "@/lib/db/types";
 import { listMapPins } from "@/lib/map/pins";
+import {
+  MAP_PIN_DEFAULT_LIMIT,
+  MAP_PIN_MAX_LIMIT,
+} from "@/lib/map/pin-limits";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +25,9 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const city = url.searchParams.get("city") || undefined;
-  const limit = Number(url.searchParams.get("limit") || "350");
+  const limit = Number(
+    url.searchParams.get("limit") || String(MAP_PIN_DEFAULT_LIMIT),
+  );
   const w = url.searchParams.get("west");
   const s = url.searchParams.get("south");
   const e = url.searchParams.get("east");
@@ -47,7 +53,9 @@ export async function GET(request: Request) {
   const result = await listMapPins({
     city,
     bbox,
-    limit: Number.isFinite(limit) ? Math.min(limit, 400) : 350,
+    limit: Number.isFinite(limit)
+      ? Math.min(limit, MAP_PIN_MAX_LIMIT)
+      : MAP_PIN_DEFAULT_LIMIT,
     zipCodes,
   });
 

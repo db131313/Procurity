@@ -40,9 +40,15 @@ export type MapPinQuery = {
   zipCodes?: string[];
 };
 
-const DEFAULT_LIMIT = 350;
-/** Hard cap — never ship more than this many pins for a viewport. */
-const MAX_LIMIT = 400;
+import {
+  MAP_PIN_DEFAULT_LIMIT,
+  MAP_PIN_MAX_LIMIT,
+} from "@/lib/map/pin-limits";
+
+export { MAP_PIN_DEFAULT_LIMIT, MAP_PIN_MAX_LIMIT };
+
+const DEFAULT_LIMIT = MAP_PIN_DEFAULT_LIMIT;
+const MAX_LIMIT = MAP_PIN_MAX_LIMIT;
 
 function defaultTrades(score: number): TradeScores {
   return {

@@ -1,6 +1,6 @@
 /**
- * Approximate metro bounds for first pin fetch before MapLibre reports viewport.
- * Tuned to match DEFAULT_MAP_CAMERA (NYC) and common city deep-links.
+ * Approximate metro bounds for first pin fetch / fitBounds.
+ * NYC spans all five boroughs — must be wider than a Brooklyn street-level crop.
  */
 
 export type LonLatBounds = {

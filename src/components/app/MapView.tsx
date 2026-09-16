@@ -23,13 +23,14 @@ import { ScoreRing } from "@/components/ui/ScoreRing";
 import { formatMoneyRange } from "@/lib/format";
 import {
   DEFAULT_MAP_CAMERA,
+  clearMapCamera,
   getMapCamera,
   setMapCamera,
 } from "@/lib/map/cameraStore";
 import {
-  approxBoundsFromCamera,
   boundsForCity,
 } from "@/lib/map/city-bounds";
+import { MAP_PIN_DEFAULT_LIMIT } from "@/lib/map/pin-limits";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -160,7 +161,10 @@ export function MapView({ projects: initialProjects, city }: Props) {
   const [pinCount, setPinCount] = useState<number | null>(
     initialProjects.length ? initialProjects.length : null,
   );
+  const [pinsTruncated, setPinsTruncated] = useState(false);
   const fetchGen = useRef(0);
+  const cityRef = useRef(city);
+  cityRef.current = city;
 
   useEffect(() => {
     setProjects(initialProjects);
@@ -236,7 +240,7 @@ export function MapView({ projects: initialProjects, city }: Props) {
       south: String(bounds.south),
       east: String(bounds.east),
       north: String(bounds.north),
-        limit: "350",
+      limit: String(MAP_PIN_DEFAULT_LIMIT),
     });
     if (city) qs.set("city", city);
 
@@ -248,6 +252,7 @@ export function MapView({ projects: initialProjects, city }: Props) {
         const data = (await res.json()) as {
           pins?: MapProject[];
           totalMatched?: number;
+          truncated?: boolean;
         };
         if (gen !== fetchGen.current) return;
         if (Array.isArray(data.pins)) {
@@ -257,6 +262,7 @@ export function MapView({ projects: initialProjects, city }: Props) {
               ? data.totalMatched
               : data.pins.length,
           );
+          setPinsTruncated(Boolean(data.truncated));
         }
       })
       .catch(() => {
@@ -267,37 +273,30 @@ export function MapView({ projects: initialProjects, city }: Props) {
       });
   };
 
-  // Instant first fetch — don't wait for MapLibre style/tiles.
+  // Instant first fetch — always use full city bounds on metro change so the
+  // badge/pins aren't stuck on a leftover Brooklyn-cropped session camera.
   useEffect(() => {
-    const saved = getMapCamera();
-    let bounds: {
-      west: number;
-      south: number;
-      east: number;
-      north: number;
-    };
-    if (saved) {
-      const fromCamera = approxBoundsFromCamera(saved.center, saved.zoom);
-      const latPad = (fromCamera.north - fromCamera.south) * 0.15;
-      const lngPad = (fromCamera.east - fromCamera.west) * 0.15;
-      bounds = {
-        west: fromCamera.west - lngPad,
-        south: fromCamera.south - latPad,
-        east: fromCamera.east + lngPad,
-        north: fromCamera.north + latPad,
-      };
-    } else {
-      const cityBounds = boundsForCity(city);
-      bounds = {
-        west: cityBounds.west,
-        south: cityBounds.south,
-        east: cityBounds.east,
-        north: cityBounds.north,
-      };
-    }
+    const cityBounds = boundsForCity(city);
     setPinsLoading(true);
-    void fetchPins(bounds);
+    void fetchPins({
+      west: cityBounds.west,
+      south: cityBounds.south,
+      east: cityBounds.east,
+      north: cityBounds.north,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- first load / city change only
+  }, [city]);
+
+  // When the metro changes, drop the saved camera so we re-fit city bounds.
+  const prevCityRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (
+      prevCityRef.current !== undefined &&
+      prevCityRef.current !== city
+    ) {
+      clearMapCamera();
+    }
+    prevCityRef.current = city;
   }, [city]);
 
   // Viewport refetch on pan/zoom once the map is ready.
@@ -306,6 +305,7 @@ export function MapView({ projects: initialProjects, city }: Props) {
     if (!map || !mapReady) return;
 
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let skipNextMoveEnd = true;
 
     const loadViewport = () => {
       const mapBounds = map.getBounds();
@@ -322,6 +322,12 @@ export function MapView({ projects: initialProjects, city }: Props) {
     };
 
     const onMoveEnd = () => {
+      // Skip the synthetic moveend from initial fitBounds so we don't
+      // immediately replace the full-city pin set with a tighter crop.
+      if (skipNextMoveEnd) {
+        skipNextMoveEnd = false;
+        return;
+      }
       if (timer) clearTimeout(timer);
       timer = setTimeout(loadViewport, 280);
     };
@@ -335,7 +341,7 @@ export function MapView({ projects: initialProjects, city }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, city]);
 
-  // Init map once — restore session camera or NYC default (no fitBounds)
+  // Init map — fit city bounds on first visit; restore session camera after pan.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -351,23 +357,43 @@ export function MapView({ projects: initialProjects, city }: Props) {
         return;
       }
 
-      const camera = getMapCamera() ?? DEFAULT_MAP_CAMERA;
+      const saved = getMapCamera();
+      const cityBounds = boundsForCity(cityRef.current);
 
       map = new MapLibreMap({
         container: containerRef.current,
         style: STYLE_URL,
-        center: camera.center,
-        zoom: camera.zoom,
-        pitch: camera.pitch,
-        bearing: camera.bearing,
+        center: saved?.center ?? DEFAULT_MAP_CAMERA.center,
+        zoom: saved?.zoom ?? DEFAULT_MAP_CAMERA.zoom,
+        pitch: saved?.pitch ?? DEFAULT_MAP_CAMERA.pitch,
+        bearing: saved?.bearing ?? DEFAULT_MAP_CAMERA.bearing,
         maxPitch: 60,
       });
-      map.addControl(new NavigationControl({ visualizePitch: true }), "top-right");
+      // Bottom-right so it doesn't cover the Filters control (top-right).
+      map.addControl(
+        new NavigationControl({ visualizePitch: true }),
+        "bottom-right",
+      );
       mapRef.current = map;
 
       map.on("load", () => {
         if (cancelled || !map) return;
         map.dragPan.enable({ deceleration: 2500, linearity: 0.3 });
+        if (!saved) {
+          map.fitBounds(
+            [
+              [cityBounds.west, cityBounds.south],
+              [cityBounds.east, cityBounds.north],
+            ],
+            {
+              padding: { top: 56, bottom: 72, left: 28, right: 28 },
+              pitch: DEFAULT_MAP_CAMERA.pitch,
+              bearing: DEFAULT_MAP_CAMERA.bearing,
+              duration: 0,
+              essential: true,
+            },
+          );
+        }
         map.resize();
         setMapReady(true);
       });
@@ -494,7 +520,10 @@ export function MapView({ projects: initialProjects, city }: Props) {
         <div className="pointer-events-none absolute left-3 top-3 z-30 md:left-5 md:top-4">
           <p className="rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
             {city.replace(/_/g, " ")}
-            {pinCount != null ? ` · ${pinCount.toLocaleString()} sites` : ""}
+            {pinCount != null
+              ? ` · ${pinCount.toLocaleString()} in view`
+              : ""}
+            {pinsTruncated ? " · top scores" : ""}
           </p>
         </div>
       )}

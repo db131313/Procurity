@@ -9,12 +9,12 @@ import {
   PreviewWelcome,
 } from "./ProductPreviews";
 import { Logo } from "@/components/brand/Logo";
-import { AnimatedCounters } from "./AnimatedCounters";
 import {
   HeroCityBackground,
   HeroScorePins,
 } from "./HeroRouteMap";
-import { CityQuickPick } from "./CityQuickPick";
+import { HomeTeaserMapSection } from "./HomeTeaserMapSection";
+import type { HomeCoverageStats } from "@/lib/marketing/home-coverage";
 
 const STEPS = [
   {
@@ -58,35 +58,41 @@ const FEATURES = [
   },
 ];
 
-// PLACEHOLDER STATS — replace with real metrics when available
-const SOCIAL = [
-  "500+ NYC projects scored weekly",
-  "Avg. buying window surfaced in days",
-  "Built for sign shop sales teams",
-];
+type Props = {
+  stats: HomeCoverageStats;
+};
 
-export function HomePage() {
+export function HomePage({ stats }: Props) {
+  const projectLabel =
+    stats.projectCount > 0
+      ? `${stats.projectCount.toLocaleString()} scored projects`
+      : "Live permit scoring";
+  const cityLabel =
+    stats.cityCount > 0
+      ? `${stats.cityCount} metros covered`
+      : "Multi-metro coverage";
+
   return (
     <div className="bg-offwhite">
-      {/* Hero — matches provided mockups (photo bg, exact copy, hamburger nav) */}
+      {/* Hero — brand + one headline + one CTA; no city picker */}
       <section className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-ink text-white">
         <HeroCityBackground />
         <MarketingNav />
 
-        {/* Desktop pins (absolute over photo) */}
         <div className="pointer-events-none absolute inset-0 z-[12] hidden md:block" aria-hidden>
           <HeroScorePins variant="desktop" />
         </div>
 
         <div className="relative z-10 flex w-full flex-1 flex-col px-5 pb-10 pt-[4.75rem] md:justify-center md:pb-24 md:pl-12 md:pr-10 md:pt-28 lg:pr-16">
-          {/* Mobile: featured pin centered under nav */}
           <div className="mb-6 mt-4 flex justify-center md:hidden">
             <HeroScorePins variant="mobile" />
           </div>
 
-          {/* Copy column — capped so pins stay in the clear right zone */}
           <div className="mt-auto w-full max-w-xl animate-pc-rise md:mt-0 md:max-w-[min(34rem,44vw)]">
-            <h1 className="text-[2.05rem] font-bold leading-[1.12] tracking-tight sm:text-[2.5rem] md:text-5xl lg:text-[3.25rem]">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal">
+              Procurity.Pro
+            </p>
+            <h1 className="mt-3 text-[2.05rem] font-bold leading-[1.12] tracking-tight sm:text-[2.5rem] md:text-5xl lg:text-[3.25rem]">
               Know{" "}
               <span className="pc-gradient-text font-black tracking-wide">
                 WHO
@@ -103,26 +109,78 @@ export function HomePage() {
             </h1>
             <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/70 sm:mt-5 sm:text-base md:text-lg">
               Use better data to better predict procurement windows for new
-              construction, and commercial building projects in your area.
+              construction and commercial building projects in your area.
             </p>
-            <div className="mt-7 sm:mt-8">
-              <CityQuickPick variant="dark" />
+            <div className="mt-7 flex flex-wrap items-center gap-3 sm:mt-8">
+              <Link
+                href="/signup"
+                className="pc-gradient-bg inline-flex h-14 items-center justify-center rounded-full px-8 text-[15px] font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.98]"
+              >
+                Find My Opportunities
+              </Link>
+              <Link
+                href="/how-it-works"
+                className="inline-flex h-14 items-center justify-center rounded-full border border-white/25 bg-white/10 px-6 text-[15px] font-bold text-white backdrop-blur transition hover:bg-white/15"
+              >
+                How it works
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Social proof — PLACEHOLDER STATS */}
-      <section className="border-b border-line bg-white px-5 py-6 md:px-10">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-3 md:justify-between">
-          {SOCIAL.map((s) => (
-            <span
-              key={s}
-              className="rounded-full bg-offwhite px-4 py-2 text-xs font-bold text-slate md:text-sm"
-            >
-              {s}
-            </span>
-          ))}
+      {/* Live data proof — replaces placeholder testimonials */}
+      <section className="border-b border-line bg-white px-5 py-14 md:px-10 md:py-16">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate">
+            Live coverage
+          </p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">
+            Built on real open-data permits — not anecdotes
+          </h2>
+          <p className="mt-3 max-w-2xl text-slate">
+            Counts below refresh from the live project database whenever this
+            page loads.
+          </p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-3xl border border-line bg-offwhite px-6 py-7">
+              <p className="text-4xl font-bold tabular-nums tracking-tight text-ink">
+                {stats.projectCount > 0
+                  ? stats.projectCount.toLocaleString()
+                  : "—"}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate">
+                {projectLabel}
+              </p>
+            </div>
+            <div className="rounded-3xl border border-line bg-offwhite px-6 py-7">
+              <p className="text-4xl font-bold tabular-nums tracking-tight text-ink">
+                {stats.cityCount}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate">{cityLabel}</p>
+            </div>
+            <div className="rounded-3xl border border-line bg-offwhite px-6 py-7 sm:col-span-2 lg:col-span-1">
+              <p className="text-sm font-bold text-ink">Top metros right now</p>
+              <ul className="mt-3 space-y-1.5 text-sm text-slate">
+                {(stats.cities.length
+                  ? stats.cities
+                  : [{ id: "nyc", label: "NYC", count: 0 }]
+                )
+                  .slice(0, 5)
+                  .map((c) => (
+                    <li
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 font-semibold"
+                    >
+                      <span>{c.label}</span>
+                      <span className="tabular-nums text-ink">
+                        {c.count > 0 ? c.count.toLocaleString() : "—"}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -142,15 +200,19 @@ export function HomePage() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-3 text-lg font-bold text-ink">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate">{step.body}</p>
+                <p className="mt-2 text-sm leading-relaxed text-slate">
+                  {step.body}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
+      <HomeTeaserMapSection initialCityId="nyc" />
+
       {/* Feature showcase */}
-      <section className="bg-white px-5 py-16 md:px-10 md:py-24">
+      <section className="bg-offwhite px-5 py-16 md:px-10 md:py-24">
         <div className="mx-auto max-w-6xl space-y-20">
           {FEATURES.map((f, i) => (
             <div
@@ -172,50 +234,6 @@ export function HomePage() {
       </section>
 
       <PhaseShowcase />
-
-      <AnimatedCounters />
-
-      {/* Testimonials PLACEHOLDER */}
-      <section className="px-5 py-16 md:px-10 md:py-24">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold text-ink">Reps who stopped driving blind</h2>
-          <div className="mt-8 flex snap-x gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible">
-            {[
-              {
-                q: "I used to burn mornings on cold calls. Now I open the map and know the three stops that matter.",
-                n: "Jordan M.",
-                c: "Metro Sign Co",
-              },
-              {
-                q: "The Buy Score reasons screen sells itself to my team. They trust why a job is hot.",
-                n: "Priya S.",
-                c: "Northside Graphics",
-              },
-              {
-                q: "We closed a lobby package two weeks earlier because Procurity flagged finishing phase.",
-                n: "Alex R.",
-                c: "Harbor Signs",
-              },
-            ].map((t) => (
-              <blockquote
-                key={t.n}
-                className="pc-card min-w-[280px] snap-center p-5 md:min-w-0"
-              >
-                <p className="text-sm leading-relaxed text-ink">&ldquo;{t.q}&rdquo;</p>
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full pc-gradient-bg text-sm font-bold text-white">
-                    {t.n[0]}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-ink">{t.n}</p>
-                    <p className="text-xs text-slate">{t.c}</p>
-                  </div>
-                </div>
-              </blockquote>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section id="pricing" className="bg-white px-5 py-16 md:px-10 md:py-24">
         <div className="mx-auto max-w-6xl">
@@ -254,7 +272,8 @@ export function HomePage() {
             <Link href="/signup">Sign up</Link>
           </div>
           <p className="text-xs text-slate">
-            © {new Date().getFullYear()} Procurity.Pro · Find the next job before they need you.
+            © {new Date().getFullYear()} Procurity.Pro · Find the next job
+            before they need you.
           </p>
         </div>
       </footer>
