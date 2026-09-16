@@ -46,11 +46,6 @@ export default async function MapPage({ searchParams }: Props) {
   return (
     <main className="relative h-full min-h-0 w-full flex-1 overflow-hidden">
       <PersistCityCookie cityId={defaultCity} />
-      <div className="pointer-events-none absolute left-3 top-3 z-30 md:left-5 md:top-4">
-        <p className="rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
-          {picker?.label ?? cityCode.replace(/_/g, " ")}
-        </p>
-      </div>
       {showDbHint && (
         <div className="pointer-events-none absolute left-3 top-12 z-30 max-w-xs md:left-5">
           <p className="rounded-xl border border-amber-200 bg-amber-50/95 px-2.5 py-1.5 text-[11px] font-medium text-amber-950">

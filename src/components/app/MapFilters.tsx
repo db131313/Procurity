@@ -197,7 +197,7 @@ export function MapFilters({ value, onChange }: Props) {
   }, [open]);
 
   return (
-    <div className="pointer-events-none absolute right-3 top-3 z-30 md:right-5 md:top-4">
+    <div className="pointer-events-none absolute right-3 top-3 z-50 md:right-5 md:top-4">
       <div className="pointer-events-auto relative">
         <button
           type="button"
@@ -212,7 +212,7 @@ export function MapFilters({ value, onChange }: Props) {
               : "border-line bg-white/95 text-ink",
           )}
         >
-          <SlidersHorizontal className="h-5 w-5" />
+          <SlidersHorizontal className="h-5 w-5 shrink-0" aria-hidden />
           <span className="pr-0.5">Filters</span>
           {anyActive ? (
             <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white/25 px-1.5 text-[11px] font-bold">

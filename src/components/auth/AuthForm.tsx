@@ -155,17 +155,6 @@ export function AuthForm({
         </p>
       )}
       <form action={onSubmit} className="space-y-4">
-        {mode === "signup" && (
-          <label className="block space-y-1.5 text-sm font-semibold text-ink">
-            <span>Name</span>
-            <input
-              name="name"
-              autoComplete="name"
-              className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
-              placeholder="Jordan Lee"
-            />
-          </label>
-        )}
         {mode === "signup" && !checkout && (
           <label className="block space-y-1.5 text-sm font-semibold text-ink">
             <span>Work zip code</span>
@@ -176,12 +165,24 @@ export function AuthForm({
               maxLength={10}
               required
               autoComplete="postal-code"
-              className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
-              placeholder="10001"
+              className="w-full rounded-2xl border-2 border-ink/20 bg-white px-4 py-3.5 text-base outline-none ring-purple/30 focus:border-ink focus:ring-2"
+              placeholder="e.g. 10001"
             />
             <span className="block text-xs font-medium text-slate">
-              We&apos;ll open the map for your metro when we cover it.
+              Required — we route you to your covered metro map (or the
+              waitlist if we&apos;re not there yet).
             </span>
+          </label>
+        )}
+        {mode === "signup" && (
+          <label className="block space-y-1.5 text-sm font-semibold text-ink">
+            <span>Name</span>
+            <input
+              name="name"
+              autoComplete="name"
+              className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
+              placeholder="Jordan Lee"
+            />
           </label>
         )}
         <label className="block space-y-1.5 text-sm font-semibold text-ink">
