@@ -14,8 +14,8 @@ export const dynamic = "force-dynamic";
  * Query: city, west,south,east,north (bbox), limit
  * Cached briefly via Cache-Control for repeat pans.
  * Does not run freshness sync — that belongs on the map page `after()`.
- * Pins are filtered by the user's zipCodes allowlist for trial/starter/growth
- * when set; Pro and empty (grandfathered) lists are unrestricted.
+ * Pins are filtered by the user's zipCodes allowlist for trial/starter/growth.
+ * Pro is unrestricted. Empty allowlist on non-Pro returns zero pins (pick zips first).
  */
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
       totalMatched: result.totalMatched,
       truncated: result.truncated,
       elapsedMs: Date.now() - started,
-      zipFiltered: Boolean(zipCodes?.length),
+      zipFiltered: Array.isArray(zipCodes),
       pins: result.pins,
     },
     {

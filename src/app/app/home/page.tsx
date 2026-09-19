@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { ProjectCard } from "@/components/app/ProjectCard";
 import { getCurrentUser } from "@/lib/auth/session";
+import { allowedZipFilter } from "@/lib/db/types";
 import { getSyncMeta, listPipeline, listProjects } from "@/lib/db/store";
 import { relativeTime } from "@/lib/format";
 
 export default async function AppHomePage() {
   const user = await getCurrentUser();
   const sync = await getSyncMeta();
-  // Citywide — all five boroughs
-  const projects = await listProjects();
+  const zipCodes = user ? allowedZipFilter(user) : undefined;
+  const projects = await listProjects(
+    Array.isArray(zipCodes) ? { zipCodes } : undefined,
+  );
   const top = projects.slice(0, 12);
   const pipeline = user ? await listPipeline(user.id) : [];
   const won = pipeline.filter((p) => p.stage === "won");

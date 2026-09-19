@@ -16,7 +16,7 @@ import type {
   TradeScores,
   UserRecord,
 } from "./types";
-import { PLAN_LIMITS, effectiveZipAllowance } from "./types";
+import { PLAN_LIMITS, effectiveZipAllowance, trimZipsToAllowance } from "./types";
 import type {
   PlanTier as PrismaPlan,
   ProjectPhase as PrismaPhase,
@@ -213,7 +213,7 @@ export async function listProjects(opts?: {
   const prisma = getPrisma();
   const where: Record<string, unknown> = {};
   if (opts?.city) where.city = opts.city;
-  if (opts?.zipCodes?.length) where.zip = { in: opts.zipCodes };
+  if (Array.isArray(opts?.zipCodes)) where.zip = { in: opts.zipCodes };
   if (opts?.minScore) where.score = { gte: opts.minScore };
   if (opts?.filter === "hot") where.score = { gte: 85 };
   if (opts?.filter === "buying") {
@@ -397,11 +397,22 @@ export async function updateUserPlan(
   plan: PlanTier,
   stripe?: { customerId?: string; subscriptionId?: string | null },
 ) {
-  const row = await getPrisma().user.update({
+  const prisma = getPrisma();
+  const existing = await prisma.user.findUnique({ where: { id: userId } });
+  if (!existing) return null;
+  const zipCodes = trimZipsToAllowance(
+    existing.zipCodes ?? [],
+    PLAN_LIMITS[plan],
+  );
+  const onboardingComplete =
+    plan === "pro" ? true : zipCodes.length === 0 ? false : existing.onboardingComplete;
+  const row = await prisma.user.update({
     where: { id: userId },
     data: {
       plan: plan as PrismaPlan,
       zipAllowance: PLAN_LIMITS[plan],
+      zipCodes,
+      onboardingComplete,
       ...(stripe?.customerId
         ? { stripeCustomerId: stripe.customerId }
         : {}),
@@ -423,11 +434,21 @@ export async function setDevPlanOverride(
   const zipAllowance = override
     ? PLAN_LIMITS[override]
     : PLAN_LIMITS[existing.plan];
+  const zipCodes = trimZipsToAllowance(existing.zipCodes ?? [], zipAllowance);
+  const effective = override ?? existing.plan;
+  const onboardingComplete =
+    effective === "pro"
+      ? true
+      : zipCodes.length === 0
+        ? false
+        : existing.onboardingComplete;
   const row = await prisma.user.update({
     where: { id: userId },
     data: {
       devPlanOverride: override as PrismaPlan | null,
       zipAllowance,
+      zipCodes,
+      onboardingComplete,
     },
   });
   return mapUser(row);

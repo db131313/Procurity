@@ -34,12 +34,16 @@ export async function POST(request: Request) {
   if (!stripeConfigured()) {
     const { updateUserPlan } = await import("@/lib/db/store");
     await updateUserPlan(user.id, tier);
-    const mapUrl = city
-      ? `/app/map?city=${encodeURIComponent(city)}`
-      : `/app/map`;
+    // Non-Pro with empty zips → onboarding (layout also gates /app/map).
+    const nextPath =
+      tier === "pro"
+        ? city
+          ? `/app/map?city=${encodeURIComponent(city)}`
+          : `/app/map`
+        : `/app/onboarding`;
     return NextResponse.json({
       demo: true,
-      url: mapUrl,
+      url: nextPath,
     });
   }
 
@@ -74,7 +78,10 @@ export async function POST(request: Request) {
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/app/map?checkout=success&tier=${tier}${successCity}`,
+    success_url:
+      tier === "pro"
+        ? `${origin}/app/map?checkout=success&tier=${tier}${successCity}`
+        : `${origin}/app/onboarding?checkout=success&tier=${tier}${successCity}`,
     cancel_url: `${origin}/signup?checkout=cancel${city ? `&city=${encodeURIComponent(city)}` : ""}`,
     client_reference_id: user.id,
     metadata: {

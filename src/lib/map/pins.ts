@@ -35,9 +35,9 @@ export type MapPinQuery = {
   limit?: number;
   minScore?: number;
   /**
-   * When set (non-empty), only return pins in these zip codes.
-   * Callers should pass `allowedZipFilter(user)` — undefined for Pro / empty
-   * grandfathered lists (no filter).
+   * When an array (including empty), only return pins in these zip codes.
+   * Callers should pass `allowedZipFilter(user)` — `undefined` for Pro
+   * (no filter); empty array → zero pins until the user picks territory.
    */
   zipCodes?: string[];
 };
@@ -137,7 +137,7 @@ async function listMapPinsPrisma(opts: MapPinQuery, limit: number) {
     where.city = opts.city || opts.cities![0];
   }
   if (opts.minScore) where.score = { gte: opts.minScore };
-  if (opts.zipCodes?.length) where.zip = { in: opts.zipCodes };
+  if (Array.isArray(opts.zipCodes)) where.zip = { in: opts.zipCodes };
   if (opts.bbox) {
     const [w, s, e, n] = opts.bbox;
     where.longitude = { gte: w, lte: e };

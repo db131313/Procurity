@@ -382,7 +382,7 @@ export const SEED_EVENTS: ProjectEvent[] = [
   },
 ];
 
-/** Demo: empty zipCodes + pro = unrestricted (Full US / citywide). */
+/** Demo: plan pro + empty zipCodes = Full US (citywide), skips zip gate. */
 export const DEMO_USER: UserRecord = {
   id: "user-demo",
   firebaseUid: "demo-uid",

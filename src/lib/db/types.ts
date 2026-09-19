@@ -115,8 +115,8 @@ export type UserRecord = {
   /**
    * Allowed zip list for map/project filtering (starter / growth / trial).
    * There is no separate `allowedZipCodes` column — `zipCodes` IS the allowlist.
-   * Empty list = grandfather unrestricted access until the user picks zips
-   * (demo users stay empty + pro = unrestricted).
+   * Empty list on non-Pro → must pick territory (onboarding gate); map returns
+   * zero pins until set. Demo stays unrestricted via plan: pro + empty list.
    */
   /** Admin-only override; when set, takes precedence over `plan`. */
   devPlanOverride: PlanTier | null;
@@ -214,27 +214,51 @@ export function formatPlanZipAccess(
   return n === 1 ? "1 zip code" : `${n} zip codes`;
 }
 
+/** Built-in demo account — always Full US (pro), never zip-gated. */
+export const DEMO_USER_EMAIL = "demo@procurity.pro";
+
+export function isDemoUserEmail(email: string | null | undefined): boolean {
+  return (email ?? "").trim().toLowerCase() === DEMO_USER_EMAIL;
+}
+
 /**
  * Whether map/project queries should skip zip filtering for this user.
  * - Pro: Full US (no zip restriction)
- * - Empty zipCodes: grandfather unrestricted until they pick zips
- * - Demo stays unrestricted via empty zipCodes + pro
+ * - Non-Pro: always zip-scoped (empty allowlist → no pins until they pick)
  */
 export function isZipUnrestricted(
   user: Pick<UserRecord, "plan" | "zipCodes">,
 ): boolean {
-  if (user.plan === "pro") return true;
-  if (!user.zipCodes.length) return true;
-  return false;
+  return user.plan === "pro";
 }
 
 /**
- * Zip allowlist for server-side map filtering, or undefined when unrestricted.
- * Apply for trial / starter / growth when zipCodes is non-empty.
+ * Zip allowlist for server-side filtering.
+ * - `undefined` = Pro / unrestricted (no WHERE zip clause)
+ * - `string[]` (maybe empty) = restrict to these zips (empty → zero results)
  */
 export function allowedZipFilter(
   user: Pick<UserRecord, "plan" | "zipCodes">,
 ): string[] | undefined {
   if (isZipUnrestricted(user)) return undefined;
   return user.zipCodes;
+}
+
+/**
+ * Starter / Growth / Trial with no zips yet must complete territory pick.
+ * Pro and the demo account skip.
+ */
+export function needsZipTerritoryPick(
+  user: Pick<UserRecord, "plan" | "zipCodes" | "email">,
+): boolean {
+  if (user.plan === "pro") return false;
+  if (isDemoUserEmail(user.email)) return false;
+  return user.zipCodes.length === 0;
+}
+
+/** Keep at most `allowance` zips (stable order) when a plan shrinks. */
+export function trimZipsToAllowance(zips: string[], allowance: number): string[] {
+  if (allowance <= 0) return [];
+  if (zips.length <= allowance) return zips;
+  return zips.slice(0, allowance);
 }

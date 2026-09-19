@@ -10,6 +10,9 @@ import {
 } from "@/lib/cities/picker";
 import { after } from "next/server";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/session";
+import { needsZipTerritoryPick } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +27,11 @@ type Props = {
  * `?city=` / `pc_city` select the metro (teaser + signup defaultCity).
  */
 export default async function MapPage({ searchParams }: Props) {
+  const user = await getCurrentUser();
+  if (user && needsZipTerritoryPick(user)) {
+    redirect("/app/onboarding");
+  }
+
   const sp = await searchParams;
   const jar = await cookies();
   const rawCity =

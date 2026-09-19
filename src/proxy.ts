@@ -28,7 +28,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  return NextResponse.next();
+  // Expose pathname to Server Components (zip onboarding gate in app layout).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", path);
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 }
 
 /**
