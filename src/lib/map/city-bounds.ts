@@ -43,3 +43,19 @@ export function boundsForCity(city?: string | null): LonLatBounds {
   if (city && CITY_BOUNDS[city]) return CITY_BOUNDS[city];
   return CITY_BOUNDS.nyc;
 }
+
+function boxesIntersect(a: LonLatBounds, b: LonLatBounds): boolean {
+  return !(
+    a.east < b.west ||
+    a.west > b.east ||
+    a.north < b.south ||
+    a.south > b.north
+  );
+}
+
+/** Covered metros whose bounds overlap the given viewport (for progressive multi-city pin loads). */
+export function citiesIntersectingBounds(viewport: LonLatBounds): string[] {
+  return Object.entries(CITY_BOUNDS)
+    .filter(([, b]) => boxesIntersect(viewport, b))
+    .map(([id]) => id);
+}

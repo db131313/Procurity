@@ -15,7 +15,8 @@ export async function addProjectToPipeline(projectId: string) {
   if (!user) redirect("/login");
   const item = await addToPipeline(user.id, projectId);
   revalidatePath("/app/pipeline");
-  revalidatePath(`/app/project/${projectId}`);
+  revalidatePath("/app/map");
+  revalidatePath("/app/home");
   return item;
 }
 
@@ -32,7 +33,8 @@ export async function movePipelineStage(
 
   await movePipelineItem(itemId, stage);
   revalidatePath("/app/pipeline");
-  if (projectId) revalidatePath(`/app/project/${projectId}`);
+  revalidatePath("/app/map");
+  revalidatePath("/app/home");
 
   if (stage === "won") {
     redirect(`/app/deal/${encodeURIComponent(owned.projectId)}/won`);

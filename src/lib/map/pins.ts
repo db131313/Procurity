@@ -27,6 +27,8 @@ export type MapPinRow = {
 
 export type MapPinQuery = {
   city?: string;
+  /** When set (2+ metros in view), filter to these cities instead of a single `city`. */
+  cities?: string[];
   /** West, south, east, north (WGS84) */
   bbox?: [number, number, number, number];
   /** Soft cap to protect payloads (viewport queries should stay well under this) */
@@ -75,11 +77,19 @@ export async function listMapPins(opts: MapPinQuery = {}): Promise<{
 
 async function listMapPinsFile(opts: MapPinQuery, limit: number) {
   const { listProjects } = await import("@/lib/db/store");
+  const cityFilter =
+    opts.cities && opts.cities.length > 1
+      ? undefined
+      : opts.city || opts.cities?.[0];
   let items = await listProjects({
-    city: opts.city,
+    city: cityFilter,
     minScore: opts.minScore,
     zipCodes: opts.zipCodes,
   });
+  if (opts.cities && opts.cities.length > 1) {
+    const allow = new Set(opts.cities);
+    items = items.filter((p) => allow.has(p.city));
+  }
   if (opts.bbox) {
     const [w, s, e, n] = opts.bbox;
     items = items.filter(
@@ -121,7 +131,11 @@ async function listMapPinsPrisma(opts: MapPinQuery, limit: number) {
   const { getPrisma } = await import("@/lib/db/prisma");
   const prisma = getPrisma();
   const where: Record<string, unknown> = {};
-  if (opts.city) where.city = opts.city;
+  if (opts.cities && opts.cities.length > 1) {
+    where.city = { in: opts.cities };
+  } else if (opts.city || opts.cities?.[0]) {
+    where.city = opts.city || opts.cities![0];
+  }
   if (opts.minScore) where.score = { gte: opts.minScore };
   if (opts.zipCodes?.length) where.zip = { in: opts.zipCodes };
   if (opts.bbox) {

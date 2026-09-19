@@ -7,6 +7,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { cn } from "@/lib/cn";
 import type { PipelineStage } from "@/lib/db/types";
 import { movePipelineStage } from "@/app/actions/pipeline";
+import { mapProjectHref } from "@/lib/map/project-href";
 
 export type PipelineCard = {
   itemId: string;
@@ -86,7 +87,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                     >
                       <div className="flex items-start justify-between gap-3">
                         <Link
-                          href={`/app/project/${encodeURIComponent(card.projectId)}`}
+                          href={mapProjectHref(card.projectId)}
                           className="min-w-0 flex-1"
                         >
                           <p className="text-[11px] font-bold tabular-nums text-purple">

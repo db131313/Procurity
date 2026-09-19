@@ -6,5 +6,5 @@ export default async function OpportunityRedirect({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/app/project/${encodeURIComponent(id)}`);
+  redirect(`/app/map?pin=${encodeURIComponent(id)}`);
 }

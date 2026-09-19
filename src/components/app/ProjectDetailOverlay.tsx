@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { StreetViewHeader } from "@/components/app/StreetViewHeader";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -89,17 +88,18 @@ export function ProjectDetailOverlay({
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
-    if (!open || !project) {
+    if (!open || !project?.id) {
       setDetail(null);
       setLoadError(null);
       setAdded(false);
       return;
     }
+    const projectId = project.id;
     let cancelled = false;
     setDetail(null);
     setLoadError(null);
     setAdded(false);
-    void fetch(`/api/projects/${encodeURIComponent(project.id)}`, {
+    void fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
       credentials: "same-origin",
     })
       .then(async (res) => {
@@ -122,20 +122,32 @@ export function ProjectDetailOverlay({
     return () => {
       cancelled = true;
     };
-  }, [open, project]);
+  }, [open, project?.id]);
 
   const p = detail?.project;
   const inPipeline = Boolean(detail?.inPipeline || added);
+  const streetLat = p?.latitude ?? project?.latitude ?? 0;
+  const streetLng = p?.longitude ?? project?.longitude ?? 0;
+  const hasStreetCoords =
+    Number.isFinite(streetLat) &&
+    Number.isFinite(streetLng) &&
+    !(streetLat === 0 && streetLng === 0);
 
   return (
     <BottomSheet open={open && Boolean(project)} onClose={onClose} variant="full">
       {project && (
         <>
-          <StreetViewHeader
-            lat={project.latitude}
-            lng={project.longitude}
-            className="w-full"
-          />
+          {hasStreetCoords ? (
+            <StreetViewHeader
+              lat={streetLat}
+              lng={streetLng}
+              className="w-full"
+            />
+          ) : (
+            <div className="flex h-56 w-full items-center justify-center bg-ink text-xs font-semibold text-white/70 sm:h-72 md:h-80">
+              Loading location…
+            </div>
+          )}
 
           <div className="px-4 pt-4">
             <div className="flex items-start gap-3">
@@ -358,7 +370,7 @@ export function ProjectDetailOverlay({
                 </section>
 
                 {p.scoreReasons?.length > 0 && (
-                  <section className="mt-6">
+                  <section className="mt-6 mb-4">
                     <h3 className="text-[11px] font-bold uppercase tracking-wide text-slate">
                       Why {p.score}?
                     </h3>
@@ -371,13 +383,6 @@ export function ProjectDetailOverlay({
                     </ul>
                   </section>
                 )}
-
-                <Link
-                  href={`/app/project/${encodeURIComponent(project.id)}`}
-                  className="mt-6 mb-2 flex h-11 w-full items-center justify-center rounded-full border border-line text-sm font-bold text-ink hover:bg-offwhite"
-                >
-                  Open full page
-                </Link>
               </>
             )}
           </div>

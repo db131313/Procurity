@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { listEvents, getProject } from "@/lib/db/store";
+import { mapProjectHref } from "@/lib/map/project-href";
 
 function dayLabel(iso: string) {
   const d = parseISO(iso);
@@ -54,7 +55,10 @@ export default async function AlertsPage() {
                 {items.map(({ event, project }) => (
                   <li key={event.id}>
                     <Link
-                      href={`/app/project/${encodeURIComponent(event.projectId)}`}
+                      href={mapProjectHref(
+                        event.projectId,
+                        project?.city ?? null,
+                      )}
                       className="pc-card block p-4 transition hover:-translate-y-0.5 hover:shadow-md"
                     >
                       <p className="text-[11px] font-bold uppercase tracking-wide text-purple">

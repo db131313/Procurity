@@ -14,7 +14,7 @@ import { cookies } from "next/headers";
 export const dynamic = "force-dynamic";
 
 type Props = {
-  searchParams: Promise<{ city?: string }>;
+  searchParams: Promise<{ city?: string; pin?: string }>;
 };
 
 /**
