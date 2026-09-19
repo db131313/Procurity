@@ -16,12 +16,13 @@ type MetaResponse = {
   dateLabel?: string | null;
   imagePath?: string | null;
   reportProblemUrl?: string | null;
+  attribution?: string | null;
   status?: string;
 };
 
 /**
- * Full-width Street View header for project overlays.
- * Uses metadata first; clean fallback when no key / no imagery.
+ * Full-width street-imagery header for project overlays (Mapillary).
+ * Metadata first; clean fallback when no token / no coverage.
  */
 export function StreetViewHeader({ lat, lng, className }: Props) {
   const [meta, setMeta] = useState<MetaResponse | null>(null);
@@ -58,7 +59,7 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
         // eslint-disable-next-line @next/next/no-img-element -- proxied API image
         <img
           src={meta!.imagePath!}
-          alt="Google Street View of project location"
+          alt="Street-level photo of project location"
           className="h-44 w-full object-cover sm:h-52"
           onError={() => setImgError(true)}
         />
@@ -67,10 +68,10 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
           <MapPin className="h-7 w-7" aria-hidden />
           <p className="text-xs font-semibold tracking-wide">
             {meta == null
-              ? "Checking Street View…"
+              ? "Checking street imagery…"
               : meta.configured === false
-                ? "Street View not configured"
-                : "No Street View for this location"}
+                ? "Street imagery not configured"
+                : "No street imagery for this location"}
           </p>
         </div>
       )}
@@ -83,7 +84,7 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
               {meta?.dateLabel ? `: ${meta.dateLabel}` : ""}
             </p>
             <p className="text-white/75">
-              Imagery © Google — not live / not real-time
+              Imagery © Mapillary — not live / not real-time
             </p>
           </div>
           {meta?.reportProblemUrl && (
@@ -93,7 +94,7 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
               rel="noreferrer"
               className="shrink-0 underline decoration-white/50 underline-offset-2 hover:decoration-white"
             >
-              Report a problem
+              View on Mapillary
             </a>
           )}
         </div>

@@ -4,14 +4,14 @@ import {
   fetchStreetViewMeta,
   formatStreetViewDate,
   isStreetViewConfigured,
-  streetViewImageUrl,
+  mapillaryAppUrl,
 } from "@/lib/geo/street-view";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Street View metadata + proxied image URL for project overlays.
- * Auth required. Returns available:false (not an error) when no key / no imagery.
+ * Street imagery metadata + proxied image URL for project overlays (Mapillary).
+ * Auth required. Returns available:false (not an error) when no token / no coverage.
  */
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -35,12 +35,13 @@ export async function GET(request: Request) {
       dateLabel: null,
       imagePath: null,
       reportProblemUrl: null,
+      attribution: "Mapillary",
       status: "NO_KEY",
     });
   }
 
   const meta = await fetchStreetViewMeta(lat, lng);
-  if (!meta.available) {
+  if (!meta.available || !meta.imageId) {
     return NextResponse.json({
       ok: true,
       configured: true,
@@ -49,12 +50,12 @@ export async function GET(request: Request) {
       dateLabel: null,
       imagePath: null,
       reportProblemUrl: null,
+      attribution: "Mapillary",
       status: meta.status,
     });
   }
 
-  const imagePath = `/api/streetview/image?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`;
-  const reportProblemUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+  const imagePath = `/api/streetview/image?id=${encodeURIComponent(meta.imageId)}`;
 
   return NextResponse.json({
     ok: true,
@@ -63,7 +64,9 @@ export async function GET(request: Request) {
     date: meta.date,
     dateLabel: formatStreetViewDate(meta.date),
     imagePath,
-    reportProblemUrl,
+    imageId: meta.imageId,
+    reportProblemUrl: mapillaryAppUrl(meta.imageId),
+    attribution: "Mapillary",
     status: meta.status,
   });
 }
