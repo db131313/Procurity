@@ -55,7 +55,7 @@ export function BottomSheet({
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            transition={{ type: "tween", duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
             drag="y"
             dragControls={controls}
             dragListener={false}

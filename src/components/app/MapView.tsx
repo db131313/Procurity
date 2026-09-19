@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Map as MapLibreMap,
   NavigationControl,
@@ -17,6 +18,7 @@ import {
   type MapFilterState,
   type ScoreMode,
 } from "@/components/app/MapFilters";
+import { MapCityPicker } from "@/components/app/MapCityPicker";
 import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
 import {
   DEFAULT_MAP_CAMERA,
@@ -26,8 +28,11 @@ import {
 } from "@/lib/map/cameraStore";
 import {
   boundsForCity,
+  citiesIntersectingBounds,
+  type LonLatBounds,
 } from "@/lib/map/city-bounds";
 import { MAP_PIN_DEFAULT_LIMIT } from "@/lib/map/pin-limits";
+import { CITY_COOKIE } from "@/lib/cities/picker";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -38,6 +43,7 @@ const STYLE_URL =
 
 export type MapProject = {
   id: string;
+  city?: string;
   latitude: number;
   longitude: number;
   score: number;
@@ -53,14 +59,6 @@ export type MapProject = {
   zip?: string | null;
 };
 
-/**
- * Buy Score pin colors
- * 90–100  green   #16A34A  excellent / act now
- * 80–89   teal    #0D9488  strong fit
- * 70–79   blue    #2563EB  worth pursuing
- * 60–69   amber   #D97706  monitor / warm
- * <60     slate   #64748B  lower priority
- */
 export function pinColorForScore(score: number): string {
   if (score >= 90) return "#16A34A";
   if (score >= 80) return "#0D9488";
@@ -81,7 +79,6 @@ function tradeScoresFor(p: MapProject): TradeScores {
   };
 }
 
-/** Pin score for coloring/filtering — overall Buy Score or one trade. */
 export function effectivePinScore(
   p: MapProject,
   scoreMode: ScoreMode,
@@ -133,16 +130,30 @@ function captureCamera(map: MapLibreMap) {
   });
 }
 
+function persistCityCookie(pickerId: string) {
+  try {
+    document.cookie = `${CITY_COOKIE}=${encodeURIComponent(pickerId)};path=/;max-age=31536000;samesame=lax`.replace(
+      "samesame",
+      "samesite",
+    );
+  } catch {
+    // ignore
+  }
+}
+
 type Props = {
   projects: MapProject[];
-  /** Optional city scope for viewport refetch */
+  /** Preferred / default CityCode for first load */
   city?: string;
 };
 
-export function MapView({ projects: initialProjects, city }: Props) {
+export function MapView({ projects: initialProjects, city: initialCity }: Props) {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<MapProject | null>(
+    null,
+  );
   const [mapReady, setMapReady] = useState(false);
   const [filters, setFilters] = useState<MapFilterState>(DEFAULT_MAP_FILTERS);
   const [projects, setProjects] = useState<MapProject[]>(initialProjects);
@@ -151,21 +162,63 @@ export function MapView({ projects: initialProjects, city }: Props) {
     initialProjects.length ? initialProjects.length : null,
   );
   const [pinsTruncated, setPinsTruncated] = useState(false);
+  const [activeCity, setActiveCity] = useState(initialCity || "nyc");
+  const [visibleCities, setVisibleCities] = useState<string[]>([
+    initialCity || "nyc",
+  ]);
   const fetchGen = useRef(0);
-  const cityRef = useRef(city);
-  cityRef.current = city;
+  const cityRef = useRef(activeCity);
+  cityRef.current = activeCity;
+  const overlayOpen = Boolean(selectedSnapshot);
+  const overlayOpenRef = useRef(overlayOpen);
+  overlayOpenRef.current = overlayOpen;
 
-  // Deep-link / QA: ?pin=<id> opens the detail overlay without flying the camera.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const pin = params.get("pin");
-    if (pin) setSelectedId(pin);
+    if (pin) {
+      setSelectedSnapshot((prev) =>
+        prev?.id === pin
+          ? prev
+          : {
+              id: pin,
+              latitude: 0,
+              longitude: 0,
+              score: 0,
+              address: "Loading…",
+              estValueLow: 0,
+              estValueHigh: 0,
+              buyingWindowEstimate: "",
+              phase: "pre_construction",
+            },
+      );
+    }
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const select = (id: string | null) => setSelectedId(id || null);
+    const select = (id: string | null) => {
+      if (!id) {
+        setSelectedSnapshot(null);
+        return;
+      }
+      const found = projectsRef.current.find((p) => p.id === id);
+      if (found) setSelectedSnapshot(found);
+      else {
+        setSelectedSnapshot({
+          id,
+          latitude: 0,
+          longitude: 0,
+          score: 0,
+          address: "Loading…",
+          estValueLow: 0,
+          estValueHigh: 0,
+          buyingWindowEstimate: "",
+          phase: "pre_construction",
+        });
+      }
+    };
     (window as unknown as { __pcSelectProject?: (id: string | null) => void }).__pcSelectProject =
       select;
     return () => {
@@ -174,11 +227,26 @@ export function MapView({ projects: initialProjects, city }: Props) {
     };
   }, []);
 
+  const projectsRef = useRef(projects);
+  projectsRef.current = projects;
+
+  // Hydrate deep-linked / stub selection once pins arrive
+  useEffect(() => {
+    if (!selectedSnapshot) return;
+    const found = projects.find((p) => p.id === selectedSnapshot.id);
+    if (found) {
+      setSelectedSnapshot((prev) =>
+        prev && prev.id === found.id && prev.latitude === found.latitude
+          ? prev
+          : found,
+      );
+    }
+  }, [projects, selectedSnapshot?.id]);
+
   useEffect(() => {
     setProjects(initialProjects);
   }, [initialProjects]);
 
-  // Restore filter state for this browser session
   useEffect(() => {
     setFilters(getMapFilters());
   }, []);
@@ -188,15 +256,8 @@ export function MapView({ projects: initialProjects, city }: Props) {
     setMapFilters(next);
   }
 
-  const byId = useMemo(() => {
-    const m = new Map<string, MapProject>();
-    for (const p of projects) m.set(p.id, p);
-    return m;
-  }, [projects]);
-
-  const selected = selectedId ? byId.get(selectedId) ?? null : null;
-  const selectedScore = selected
-    ? effectivePinScore(selected, filters.scoreMode)
+  const selectedScore = selectedSnapshot
+    ? effectivePinScore(selectedSnapshot, filters.scoreMode)
     : 0;
 
   const visible = useMemo(() => {
@@ -235,14 +296,22 @@ export function MapView({ projects: initialProjects, city }: Props) {
     [visible],
   );
 
-  /** Shared pin fetch — used for instant first paint + pan/zoom. */
-  const fetchPins = (bounds: {
-    west: number;
-    south: number;
-    east: number;
-    north: number;
-  }) => {
+  const fetchPins = (bounds: LonLatBounds, opts?: { preferCity?: string }) => {
     const gen = ++fetchGen.current;
+    const prefer = opts?.preferCity ?? cityRef.current;
+    const intersecting = citiesIntersectingBounds(bounds);
+    // Single-metro: keep fast city-scoped fetch. Multi-metro viewport: only cities in view.
+    const scope =
+      intersecting.length <= 1
+        ? intersecting.length === 1
+          ? intersecting
+          : prefer
+            ? [prefer]
+            : []
+        : intersecting;
+
+    setVisibleCities(scope.length ? scope : [prefer]);
+
     const qs = new URLSearchParams({
       west: String(bounds.west),
       south: String(bounds.south),
@@ -250,7 +319,13 @@ export function MapView({ projects: initialProjects, city }: Props) {
       north: String(bounds.north),
       limit: String(MAP_PIN_DEFAULT_LIMIT),
     });
-    if (city) qs.set("city", city);
+    if (scope.length === 1) {
+      qs.set("city", scope[0]!);
+    } else if (scope.length > 1) {
+      qs.set("cities", scope.join(","));
+    } else if (prefer) {
+      qs.set("city", prefer);
+    }
 
     return fetch(`/api/map/pins?${qs.toString()}`, {
       credentials: "same-origin",
@@ -281,33 +356,49 @@ export function MapView({ projects: initialProjects, city }: Props) {
       });
   };
 
-  // Instant first fetch — always use full city bounds on metro change so the
-  // badge/pins aren't stuck on a leftover Brooklyn-cropped session camera.
+  // First load / metro jump — city-scoped bounds (fast).
   useEffect(() => {
-    const cityBounds = boundsForCity(city);
+    const cityBounds = boundsForCity(activeCity);
     setPinsLoading(true);
-    void fetchPins({
-      west: cityBounds.west,
-      south: cityBounds.south,
-      east: cityBounds.east,
-      north: cityBounds.north,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- first load / city change only
-  }, [city]);
+    void fetchPins(cityBounds, { preferCity: activeCity });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCity]);
 
-  // When the metro changes, drop the saved camera so we re-fit city bounds.
+  // Fit camera when metro changes (picker or prop).
   const prevCityRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (
-      prevCityRef.current !== undefined &&
-      prevCityRef.current !== city
-    ) {
+    if (prevCityRef.current !== undefined && prevCityRef.current !== activeCity) {
       clearMapCamera();
+      const map = mapRef.current;
+      if (map) {
+        const b = boundsForCity(activeCity);
+        map.fitBounds(
+          [
+            [b.west, b.south],
+            [b.east, b.north],
+          ],
+          {
+            padding: { top: 56, bottom: 72, left: 28, right: 28 },
+            pitch: DEFAULT_MAP_CAMERA.pitch,
+            bearing: DEFAULT_MAP_CAMERA.bearing,
+            duration: 700,
+            essential: true,
+          },
+        );
+      }
     }
-    prevCityRef.current = city;
-  }, [city]);
+    prevCityRef.current = activeCity;
+  }, [activeCity]);
 
-  // Viewport refetch on pan/zoom once the map is ready.
+  // Sync prop city from SSR / navigation
+  useEffect(() => {
+    if (initialCity && initialCity !== activeCity) {
+      setActiveCity(initialCity);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCity]);
+
+  // Viewport refetch on pan/zoom — progressive multi-city when zoomed out.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -327,11 +418,10 @@ export function MapView({ projects: initialProjects, city }: Props) {
         east: ne.lng + lngPad,
         north: ne.lat + latPad,
       });
+      captureCamera(map);
     };
 
     const onMoveEnd = () => {
-      // Skip the synthetic moveend from initial fitBounds so we don't
-      // immediately replace the full-city pin set with a tighter crop.
       if (skipNextMoveEnd) {
         skipNextMoveEnd = false;
         return;
@@ -341,15 +431,33 @@ export function MapView({ projects: initialProjects, city }: Props) {
     };
 
     map.on("moveend", onMoveEnd);
-
     return () => {
       map.off("moveend", onMoveEnd);
       if (timer) clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapReady, city]);
+  }, [mapReady, activeCity]);
 
-  // Init map — fit city bounds on first visit; restore session camera after pan.
+  // Pause map drag while overlay is open — prevents gesture fighting with the sheet.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    if (overlayOpen) {
+      map.dragPan.disable();
+      map.scrollZoom.disable();
+      map.boxZoom.disable();
+      map.dragRotate.disable();
+      map.touchZoomRotate.disable();
+    } else {
+      map.dragPan.enable({ deceleration: 2500, linearity: 0.3 });
+      map.scrollZoom.enable();
+      map.boxZoom.enable();
+      map.dragRotate.enable();
+      map.touchZoomRotate.enable();
+    }
+  }, [overlayOpen, mapReady]);
+
+  // Init map once
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -377,7 +485,6 @@ export function MapView({ projects: initialProjects, city }: Props) {
         bearing: saved?.bearing ?? DEFAULT_MAP_CAMERA.bearing,
         maxPitch: 60,
       });
-      // Bottom-right so it doesn't cover the Filters control (top-right).
       map.addControl(
         new NavigationControl({ visualizePitch: true }),
         "bottom-right",
@@ -424,7 +531,7 @@ export function MapView({ projects: initialProjects, city }: Props) {
     };
   }, []);
 
-  // Push GeoJSON + fixed-size pin layers (no clustering)
+  // Push GeoJSON — do NOT call map.resize() on every data update (that was fighting drag).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -433,79 +540,109 @@ export function MapView({ projects: initialProjects, city }: Props) {
     const existing = map.getSource(sourceId) as GeoJSONSource | undefined;
     if (existing) {
       existing.setData(geojson);
-    } else {
-      map.addSource(sourceId, {
-        type: "geojson",
-        data: geojson,
-      });
-
-      map.addLayer({
-        id: "project-pins-halo",
-        type: "circle",
-        source: sourceId,
-        paint: {
-          "circle-radius": 12,
-          "circle-color": ["get", "color"],
-          "circle-opacity": 0.22,
-        },
-      });
-
-      map.addLayer({
-        id: "project-pins",
-        type: "circle",
-        source: sourceId,
-        paint: {
-          "circle-radius": 8,
-          "circle-color": ["get", "color"],
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "#ffffff",
-        },
-      });
-
-      map.addLayer({
-        id: "project-scores",
-        type: "symbol",
-        source: sourceId,
-        minzoom: 12,
-        layout: {
-          "text-field": ["to-string", ["get", "score"]],
-          "text-size": 10,
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
-        },
-        paint: {
-          "text-color": "#ffffff",
-          "text-halo-color": "rgba(0,0,0,0.25)",
-          "text-halo-width": 0.5,
-        },
-      });
-
-      const onEnter = () => {
-        map.getCanvas().style.cursor = "pointer";
-      };
-      const onLeave = () => {
-        map.getCanvas().style.cursor = "";
-      };
-      const onClickPin = (e: MapLayerMouseEvent) => {
-        const feature = e.features?.[0];
-        const id = feature?.properties?.id as string | undefined;
-        if (id) {
-          captureCamera(map);
-          setSelectedId(id);
-        }
-      };
-
-      map.on("mouseenter", "project-pins", onEnter);
-      map.on("mouseleave", "project-pins", onLeave);
-      map.on("click", "project-pins", onClickPin);
-      map.on("click", "project-scores", onClickPin);
+      return;
     }
 
+    map.addSource(sourceId, {
+      type: "geojson",
+      data: geojson,
+    });
+
+    map.addLayer({
+      id: "project-pins-halo",
+      type: "circle",
+      source: sourceId,
+      paint: {
+        "circle-radius": 12,
+        "circle-color": ["get", "color"],
+        "circle-opacity": 0.22,
+      },
+    });
+
+    map.addLayer({
+      id: "project-pins",
+      type: "circle",
+      source: sourceId,
+      paint: {
+        "circle-radius": 8,
+        "circle-color": ["get", "color"],
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+
+    map.addLayer({
+      id: "project-scores",
+      type: "symbol",
+      source: sourceId,
+      minzoom: 12,
+      layout: {
+        "text-field": ["to-string", ["get", "score"]],
+        "text-size": 10,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": "#ffffff",
+        "text-halo-color": "rgba(0,0,0,0.25)",
+        "text-halo-width": 0.5,
+      },
+    });
+
+    const onEnter = () => {
+      map.getCanvas().style.cursor = "pointer";
+    };
+    const onLeave = () => {
+      map.getCanvas().style.cursor = "";
+    };
+    const onClickPin = (e: MapLayerMouseEvent) => {
+      if (overlayOpenRef.current) return;
+      const feature = e.features?.[0];
+      if (!feature) return;
+      const id = feature.properties?.id as string | undefined;
+      if (!id) return;
+      captureCamera(map);
+      const found = projectsRef.current.find((p) => p.id === id);
+      if (found) setSelectedSnapshot(found);
+      else {
+        const coords =
+          feature.geometry?.type === "Point"
+            ? feature.geometry.coordinates
+            : [0, 0];
+        setSelectedSnapshot({
+          id,
+          latitude: coords[1] ?? 0,
+          longitude: coords[0] ?? 0,
+          score: Number(feature.properties?.score) || 0,
+          address: String(feature.properties?.address || "Project"),
+          estValueLow: 0,
+          estValueHigh: 0,
+          buyingWindowEstimate: "",
+          phase: "pre_construction",
+        });
+      }
+    };
+
+    map.on("mouseenter", "project-pins", onEnter);
+    map.on("mouseleave", "project-pins", onLeave);
+    map.on("click", "project-pins", onClickPin);
+    map.on("click", "project-scores", onClickPin);
     map.resize();
   }, [geojson, mapReady]);
 
-  // Intentionally no flyTo on pin select — preserve pan/zoom so closing the
-  // overlay returns the rep to the exact same map camera.
+  function onCityPick(cityCode: string, pickerId: string) {
+    persistCityCookie(pickerId);
+    setActiveCity(cityCode);
+    setSelectedSnapshot(null);
+    router.replace(`/app/map?city=${encodeURIComponent(pickerId)}`, {
+      scroll: false,
+    });
+  }
+
+  const cityBadgeLabel =
+    visibleCities.length > 1
+      ? `${visibleCities.length} metros`
+      : (activeCity || "map").replace(/_/g, " ");
 
   return (
     <div className="relative h-full min-h-0 w-full flex-1">
@@ -516,17 +653,13 @@ export function MapView({ projects: initialProjects, city }: Props) {
         role="application"
       />
 
-      {city && (
-        <div className="pointer-events-none absolute left-3 top-3 z-30 md:left-5 md:top-4">
-          <p className="rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
-            {city.replace(/_/g, " ")}
-            {pinCount != null
-              ? ` · ${pinCount.toLocaleString()} in view`
-              : ""}
-            {pinsTruncated ? " · top scores" : ""}
-          </p>
-        </div>
-      )}
+      <div className="pointer-events-none absolute left-3 top-3 z-30 md:left-5 md:top-4">
+        <p className="rounded-full border border-line bg-white/95 px-3 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
+          {cityBadgeLabel}
+          {pinCount != null ? ` · ${pinCount.toLocaleString()} in view` : ""}
+          {pinsTruncated ? " · top scores" : ""}
+        </p>
+      </div>
 
       {pinsLoading && projects.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
@@ -536,7 +669,10 @@ export function MapView({ projects: initialProjects, city }: Props) {
         </div>
       )}
 
-      <MapFilters value={filters} onChange={updateFilters} />
+      <div className="pointer-events-none absolute right-3 top-3 z-50 flex items-start gap-2 md:right-5 md:top-4">
+        <MapCityPicker value={activeCity} onChange={onCityPick} />
+        <MapFilters value={filters} onChange={updateFilters} />
+      </div>
 
       <div className="pointer-events-none absolute bottom-3 left-3 z-30 md:bottom-6 md:left-5">
         <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
@@ -566,9 +702,18 @@ export function MapView({ projects: initialProjects, city }: Props) {
       </div>
 
       <ProjectDetailOverlay
-        project={selected}
-        open={Boolean(selected)}
-        onClose={() => setSelectedId(null)}
+        project={selectedSnapshot}
+        open={Boolean(selectedSnapshot)}
+        onClose={() => {
+          setSelectedSnapshot(null);
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has("pin")) {
+              url.searchParams.delete("pin");
+              router.replace(url.pathname + url.search, { scroll: false });
+            }
+          }
+        }}
         displayScore={selectedScore}
       />
     </div>

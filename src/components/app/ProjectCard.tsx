@@ -3,11 +3,12 @@ import { ScoreRing } from "@/components/ui/ScoreRing";
 import type { Project } from "@/lib/db/types";
 import { PHASE_LABELS } from "@/lib/db/types";
 import { formatMoneyRange } from "@/lib/format";
+import { mapProjectHref } from "@/lib/map/project-href";
 
 export function ProjectCard({ project }: { project: Project }) {
   return (
     <Link
-      href={`/app/project/${encodeURIComponent(project.id)}`}
+      href={mapProjectHref(project.id, project.city)}
       className="pc-card block p-4 transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.99]"
     >
       <div className="flex items-start gap-3">

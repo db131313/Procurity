@@ -25,6 +25,13 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const city = url.searchParams.get("city") || undefined;
+  const citiesParam = url.searchParams.get("cities");
+  const cities = citiesParam
+    ? citiesParam
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean)
+    : undefined;
   const limit = Number(
     url.searchParams.get("limit") || String(MAP_PIN_DEFAULT_LIMIT),
   );
@@ -51,7 +58,13 @@ export async function GET(request: Request) {
   const started = Date.now();
   const zipCodes = allowedZipFilter(user);
   const result = await listMapPins({
-    city,
+    city: cities && cities.length > 1 ? undefined : city,
+    cities:
+      cities && cities.length > 1
+        ? cities
+        : city
+          ? undefined
+          : cities,
     bbox,
     limit: Number.isFinite(limit)
       ? Math.min(limit, MAP_PIN_MAX_LIMIT)
@@ -63,6 +76,7 @@ export async function GET(request: Request) {
     {
       ok: true,
       city: city ?? null,
+      cities: cities && cities.length > 1 ? cities : null,
       bbox: bbox ?? null,
       count: result.pins.length,
       totalMatched: result.totalMatched,

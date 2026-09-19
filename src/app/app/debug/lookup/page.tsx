@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { listProjects } from "@/lib/db/store";
 import { readDiscards } from "@/lib/dob/discards";
+import { mapProjectHref } from "@/lib/map/project-href";
 
 /**
  * Internal QA tool — search ingested projects / discard log by address or BIN.
@@ -81,7 +82,7 @@ export default async function DebugLookupPage({
               {projectMatches.slice(0, 50).map((p) => (
                 <li key={p.id} className="pc-card p-3 text-sm">
                   <Link
-                    href={`/app/project/${encodeURIComponent(p.id)}`}
+                    href={mapProjectHref(p.id, p.city)}
                     className="font-bold text-purple hover:underline"
                   >
                     {p.address}
