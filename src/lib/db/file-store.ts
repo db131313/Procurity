@@ -10,7 +10,7 @@ import type {
   TradeScores,
   UserRecord,
 } from "./types";
-import { PLAN_LIMITS, effectiveZipAllowance } from "./types";
+import { PLAN_LIMITS, effectiveZipAllowance, trimZipsToAllowance } from "./types";
 
 type DbShape = {
   projects: Project[];
@@ -162,7 +162,7 @@ export async function listProjects(opts?: {
   if (opts?.city) {
     items = items.filter((p) => p.city === opts.city);
   }
-  if (opts?.zipCodes?.length) {
+  if (Array.isArray(opts?.zipCodes)) {
     items = items.filter((p) => p.zip && opts.zipCodes!.includes(p.zip));
   }
   if (opts?.minScore) items = items.filter((p) => p.score >= opts.minScore!);
@@ -293,6 +293,13 @@ export async function updateUserPlan(
   if (!user) return null;
   user.plan = plan;
   user.zipAllowance = PLAN_LIMITS[plan];
+  user.zipCodes = trimZipsToAllowance(user.zipCodes, PLAN_LIMITS[plan]);
+  // Paid/plan change: non-Pro with no zips must finish territory pick.
+  if (plan === "pro") {
+    user.onboardingComplete = true;
+  } else if (user.zipCodes.length === 0) {
+    user.onboardingComplete = false;
+  }
   if (stripe?.customerId) user.stripeCustomerId = stripe.customerId;
   if (stripe && "subscriptionId" in stripe) {
     user.stripeSubscriptionId = stripe.subscriptionId ?? null;
@@ -309,9 +316,17 @@ export async function setDevPlanOverride(
   const user = db.users.find((u) => u.id === userId);
   if (!user) return null;
   user.devPlanOverride = override;
-  user.zipAllowance = override
+  const allowance = override
     ? PLAN_LIMITS[override]
     : PLAN_LIMITS[user.plan];
+  user.zipAllowance = allowance;
+  user.zipCodes = trimZipsToAllowance(user.zipCodes, allowance);
+  const effective = override ?? user.plan;
+  if (effective === "pro") {
+    user.onboardingComplete = true;
+  } else if (user.zipCodes.length === 0) {
+    user.onboardingComplete = false;
+  }
   await save(db);
   return user;
 }

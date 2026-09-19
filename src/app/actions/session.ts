@@ -99,12 +99,12 @@ export async function establishFirebaseSession(input: {
       return { redirectTo: `/app/map?city=${metro.city}` };
     }
 
-    // Teaser checkout funnel or login
+    // Teaser checkout funnel or login — do NOT mark onboarding complete yet.
+    // After Stripe assigns starter/growth, empty zipCodes triggers territory pick.
     const user = await upsertUser({
       firebaseUid: verified.uid,
       email: verified.email,
       name,
-      ...(input.skipOnboarding ? { onboardingComplete: true } : {}),
     });
 
     await createSession({
@@ -118,6 +118,7 @@ export async function establishFirebaseSession(input: {
     }
 
     if (input.skipOnboarding) {
+      // Checkout first; success URL / app layout send non-Pro to onboarding if needed.
       return {
         redirectTo: input.city
           ? `/app/map?city=${encodeURIComponent(input.city)}`
@@ -201,7 +202,9 @@ export async function signInWithPassword(formData: FormData) {
     firebaseUid: uid,
     email,
     name,
-    onboardingComplete: mode === "login" || checkout,
+    // Signup (incl. teaser): leave onboarding incomplete until zips / Pro complete.
+    // Login: omit so existing onboardingComplete is preserved.
+    ...(mode === "signup" ? { onboardingComplete: false } : {}),
   });
 
   await createSession({ uid, email, name: name ?? undefined });
