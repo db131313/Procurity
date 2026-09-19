@@ -380,7 +380,7 @@ export async function getSyncMeta() {
   return { lastSyncAt: db.lastSyncAt, projectCount: db.projects.length };
 }
 
-/** Expand demo accounts after sync. Demo/pro stay unrestricted (empty zip list). */
+/** Keep the demo account unrestricted after sync. Never touch paid/trial users. */
 export async function expandDemoCoverage(limit = 25) {
   const db = await ensureDb();
   const counts = new Map<string, number>();
@@ -392,42 +392,33 @@ export async function expandDemoCoverage(limit = 25) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([z]) => z);
-  if (!topZips.length) return db;
 
   for (const user of db.users) {
-    const isDemoOrPro =
-      user.email === DEMO_USER.email ||
-      user.plan === "trial" ||
-      user.plan === "pro";
-    if (isDemoOrPro) {
-      user.zipCodes = [];
-      user.zipAllowance = PLAN_LIMITS.pro;
-      if (user.email === DEMO_USER.email || user.plan === "trial") {
-        user.plan = "pro";
-      }
-    } else {
-      user.zipCodes = topZips.slice(
-        0,
-        Math.min(user.zipAllowance || PLAN_LIMITS.growth, topZips.length),
-      );
-      user.zipAllowance = Math.max(user.zipAllowance, PLAN_LIMITS.growth);
-    }
+    if (user.email !== DEMO_USER.email) continue;
+    // Demo stays Full US: empty zip list + pro (no filter on map API).
+    user.zipCodes = [];
+    user.zipAllowance = PLAN_LIMITS.pro;
+    user.plan = "pro";
+    user.onboardingComplete = true;
+    void topZips;
   }
   await save(db);
   return db;
 }
 
 /**
- * Citywide demo mode: empty zip list = no filter (grandfather / Full US path).
- * Demo user stays unrestricted.
+ * Citywide demo mode for the demo account only.
+ * Must NOT promote trial users or wipe Starter/Growth zip allowlists —
+ * that broke zip-tier enforcement after every DOB sync.
  */
 export async function enableCitywideDemo() {
   const db = await ensureDb();
   for (const user of db.users) {
+    if (user.email !== DEMO_USER.email) continue;
     user.zipCodes = [];
     user.zipAllowance = PLAN_LIMITS.pro;
     user.onboardingComplete = true;
-    if (user.plan === "trial") user.plan = "pro";
+    user.plan = "pro";
   }
   await save(db);
   return db;

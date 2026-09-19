@@ -112,3 +112,59 @@ export function zipToMetro(rawZip: string): ZipMetroResult {
 export function isCoveredMetro(code: string): code is CoveredMetro {
   return (COVERED_METROS as readonly string[]).includes(code);
 }
+
+/**
+ * Curated zip options for Starter/Growth territory pickers.
+ * Every zip must resolve via zipToMetro to its metro (covered only).
+ */
+export const METRO_ZIP_OPTIONS: {
+  city: CoveredMetro;
+  label: string;
+  zips: string[];
+}[] = [
+  {
+    city: "nyc",
+    label: "New York City",
+    zips: ["10001", "10019", "10128", "11201", "11211", "11354", "10451", "10301"],
+  },
+  {
+    city: "chicago",
+    label: "Chicago",
+    zips: ["60601", "60611", "60614", "60622", "60654"],
+  },
+  {
+    city: "los_angeles",
+    label: "Los Angeles",
+    zips: ["90012", "90015", "90024", "90028", "90045", "90210", "90401"],
+  },
+  {
+    city: "san_francisco",
+    label: "San Francisco",
+    zips: ["94102", "94103", "94107", "94110", "94111"],
+  },
+  {
+    city: "boston",
+    label: "Boston",
+    zips: ["02108", "02110", "02114", "02116", "02210"],
+  },
+  {
+    city: "seattle",
+    label: "Seattle",
+    zips: ["98101", "98104", "98109", "98121", "98122"],
+  },
+  {
+    city: "fort_worth",
+    label: "Fort Worth",
+    zips: ["76102", "76104", "76107", "76109", "76110"],
+  },
+  {
+    city: "miami_dade",
+    label: "Miami-Dade",
+    zips: ["33130", "33131", "33132", "33139", "33160"],
+  },
+];
+
+/** True when every zip maps to one of the 8 covered metros. */
+export function allZipsCovered(zips: string[]): boolean {
+  return zips.every((z) => zipToMetro(z).covered);
+}

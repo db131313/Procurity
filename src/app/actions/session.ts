@@ -84,7 +84,9 @@ export async function establishFirebaseSession(input: {
         firebaseUid: verified.uid,
         email: verified.email,
         name,
+        plan: "trial",
         zipCodes: [zip],
+        zipAllowance: PLAN_LIMITS.trial,
         onboardingComplete: true,
       });
       await setUserZips(user.id, [zip]);
@@ -183,7 +185,9 @@ export async function signInWithPassword(formData: FormData) {
       firebaseUid: uid,
       email,
       name,
+      plan: "trial",
       zipCodes: [zip],
+      zipAllowance: PLAN_LIMITS.trial,
       onboardingComplete: true,
     });
     await setUserZips(user.id, [zip]);
@@ -232,6 +236,14 @@ export async function saveOnboardingZips(formData: FormData): Promise<void> {
     .map((z) => z.trim())
     .filter((z) => /^\d{5}$/.test(z));
 
+  // Starter / Growth / Trial: only covered-metro zips (Pro optional notes skip this).
+  if (user.plan !== "pro" && zips.length > 0) {
+    const uncovered = zips.filter((z) => !zipToMetro(z).covered);
+    if (uncovered.length) {
+      redirect("/app/settings?error=uncovered");
+    }
+  }
+
   const result = await setUserZips(user.id, zips);
   if (!result.ok) {
     if (result.reason === "limit") {
@@ -248,7 +260,7 @@ export async function saveOnboardingZips(formData: FormData): Promise<void> {
       redirect(`/app/map?city=${metro.city}`);
     }
   }
-  redirect("/app/home");
+  redirect("/app/settings?ok=1");
 }
 
 /** Pro onboarding: no zip pick required — mark complete and enter the app. */
