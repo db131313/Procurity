@@ -9,6 +9,7 @@ import {
   Map,
   MoreHorizontal,
   Kanban,
+  Route,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Logo } from "@/components/brand/Logo";
@@ -16,6 +17,7 @@ import { Logo } from "@/components/brand/Logo";
 const TABS = [
   { href: "/app/home", label: "Home", icon: Home },
   { href: "/app/map", label: "Map", icon: Map },
+  { href: "/app/route", label: "Route", icon: Route },
   { href: "/app/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/app/alerts", label: "Alerts", icon: Bell },
   { href: "/app/settings", label: "More", icon: MoreHorizontal },
@@ -90,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         style={{ paddingBottom: "var(--safe-bottom)" }}
         aria-label="Primary"
       >
-        <div className="mx-auto flex max-w-lg items-stretch justify-between px-2 pt-1">
+        <div className="mx-auto flex max-w-lg items-stretch justify-between px-1 pt-1">
           {TABS.map((tab) => {
             const active = pathname.startsWith(tab.href);
             const Icon = tab.icon;
@@ -100,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => go(tab.href)}
                 className={cn(
-                  "flex min-h-14 min-w-[64px] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-bold",
+                  "flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[9px] font-bold",
                   active ? "text-purple" : "text-slate",
                   pending && !active && "opacity-60",
                 )}
