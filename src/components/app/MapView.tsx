@@ -155,6 +155,25 @@ export function MapView({ projects: initialProjects, city }: Props) {
   const cityRef = useRef(city);
   cityRef.current = city;
 
+  // Deep-link / QA: ?pin=<id> opens the detail overlay without flying the camera.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const pin = params.get("pin");
+    if (pin) setSelectedId(pin);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const select = (id: string) => setSelectedId(id);
+    (window as unknown as { __pcSelectProject?: (id: string) => void }).__pcSelectProject =
+      select;
+    return () => {
+      delete (window as unknown as { __pcSelectProject?: (id: string) => void })
+        .__pcSelectProject;
+    };
+  }, []);
+
   useEffect(() => {
     setProjects(initialProjects);
   }, [initialProjects]);
