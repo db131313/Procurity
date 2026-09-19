@@ -14,6 +14,7 @@ import {
   HeroScorePins,
 } from "./HeroRouteMap";
 import { HomeTeaserMapSection } from "./HomeTeaserMapSection";
+import { DataFreshnessBadge } from "@/components/ui/DataFreshnessBadge";
 import type { HomeCoverageStats } from "@/lib/marketing/home-coverage";
 
 const STEPS = [
@@ -43,7 +44,7 @@ const FEATURES = [
   },
   {
     title: "Field map that fits your pocket",
-    body: "Filter Hot / Buying Now / New. Bottom sheet previews slide up on pin tap.",
+    body: "Filter Hot / Buying Now / New. Full project overlay slides up on pin tap.",
     Preview: PreviewMap,
   },
   {
@@ -74,7 +75,7 @@ export function HomePage({ stats }: Props) {
 
   return (
     <div className="bg-offwhite">
-      {/* Hero — brand + one headline + one CTA; no city picker */}
+      {/* Hero — brand + one headline + one CTA; contained on desktop */}
       <section className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-ink text-white">
         <HeroCityBackground />
         <MarketingNav />
@@ -83,12 +84,12 @@ export function HomePage({ stats }: Props) {
           <HeroScorePins variant="desktop" />
         </div>
 
-        <div className="relative z-10 flex w-full flex-1 flex-col px-5 pb-10 pt-[4.75rem] md:justify-center md:pb-24 md:pl-12 md:pr-10 md:pt-28 lg:pr-16">
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 pb-10 pt-[4.75rem] md:justify-center md:px-10 md:pb-24 md:pt-28">
           <div className="mb-6 mt-4 flex justify-center md:hidden">
             <HeroScorePins variant="mobile" />
           </div>
 
-          <div className="mt-auto w-full max-w-xl animate-pc-rise md:mt-0 md:max-w-[min(34rem,44vw)]">
+          <div className="mt-auto w-full max-w-xl animate-pc-rise md:mt-0 md:max-w-2xl">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal">
               Procurity.Pro
             </p>
@@ -129,39 +130,60 @@ export function HomePage({ stats }: Props) {
         </div>
       </section>
 
-      {/* Live data proof — replaces placeholder testimonials */}
-      <section className="border-b border-line bg-white px-5 py-14 md:px-10 md:py-16">
+      {/* Live data proof — terminal-style density for field reps */}
+      <section className="border-b border-line bg-[#0b1220] px-5 py-12 text-white md:px-10 md:py-14">
         <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate">
-            Live coverage
-          </p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-ink md:text-4xl">
-            Built on real open-data permits — not anecdotes
-          </h2>
-          <p className="mt-3 max-w-2xl text-slate">
-            Counts below refresh from the live project database whenever this
-            page loads.
-          </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-3xl border border-line bg-offwhite px-6 py-7">
-              <p className="text-4xl font-bold tabular-nums tracking-tight text-ink">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-teal">
+                Live coverage
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">
+                Real open-data permits. Live counts.
+              </h2>
+              <p className="mt-2 max-w-xl text-sm text-white/60">
+                Numbers refresh from the project database on every page load —
+                built for reps who need confidence mid-route.
+              </p>
+            </div>
+            <DataFreshnessBadge
+              iso={stats.lastSyncAt}
+              label="Last sync"
+              variant="panel"
+              className="shrink-0 border-teal/40 bg-teal/15 text-white [&_span.uppercase]:text-white/70 [&_.font-mono]:text-white"
+            />
+          </div>
+
+          <div className="mt-8 grid gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10 sm:grid-cols-3">
+            <div className="bg-[#0f172a] px-5 py-6">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">
+                Projects scored
+              </p>
+              <p className="mt-2 font-mono text-4xl font-bold tabular-nums tracking-tight text-teal md:text-5xl">
                 {stats.projectCount > 0
                   ? stats.projectCount.toLocaleString()
                   : "—"}
               </p>
-              <p className="mt-2 text-sm font-semibold text-slate">
+              <p className="mt-2 text-xs font-semibold text-white/55">
                 {projectLabel}
               </p>
             </div>
-            <div className="rounded-3xl border border-line bg-offwhite px-6 py-7">
-              <p className="text-4xl font-bold tabular-nums tracking-tight text-ink">
+            <div className="bg-[#0f172a] px-5 py-6">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">
+                Metros live
+              </p>
+              <p className="mt-2 font-mono text-4xl font-bold tabular-nums tracking-tight text-white md:text-5xl">
                 {stats.cityCount}
               </p>
-              <p className="mt-2 text-sm font-semibold text-slate">{cityLabel}</p>
+              <p className="mt-2 text-xs font-semibold text-white/55">
+                {cityLabel}
+              </p>
             </div>
-            <div className="rounded-3xl border border-line bg-offwhite px-6 py-7 sm:col-span-2 lg:col-span-1">
-              <p className="text-sm font-bold text-ink">Top metros right now</p>
-              <ul className="mt-3 space-y-1.5 text-sm text-slate">
+            <div className="bg-[#0f172a] px-5 py-6 sm:col-span-1">
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-white/45">
+                Top metros
+              </p>
+              <ul className="mt-3 space-y-2">
                 {(stats.cities.length
                   ? stats.cities
                   : [{ id: "nyc", label: "NYC", count: 0 }]
@@ -170,10 +192,12 @@ export function HomePage({ stats }: Props) {
                   .map((c) => (
                     <li
                       key={c.id}
-                      className="flex items-center justify-between gap-3 font-semibold"
+                      className="flex items-center justify-between gap-3 font-mono text-sm"
                     >
-                      <span>{c.label}</span>
-                      <span className="tabular-nums text-ink">
+                      <span className="font-semibold text-white/80">
+                        {c.label}
+                      </span>
+                      <span className="tabular-nums font-bold text-teal">
                         {c.count > 0 ? c.count.toLocaleString() : "—"}
                       </span>
                     </li>
@@ -195,8 +219,8 @@ export function HomePage({ stats }: Props) {
           </p>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
-              <div key={step.title} className="pc-card p-5">
-                <span className="pc-gradient-text text-3xl font-bold tabular-nums">
+              <div key={step.title} className="border-l-2 border-teal/40 pl-4">
+                <span className="pc-gradient-text font-mono text-2xl font-bold tabular-nums">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-3 text-lg font-bold text-ink">{step.title}</h3>

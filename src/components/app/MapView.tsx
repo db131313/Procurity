@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
   Map as MapLibreMap,
   NavigationControl,
@@ -18,9 +17,7 @@ import {
   type MapFilterState,
   type ScoreMode,
 } from "@/components/app/MapFilters";
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { ScoreRing } from "@/components/ui/ScoreRing";
-import { formatMoneyRange } from "@/lib/format";
+import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
 import {
   DEFAULT_MAP_CAMERA,
   clearMapCamera,
@@ -70,14 +67,6 @@ export function pinColorForScore(score: number): string {
   if (score >= 70) return "#2563EB";
   if (score >= 60) return "#D97706";
   return "#64748B";
-}
-
-function scoreBand(score: number) {
-  if (score >= 90) return "Hot · 90+";
-  if (score >= 80) return "Strong · 80–89";
-  if (score >= 70) return "Solid · 70–79";
-  if (score >= 60) return "Warm · 60–69";
-  return "Watch · <60";
 }
 
 function tradeScoresFor(p: MapProject): TradeScores {
@@ -165,6 +154,25 @@ export function MapView({ projects: initialProjects, city }: Props) {
   const fetchGen = useRef(0);
   const cityRef = useRef(city);
   cityRef.current = city;
+
+  // Deep-link / QA: ?pin=<id> opens the detail overlay without flying the camera.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const pin = params.get("pin");
+    if (pin) setSelectedId(pin);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const select = (id: string | null) => setSelectedId(id || null);
+    (window as unknown as { __pcSelectProject?: (id: string | null) => void }).__pcSelectProject =
+      select;
+    return () => {
+      delete (window as unknown as { __pcSelectProject?: (id: string | null) => void })
+        .__pcSelectProject;
+    };
+  }, []);
 
   useEffect(() => {
     setProjects(initialProjects);
@@ -496,16 +504,8 @@ export function MapView({ projects: initialProjects, city }: Props) {
     map.resize();
   }, [geojson, mapReady]);
 
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !selected) return;
-    map.flyTo({
-      center: [selected.longitude, selected.latitude],
-      zoom: Math.max(map.getZoom(), 14),
-      duration: 700,
-      essential: true,
-    });
-  }, [selected]);
+  // Intentionally no flyTo on pin select — preserve pan/zoom so closing the
+  // overlay returns the rep to the exact same map camera.
 
   return (
     <div className="relative h-full min-h-0 w-full flex-1">
@@ -565,48 +565,12 @@ export function MapView({ projects: initialProjects, city }: Props) {
         </div>
       </div>
 
-      <BottomSheet open={Boolean(selected)} onClose={() => setSelectedId(null)}>
-        {selected && (
-          <div className="pb-2">
-            <div className="flex items-start gap-3">
-              <ScoreRing score={selectedScore} size={64} stroke={5} />
-              <div className="min-w-0 flex-1">
-                <p
-                  className="text-[11px] font-bold uppercase tracking-wide"
-                  style={{ color: pinColorForScore(selectedScore) }}
-                >
-                  {scoreBand(selectedScore)}
-                </p>
-                <p className="mt-0.5 text-lg font-bold text-ink">{selected.address}</p>
-                <p className="mt-1 text-sm text-slate">
-                  {[selected.borough, selected.zip].filter(Boolean).join(" · ")}
-                </p>
-                <p className="mt-1 text-sm text-slate">
-                  {formatMoneyRange(selected.estValueLow, selected.estValueHigh)} ·{" "}
-                  {selected.buyingWindowEstimate}
-                </p>
-                <p className="mt-1 text-[11px] font-semibold text-slate">
-                  {selected.scoreConfidence === "high"
-                    ? "High confidence"
-                    : selected.scoreConfidence === "medium"
-                      ? "Medium confidence"
-                      : "Low confidence — limited data"}
-                </p>
-              </div>
-            </div>
-            <Link
-              href={`/app/project/${encodeURIComponent(selected.id)}`}
-              onClick={() => {
-                const map = mapRef.current;
-                if (map) captureCamera(map);
-              }}
-              className="pc-gradient-bg mt-4 flex h-12 items-center justify-center rounded-full text-sm font-bold text-white"
-            >
-              View project
-            </Link>
-          </div>
-        )}
-      </BottomSheet>
+      <ProjectDetailOverlay
+        project={selected}
+        open={Boolean(selected)}
+        onClose={() => setSelectedId(null)}
+        displayScore={selectedScore}
+      />
     </div>
   );
 }

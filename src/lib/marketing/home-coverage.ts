@@ -7,6 +7,8 @@ export type HomeCoverageStats = {
   cityCount: number;
   cities: { id: string; label: string; count: number }[];
   source: "database" | "file" | "fallback";
+  /** ISO timestamp of last permit sync, when known */
+  lastSyncAt: string | null;
 };
 
 const SERVED = PICKER_CITIES.filter((c) => c.served && c.cityCode);
@@ -17,6 +19,11 @@ const SERVED = PICKER_CITIES.filter((c) => c.served && c.cityCode);
  */
 export async function getHomeCoverageStats(): Promise<HomeCoverageStats> {
   try {
+    const meta = await getSyncMeta().catch(() => ({
+      lastSyncAt: null as string | null,
+      projectCount: 0,
+    }));
+
     if (isDatabaseConfigured()) {
       const prisma = getPrisma();
       const grouped = await prisma.project.groupBy({
@@ -37,6 +44,7 @@ export async function getHomeCoverageStats(): Promise<HomeCoverageStats> {
         cityCount: cities.length || SERVED.length,
         cities,
         source: "database",
+        lastSyncAt: meta.lastSyncAt,
       };
     }
 
@@ -50,12 +58,12 @@ export async function getHomeCoverageStats(): Promise<HomeCoverageStats> {
       label: c.shortLabel,
       count: byCity.get(c.cityCode!) ?? 0,
     })).filter((c) => c.count > 0);
-    const meta = await getSyncMeta();
     return {
       projectCount: meta.projectCount || projects.length,
       cityCount: cities.length || SERVED.length,
       cities,
       source: "file",
+      lastSyncAt: meta.lastSyncAt,
     };
   } catch (err) {
     console.warn("[home] coverage stats failed", err);
@@ -64,6 +72,7 @@ export async function getHomeCoverageStats(): Promise<HomeCoverageStats> {
       cityCount: SERVED.length,
       cities: [],
       source: "fallback",
+      lastSyncAt: null,
     };
   }
 }
