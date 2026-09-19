@@ -702,17 +702,10 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
       </div>
 
       <ProjectDetailOverlay
-        project={
-          selectedSnapshot && selectedSnapshot.latitude
-            ? selectedSnapshot
-            : selectedSnapshot
-              ? selectedSnapshot
-              : null
-        }
+        project={selectedSnapshot}
         open={Boolean(selectedSnapshot)}
         onClose={() => {
           setSelectedSnapshot(null);
-          // Drop ?pin= from URL without remounting
           if (typeof window !== "undefined") {
             const url = new URL(window.location.href);
             if (url.searchParams.has("pin")) {
