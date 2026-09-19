@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useDragControls } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 type BottomSheetProps = {
@@ -20,6 +20,15 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const controls = useDragControls();
   const isFull = variant === "full";
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   return (
     <AnimatePresence>
@@ -40,7 +49,7 @@ export function BottomSheet({
             className={cn(
               "fixed inset-x-0 z-50 mx-auto flex flex-col overflow-hidden bg-white shadow-2xl",
               isFull
-                ? "bottom-[calc(64px+var(--safe-bottom))] max-h-[min(92dvh,920px)] max-w-xl rounded-t-[24px] md:bottom-0 md:max-h-[min(94dvh,960px)] md:max-w-2xl"
+                ? "bottom-[calc(64px+var(--safe-bottom))] max-h-[min(88dvh,860px)] max-w-xl rounded-t-[24px] md:bottom-3 md:max-h-[min(90dvh,900px)] md:max-w-2xl"
                 : "bottom-[calc(64px+var(--safe-bottom))] max-w-lg rounded-t-[24px] px-4 pb-4 pt-2 md:bottom-0 md:pb-[calc(16px+var(--safe-bottom))]",
             )}
             initial={{ y: "100%" }}
@@ -59,7 +68,9 @@ export function BottomSheet({
             <div
               className={cn(
                 "mx-auto shrink-0 cursor-grab touch-none active:cursor-grabbing",
-                isFull ? "mb-0 mt-2 h-1.5 w-12 rounded-full bg-line" : "mb-3 h-1.5 w-12 rounded-full bg-line",
+                isFull
+                  ? "mb-0 mt-2 h-1.5 w-12 rounded-full bg-line"
+                  : "mb-3 h-1.5 w-12 rounded-full bg-line",
               )}
               onPointerDown={(e) => controls.start(e)}
             />

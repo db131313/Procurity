@@ -165,11 +165,11 @@ export function MapView({ projects: initialProjects, city }: Props) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const select = (id: string) => setSelectedId(id);
-    (window as unknown as { __pcSelectProject?: (id: string) => void }).__pcSelectProject =
+    const select = (id: string | null) => setSelectedId(id || null);
+    (window as unknown as { __pcSelectProject?: (id: string | null) => void }).__pcSelectProject =
       select;
     return () => {
-      delete (window as unknown as { __pcSelectProject?: (id: string) => void })
+      delete (window as unknown as { __pcSelectProject?: (id: string | null) => void })
         .__pcSelectProject;
     };
   }, []);
