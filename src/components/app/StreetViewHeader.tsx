@@ -1,0 +1,103 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { MapPin } from "lucide-react";
+import { cn } from "@/lib/cn";
+
+type Props = {
+  lat: number;
+  lng: number;
+  className?: string;
+};
+
+type MetaResponse = {
+  configured?: boolean;
+  available?: boolean;
+  dateLabel?: string | null;
+  imagePath?: string | null;
+  reportProblemUrl?: string | null;
+  status?: string;
+};
+
+/**
+ * Full-width Street View header for project overlays.
+ * Uses metadata first; clean fallback when no key / no imagery.
+ */
+export function StreetViewHeader({ lat, lng, className }: Props) {
+  const [meta, setMeta] = useState<MetaResponse | null>(null);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMeta(null);
+    setImgError(false);
+    void fetch(
+      `/api/streetview?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`,
+      { credentials: "same-origin" },
+    )
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return (await res.json()) as MetaResponse;
+      })
+      .then((data) => {
+        if (!cancelled) setMeta(data);
+      })
+      .catch(() => {
+        if (!cancelled) setMeta({ available: false, configured: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lat, lng]);
+
+  const showImage = Boolean(meta?.available && meta.imagePath && !imgError);
+
+  return (
+    <div className={cn("relative overflow-hidden bg-ink", className)}>
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element -- proxied API image
+        <img
+          src={meta!.imagePath!}
+          alt="Google Street View of project location"
+          className="h-44 w-full object-cover sm:h-52"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <div className="flex h-36 w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-ink to-slate/80 text-white/70 sm:h-40">
+          <MapPin className="h-7 w-7" aria-hidden />
+          <p className="text-xs font-semibold tracking-wide">
+            {meta == null
+              ? "Checking Street View…"
+              : meta.configured === false
+                ? "Street View not configured"
+                : "No Street View for this location"}
+          </p>
+        </div>
+      )}
+
+      {showImage && (
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-8 text-[11px] text-white">
+          <div>
+            <p className="font-bold tracking-wide">
+              Street View
+              {meta?.dateLabel ? `: ${meta.dateLabel}` : ""}
+            </p>
+            <p className="text-white/75">
+              Imagery © Google — not live / not real-time
+            </p>
+          </div>
+          {meta?.reportProblemUrl && (
+            <a
+              href={meta.reportProblemUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 underline decoration-white/50 underline-offset-2 hover:decoration-white"
+            >
+              Report a problem
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
