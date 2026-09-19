@@ -63,6 +63,13 @@ export default async function AppHomePage() {
         Find My Opportunities
       </Link>
 
+      <Link
+        href="/app/route"
+        className="mt-3 flex h-12 items-center justify-center rounded-full border-2 border-line bg-white text-sm font-bold text-ink transition active:scale-[0.98]"
+      >
+        Plan today&apos;s route
+      </Link>
+
       <div className="mt-6 flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:overflow-visible lg:grid-cols-3">
         {top.map((p) => (
           <div key={p.id} className="min-w-[280px] md:min-w-0">
