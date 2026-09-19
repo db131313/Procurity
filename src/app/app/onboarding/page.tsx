@@ -2,11 +2,17 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { saveOnboardingZips, completeProOnboarding } from "@/app/actions/session";
 import { Logo } from "@/components/brand/Logo";
+import { ZipTerritoryPicker } from "@/components/app/ZipTerritoryPicker";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; allowance?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const sp = await searchParams;
   const isPro = user.plan === "pro";
 
   if (isPro) {
@@ -41,25 +47,29 @@ export default async function OnboardingPage() {
         Pick your territory
       </h1>
       <p className="mt-2 text-sm text-slate">
-        Add up to {user.zipAllowance} zip{" "}
-        {user.zipAllowance === 1 ? "code" : "codes"}. We&apos;ll score projects
-        in those areas every day.
+        Choose up to {user.zipAllowance} zip{" "}
+        {user.zipAllowance === 1 ? "code" : "codes"} from the 8 live metros.
+        Map pins are filtered to these zips server-side.
       </p>
 
+      {sp.error === "uncovered" && (
+        <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-950">
+          Every zip must be in a covered metro (NYC, Chicago, LA, SF, Boston,
+          Seattle, Fort Worth, or Miami-Dade).
+        </p>
+      )}
+      {sp.error === "zip_limit" && (
+        <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-950">
+          Your plan allows up to {sp.allowance || user.zipAllowance} zip
+          {(Number(sp.allowance) || user.zipAllowance) === 1 ? "" : "s"}.
+        </p>
+      )}
+
       <form action={saveOnboardingZips} className="mt-8 space-y-4">
-        <label className="block space-y-1.5 text-sm font-semibold text-ink">
-          <span>Zip codes</span>
-          <textarea
-            name="zips"
-            required
-            rows={4}
-            defaultValue={user.zipCodes.join(", ") || "10001"}
-            className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
-            placeholder={
-              user.zipAllowance === 1 ? "10001" : "10001, 10019, 10118"
-            }
-          />
-        </label>
+        <ZipTerritoryPicker
+          allowance={user.zipAllowance}
+          initialZips={user.zipCodes}
+        />
         <button
           type="submit"
           className="pc-gradient-bg flex h-14 w-full items-center justify-center rounded-full text-sm font-bold text-white"
