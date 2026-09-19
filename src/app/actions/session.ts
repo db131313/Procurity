@@ -84,7 +84,9 @@ export async function establishFirebaseSession(input: {
         firebaseUid: verified.uid,
         email: verified.email,
         name,
+        plan: "trial",
         zipCodes: [zip],
+        zipAllowance: PLAN_LIMITS.trial,
         onboardingComplete: true,
       });
       await setUserZips(user.id, [zip]);
@@ -183,7 +185,9 @@ export async function signInWithPassword(formData: FormData) {
       firebaseUid: uid,
       email,
       name,
+      plan: "trial",
       zipCodes: [zip],
+      zipAllowance: PLAN_LIMITS.trial,
       onboardingComplete: true,
     });
     await setUserZips(user.id, [zip]);

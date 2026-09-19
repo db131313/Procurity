@@ -497,59 +497,34 @@ export async function getSyncMeta() {
   };
 }
 
-export async function expandDemoCoverage(limit = 25) {
+/** Keep the demo account unrestricted after sync. Never touch paid/trial users. */
+export async function expandDemoCoverage(_limit = 25) {
   const prisma = getPrisma();
-  const projects = await prisma.project.findMany({
-    where: { zip: { not: null } },
-    select: { zip: true },
+  await prisma.user.updateMany({
+    where: { email: DEMO_USER.email },
+    data: {
+      zipCodes: [],
+      zipAllowance: PLAN_LIMITS.pro,
+      plan: "pro",
+      onboardingComplete: true,
+    },
   });
-  const counts = new Map<string, number>();
-  for (const p of projects) {
-    if (!p.zip) continue;
-    counts.set(p.zip, (counts.get(p.zip) ?? 0) + 1);
-  }
-  const topZips = [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([z]) => z);
-  if (!topZips.length) return;
-
-  const users = await prisma.user.findMany();
-  for (const user of users) {
-    const isDemoOrPro =
-      user.email === DEMO_USER.email ||
-      user.plan === "trial" ||
-      user.plan === "pro";
-    // Keep demo/pro unrestricted (empty zipCodes). Paid starter/growth get densest zips.
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        zipCodes: isDemoOrPro
-          ? []
-          : topZips.slice(0, Math.min(user.zipAllowance || PLAN_LIMITS.growth, topZips.length)),
-        zipAllowance: isDemoOrPro
-          ? PLAN_LIMITS.pro
-          : Math.max(user.zipAllowance, PLAN_LIMITS.growth),
-        plan:
-          user.email === DEMO_USER.email || user.plan === "trial"
-            ? "pro"
-            : user.plan,
-      },
-    });
-  }
 }
 
+/**
+ * Citywide demo mode for the demo account only.
+ * Must NOT promote trial users or wipe Starter/Growth zip allowlists —
+ * that broke zip-tier enforcement after every DOB sync.
+ */
 export async function enableCitywideDemo() {
   const prisma = getPrisma();
   await prisma.user.updateMany({
+    where: { email: DEMO_USER.email },
     data: {
       zipCodes: [],
       zipAllowance: PLAN_LIMITS.pro,
       onboardingComplete: true,
+      plan: "pro",
     },
-  });
-  await prisma.user.updateMany({
-    where: { plan: "trial" },
-    data: { plan: "pro" },
   });
 }
