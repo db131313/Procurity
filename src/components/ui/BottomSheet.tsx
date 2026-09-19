@@ -65,21 +65,25 @@ export function BottomSheet({
               if (info.offset.y > 80 || info.velocity.y > 400) onClose();
             }}
           >
-            <div
-              className={cn(
-                "mx-auto shrink-0 cursor-grab touch-none active:cursor-grabbing",
-                isFull
-                  ? "mb-0 mt-2 h-1.5 w-12 rounded-full bg-line"
-                  : "mb-3 h-1.5 w-12 rounded-full bg-line",
-              )}
-              onPointerDown={(e) => controls.start(e)}
-            />
             {isFull ? (
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(16px+var(--safe-bottom))] md:pb-6">
+              <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(16px+var(--safe-bottom))] md:pb-6">
+                {/* Drag handle overlaid on imagery — no top padding above the photo */}
+                <div className="pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center">
+                  <div
+                    className="pointer-events-auto h-1.5 w-12 cursor-grab touch-none rounded-full bg-white/85 shadow-sm ring-1 ring-black/10 active:cursor-grabbing"
+                    onPointerDown={(e) => controls.start(e)}
+                  />
+                </div>
                 {children}
               </div>
             ) : (
-              children
+              <>
+                <div
+                  className="mx-auto mb-3 h-1.5 w-12 shrink-0 cursor-grab touch-none rounded-full bg-line active:cursor-grabbing"
+                  onPointerDown={(e) => controls.start(e)}
+                />
+                {children}
+              </>
             )}
           </motion.div>
         </>

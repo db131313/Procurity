@@ -60,11 +60,11 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
         <img
           src={meta!.imagePath!}
           alt="Street-level photo of project location"
-          className="h-44 w-full object-cover sm:h-52"
+          className="h-56 w-full object-cover sm:h-72 md:h-80"
           onError={() => setImgError(true)}
         />
       ) : (
-        <div className="flex h-36 w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-ink to-slate/80 text-white/70 sm:h-40">
+        <div className="flex h-52 w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-ink to-slate/80 text-white/70 sm:h-64 md:h-72">
           <MapPin className="h-7 w-7" aria-hidden />
           <p className="text-xs font-semibold tracking-wide">
             {meta == null
