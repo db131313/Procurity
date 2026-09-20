@@ -17,6 +17,12 @@ import { HomeTeaserMapSection } from "./HomeTeaserMapSection";
 import { DataFreshnessBadge } from "@/components/ui/DataFreshnessBadge";
 import type { HomeCoverageStats } from "@/lib/marketing/home-coverage";
 
+type Props = {
+  stats: HomeCoverageStats;
+  /** When true, Plan My Day goes straight into the app orchestration. */
+  isLoggedIn?: boolean;
+};
+
 const STEPS = [
   {
     title: "Ingest",
@@ -59,11 +65,7 @@ const FEATURES = [
   },
 ];
 
-type Props = {
-  stats: HomeCoverageStats;
-};
-
-export function HomePage({ stats }: Props) {
+export function HomePage({ stats, isLoggedIn = false }: Props) {
   const projectLabel =
     stats.projectCount > 0
       ? `${stats.projectCount.toLocaleString()} scored projects`
@@ -72,10 +74,13 @@ export function HomePage({ stats }: Props) {
     stats.cityCount > 0
       ? `${stats.cityCount} metros covered`
       : "Multi-metro coverage";
+  const planMyDayHref = isLoggedIn
+    ? "/app/plan-my-day"
+    : "/login?next=/app/plan-my-day";
 
   return (
     <div className="bg-offwhite">
-      {/* Hero — brand + one headline + one CTA; contained on desktop */}
+      {/* Hero — brand + one headline + primary CTA; agent CTA is additive */}
       <section className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-ink text-white">
         <HeroCityBackground />
         <MarketingNav />
@@ -90,9 +95,14 @@ export function HomePage({ stats }: Props) {
           </div>
 
           <div className="mt-auto w-full max-w-xl animate-pc-rise md:mt-0 md:max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal">
-              Procurity.Pro
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-teal">
+                Procurity.Pro
+              </p>
+              <span className="inline-flex items-center rounded-full border border-teal/40 bg-teal/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-teal">
+                AI
+              </span>
+            </div>
             <h1 className="mt-3 text-[2.05rem] font-bold leading-[1.12] tracking-tight sm:text-[2.5rem] md:text-5xl lg:text-[3.25rem]">
               Know{" "}
               <span className="pc-gradient-text font-black tracking-wide">
@@ -118,6 +128,12 @@ export function HomePage({ stats }: Props) {
                 className="pc-gradient-bg inline-flex h-14 items-center justify-center rounded-full px-8 text-[15px] font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.98]"
               >
                 Find My Opportunities
+              </Link>
+              <Link
+                href={planMyDayHref}
+                className="inline-flex h-14 items-center justify-center rounded-full border border-teal/45 bg-teal/15 px-6 text-[15px] font-bold text-white backdrop-blur transition hover:bg-teal/25"
+              >
+                Let the Agent Plan My Day
               </Link>
               <Link
                 href="/how-it-works"

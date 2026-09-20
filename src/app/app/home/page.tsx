@@ -64,6 +64,16 @@ export default async function AppHomePage() {
       </Link>
 
       <Link
+        href="/app/plan-my-day"
+        className="mt-3 flex h-14 items-center justify-center gap-2 rounded-full border-2 border-teal/40 bg-teal/10 text-sm font-bold text-ink transition active:scale-[0.98]"
+      >
+        <span className="rounded-full bg-teal px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink">
+          AI
+        </span>
+        Let the Agent Plan My Day
+      </Link>
+
+      <Link
         href="/app/map?route=1"
         className="mt-3 flex h-12 items-center justify-center rounded-full border-2 border-line bg-white text-sm font-bold text-ink transition active:scale-[0.98]"
       >

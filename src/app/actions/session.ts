@@ -13,6 +13,7 @@ import { isFirebaseConfigured } from "@/lib/firebase/config";
 import { CITY_COOKIE } from "@/lib/cities/picker";
 import { normalizeUsZip, zipToMetro } from "@/lib/geo/zip-to-metro";
 import { setCityCookie } from "@/lib/map/city-cookie";
+import { safeAppNext } from "@/lib/route/safe-next";
 
 async function persistPickerCity(city: string | null | undefined) {
   if (!city) return;
@@ -26,7 +27,7 @@ async function persistPickerCity(city: string | null | undefined) {
   await setCityCookie(city);
 }
 
-export async function startDemoSession(city?: string) {
+export async function startDemoSession(city?: string, next?: string) {
   await upsertUser({
     firebaseUid: "demo-uid",
     email: "demo@procurity.pro",
@@ -43,6 +44,12 @@ export async function startDemoSession(city?: string) {
     name: "Demo Rep",
     demo: true,
   });
+  const continueTo = safeAppNext(next);
+  if (continueTo) {
+    if (city) await persistPickerCity(city);
+    else await setCityCookie("nyc");
+    redirect(continueTo);
+  }
   if (city) {
     await persistPickerCity(city);
     redirect(`/app/map?city=${encodeURIComponent(city)}`);
@@ -154,6 +161,7 @@ export async function signInWithPassword(formData: FormData) {
   const checkout = String(formData.get("checkout") || "") === "1";
   const city = String(formData.get("city") || "").trim() || null;
   const zipRaw = String(formData.get("zip") || "");
+  const continueTo = safeAppNext(String(formData.get("next") || ""));
 
   if (!email || !password) {
     return { error: "Email and password are required." };
@@ -194,7 +202,7 @@ export async function signInWithPassword(formData: FormData) {
     await setUserZips(user.id, [zip]);
     await createSession({ uid, email, name: name ?? undefined });
     await persistPickerCity(metro.city);
-    redirect(`/app/map?city=${metro.city}`);
+    redirect(continueTo || `/app/map?city=${metro.city}`);
   }
 
   const uid = `local-${Buffer.from(email).toString("base64url").slice(0, 24)}`;
@@ -221,7 +229,10 @@ export async function signInWithPassword(formData: FormData) {
   if (!user.onboardingComplete && !checkout) {
     redirect("/app/onboarding");
   }
-  redirect(city ? `/app/map?city=${encodeURIComponent(city)}` : "/app/home");
+  redirect(
+    continueTo ||
+      (city ? `/app/map?city=${encodeURIComponent(city)}` : "/app/home"),
+  );
 }
 
 export async function signOutAction() {
