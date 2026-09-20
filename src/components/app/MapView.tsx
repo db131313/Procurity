@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Map as MapLibreMap,
   NavigationControl,
+  LngLatBounds,
   setWorkerUrl,
   type GeoJSONSource,
   type MapLayerMouseEvent,
@@ -19,6 +20,7 @@ import {
   type ScoreMode,
 } from "@/components/app/MapFilters";
 import { MapCityPicker } from "@/components/app/MapCityPicker";
+import { MapRoutePanel } from "@/components/app/MapRoutePanel";
 import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
 import {
   DEFAULT_MAP_CAMERA,
@@ -34,6 +36,10 @@ import {
 import { MAP_PIN_DEFAULT_LIMIT } from "@/lib/map/pin-limits";
 import { CITY_COOKIE } from "@/lib/cities/picker";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
+import {
+  loadMapRoute,
+  type RouteResult,
+} from "@/lib/route/types";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
@@ -166,6 +172,8 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
   const [visibleCities, setVisibleCities] = useState<string[]>([
     initialCity || "nyc",
   ]);
+  const [routeOpen, setRouteOpen] = useState(false);
+  const [route, setRoute] = useState<RouteResult | null>(null);
   const fetchGen = useRef(0);
   const cityRef = useRef(activeCity);
   cityRef.current = activeCity;
@@ -194,6 +202,9 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
             },
       );
     }
+    if (params.get("route") === "1") setRouteOpen(true);
+    const saved = loadMapRoute();
+    if (saved?.stops?.length) setRoute(saved);
   }, []);
 
   useEffect(() => {
@@ -630,6 +641,177 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
     map.resize();
   }, [geojson, mapReady]);
 
+  // Daily route line + numbered stops on the same map.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    const lineId = "daily-route-line";
+    const stopsId = "daily-route-stops";
+    const empty: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [],
+    };
+
+    const stops = route?.stops?.length
+      ? [...route.stops].sort((a, b) => a.visitOrder - b.visitOrder)
+      : [];
+
+    const lineFc: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features:
+        stops.length >= 2
+          ? [
+              {
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "LineString",
+                  coordinates: [
+                    ...(route?.start
+                      ? [[route.start.longitude, route.start.latitude] as [number, number]]
+                      : []),
+                    ...stops.map(
+                      (s) =>
+                        [s.longitude, s.latitude] as [number, number],
+                    ),
+                  ],
+                },
+              },
+            ]
+          : [],
+    };
+
+    const stopsFc: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: stops.map((s) => ({
+        type: "Feature" as const,
+        id: s.id,
+        properties: {
+          id: s.id,
+          visitOrder: s.visitOrder,
+          address: s.address,
+          score: s.score,
+        },
+        geometry: {
+          type: "Point" as const,
+          coordinates: [s.longitude, s.latitude],
+        },
+      })),
+    };
+
+    const ensureSource = (
+      id: string,
+      data: GeoJSON.FeatureCollection,
+    ) => {
+      const existing = map.getSource(id) as GeoJSONSource | undefined;
+      if (existing) {
+        existing.setData(data);
+        return;
+      }
+      map.addSource(id, { type: "geojson", data });
+    };
+
+    ensureSource(lineId, stops.length ? lineFc : empty);
+    ensureSource(stopsId, stops.length ? stopsFc : empty);
+
+    if (!map.getLayer("daily-route-path")) {
+      map.addLayer({
+        id: "daily-route-path",
+        type: "line",
+        source: lineId,
+        paint: {
+          "line-color": "#111827",
+          "line-width": 4,
+          "line-opacity": 0.9,
+        },
+      });
+      map.addLayer({
+        id: "daily-route-stop-halo",
+        type: "circle",
+        source: stopsId,
+        paint: {
+          "circle-radius": 14,
+          "circle-color": "#111827",
+          "circle-opacity": 0.2,
+        },
+      });
+      map.addLayer({
+        id: "daily-route-stop-circle",
+        type: "circle",
+        source: stopsId,
+        paint: {
+          "circle-radius": 11,
+          "circle-color": "#111827",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+        },
+      });
+      map.addLayer({
+        id: "daily-route-stop-label",
+        type: "symbol",
+        source: stopsId,
+        layout: {
+          "text-field": ["to-string", ["get", "visitOrder"]],
+          "text-size": 12,
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: {
+          "text-color": "#ffffff",
+        },
+      });
+
+      const onEnter = () => {
+        map.getCanvas().style.cursor = "pointer";
+      };
+      const onLeave = () => {
+        map.getCanvas().style.cursor = "";
+      };
+      const onClickStop = (e: MapLayerMouseEvent) => {
+        if (overlayOpenRef.current) return;
+        const feature = e.features?.[0];
+        const id = feature?.properties?.id as string | undefined;
+        if (!id) return;
+        const stop = route?.stops.find((s) => s.id === id);
+        if (!stop) return;
+        captureCamera(map);
+        setSelectedSnapshot({
+          id: stop.id,
+          latitude: stop.latitude,
+          longitude: stop.longitude,
+          score: stop.score,
+          address: stop.address,
+          borough: stop.borough,
+          zip: stop.zip,
+          city: stop.city,
+          estValueLow: stop.estValueLow,
+          estValueHigh: stop.estValueHigh,
+          buyingWindowEstimate: stop.buyingWindowEstimate,
+          phase: "interior_finishing",
+        });
+      };
+      map.on("mouseenter", "daily-route-stop-circle", onEnter);
+      map.on("mouseleave", "daily-route-stop-circle", onLeave);
+      map.on("click", "daily-route-stop-circle", onClickStop);
+      map.on("click", "daily-route-stop-label", onClickStop);
+    }
+
+    if (stops.length >= 1) {
+      const b = new LngLatBounds();
+      if (route?.start) {
+        b.extend([route.start.longitude, route.start.latitude]);
+      }
+      for (const s of stops) b.extend([s.longitude, s.latitude]);
+      map.fitBounds(b, {
+        padding: { top: 80, bottom: 120, left: 48, right: 48 },
+        maxZoom: 14,
+        duration: 700,
+        essential: true,
+      });
+    }
+  }, [route, mapReady]);
+
   function onCityPick(cityCode: string, pickerId: string) {
     persistCityCookie(pickerId);
     setActiveCity(cityCode);
@@ -671,6 +853,13 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
 
       <div className="pointer-events-none absolute right-3 top-3 z-50 flex items-start gap-2 md:right-5 md:top-4">
         <MapCityPicker value={activeCity} onChange={onCityPick} />
+        <MapRoutePanel
+          city={activeCity}
+          open={routeOpen}
+          onOpenChange={setRouteOpen}
+          route={route}
+          onRouteChange={setRoute}
+        />
         <MapFilters value={filters} onChange={updateFilters} />
       </div>
 

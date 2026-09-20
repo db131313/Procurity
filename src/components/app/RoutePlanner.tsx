@@ -10,38 +10,9 @@ import { METRO_ZIP_OPTIONS } from "@/lib/geo/zip-to-metro";
 import { mapProjectHref } from "@/lib/map/project-href";
 import { cn } from "@/lib/cn";
 import Link from "next/link";
+import { saveMapRoute, type RouteResult } from "@/lib/route/types";
 
 type Mode = "near" | "zip";
-
-type RouteStop = {
-  id: string;
-  visitOrder: number;
-  address: string;
-  score: number;
-  buyingWindowEstimate: string;
-  borough: string | null;
-  zip: string | null;
-  city: string;
-  latitude: number;
-  longitude: number;
-  estValueLow: number;
-  estValueHigh: number;
-  milesFromPrev: number;
-  navigateUrl: string;
-};
-
-type RouteResult = {
-  ok: boolean;
-  mode: Mode;
-  stops: RouteStop[];
-  stopCount: number;
-  fullRouteUrl: string | null;
-  message?: string;
-  city?: string;
-  zip?: string;
-  usedGeolocation?: boolean;
-  error?: string;
-};
 
 const SERVED = PICKER_CITIES.filter((c) => c.served && c.cityCode);
 const STOP_OPTIONS = [5, 8, 10, 12];
@@ -112,6 +83,7 @@ export function RoutePlanner({ defaultCity }: Props) {
         return;
       }
       setResult(data);
+      if (data.stops?.length) saveMapRoute(data);
       if (data.message && !data.stops?.length) setError(data.message);
     });
   }
@@ -126,9 +98,16 @@ export function RoutePlanner({ defaultCity }: Props) {
         Plan today&apos;s visits
       </h1>
       <p className="mt-1 text-sm text-slate">
-        Top Buy Score sites, ordered for an efficient drive — then hand off to
-        Maps for turn-by-turn.
+        Top Buy Score sites, ordered for an efficient drive — then see them on
+        the map or hand off to Maps for turn-by-turn.
       </p>
+
+      <Link
+        href="/app/map?route=1"
+        className="mt-4 flex h-11 items-center justify-center rounded-full border-2 border-line bg-white text-sm font-bold text-ink"
+      >
+        Open route on map
+      </Link>
 
       <div className="mt-5 flex gap-2">
         {(
@@ -248,7 +227,7 @@ export function RoutePlanner({ defaultCity }: Props) {
 
       {result && result.stops.length > 0 && (
         <section className="mt-6">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-ink">
               {result.stopCount} stops
               {result.mode === "zip" && result.zip
@@ -257,17 +236,25 @@ export function RoutePlanner({ defaultCity }: Props) {
                   ? ` · ${result.city}`
                   : ""}
             </h2>
-            {result.fullRouteUrl && (
-              <a
-                href={result.fullRouteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-xs font-bold text-ink"
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/app/map?route=1"
+                className="inline-flex h-10 items-center rounded-full bg-ink px-3 text-xs font-bold text-white"
               >
-                <Navigation className="h-3.5 w-3.5" aria-hidden />
-                Open full route
-              </a>
-            )}
+                Show on map
+              </Link>
+              {result.fullRouteUrl && (
+                <a
+                  href={result.fullRouteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-xs font-bold text-ink"
+                >
+                  <Navigation className="h-3.5 w-3.5" aria-hidden />
+                  Open full route
+                </a>
+              )}
+            </div>
           </div>
 
           <ol className="mt-3 space-y-3">
