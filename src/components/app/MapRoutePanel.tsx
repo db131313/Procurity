@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Navigation, Route as RouteIcon, X } from "lucide-react";
+import { Route as RouteIcon, X } from "lucide-react";
 import { PICKER_CITIES } from "@/lib/cities/picker";
 import { METRO_ZIP_OPTIONS } from "@/lib/geo/zip-to-metro";
 import { cn } from "@/lib/cn";
@@ -94,6 +94,8 @@ export function MapRoutePanel({
       saveMapRoute(data);
       onRouteChange(data);
       setError(null);
+      // Stay on our map with the route drawn — Start FAB handles Maps handoff.
+      onOpenChange(false);
     });
   }
 
@@ -238,18 +240,6 @@ export function MapRoutePanel({
           >
             {pending ? "Building…" : "Generate on map"}
           </button>
-
-          {route?.fullRouteUrl ? (
-            <a
-              href={route.fullRouteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-full border border-line text-xs font-bold text-ink"
-            >
-              <Navigation className="h-3.5 w-3.5" aria-hidden />
-              Open in Maps
-            </a>
-          ) : null}
 
           {route ? (
             <button

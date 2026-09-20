@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { Navigation } from "lucide-react";
 import { StreetViewHeader } from "@/components/app/StreetViewHeader";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -11,6 +12,8 @@ import { addProjectToPipeline } from "@/app/actions/pipeline";
 import type { ProcurementLead } from "@/lib/projects/leads";
 import { searchLink } from "@/lib/projects/leads";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
+import { navigateToStopUrl } from "@/lib/route/maps-links";
+import { saveMapRoute, type RouteResult } from "@/lib/route/types";
 
 function pinColorForScore(score: number): string {
   if (score >= 90) return "#16A34A";
@@ -66,6 +69,8 @@ type Props = {
   onClose: () => void;
   /** Pin score already adjusted for trade filter mode */
   displayScore: number;
+  /** Build a single-stop route on the same map (optional — map page). */
+  onDirections?: (route: RouteResult) => void;
 };
 
 function scoreBand(score: number) {
@@ -81,11 +86,68 @@ export function ProjectDetailOverlay({
   open,
   onClose,
   displayScore,
+  onDirections,
 }: Props) {
   const [detail, setDetail] = useState<DetailPayload | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [added, setAdded] = useState(false);
+
+  function buildSingleStopRoute(): RouteResult | null {
+    if (!project) return null;
+    const src = detail?.project ?? project;
+    const lat = src.latitude;
+    const lng = src.longitude;
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng) ||
+      (lat === 0 && lng === 0)
+    ) {
+      return null;
+    }
+    const navigateUrl = navigateToStopUrl({
+      latitude: lat,
+      longitude: lng,
+      address: src.address,
+    });
+    return {
+      ok: true,
+      mode: "near",
+      stopCount: 1,
+      fullRouteUrl: navigateUrl,
+      start: undefined,
+      stops: [
+        {
+          id: src.id,
+          visitOrder: 1,
+          address: src.address,
+          score: src.score,
+          buyingWindowEstimate: src.buyingWindowEstimate,
+          borough: src.borough ?? null,
+          zip: src.zip ?? null,
+          city: (src as { city?: string }).city || "",
+          latitude: lat,
+          longitude: lng,
+          estValueLow: src.estValueLow,
+          estValueHigh: src.estValueHigh,
+          milesFromPrev: 0,
+          navigateUrl,
+        },
+      ],
+    };
+  }
+
+  function handleDirections() {
+    const next = buildSingleStopRoute();
+    if (!next) return;
+    saveMapRoute(next);
+    if (onDirections) {
+      onDirections(next);
+    } else {
+      onClose();
+      window.location.assign("/app/map?route=1");
+    }
+  }
 
   useEffect(() => {
     if (!open || !project?.id) {
@@ -272,6 +334,15 @@ export function ProjectDetailOverlay({
                     : pending
                       ? "Adding…"
                       : "Add to Pipeline"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDirections}
+                  className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-line bg-white text-sm font-bold text-ink"
+                >
+                  <Navigation className="h-4 w-4" aria-hidden />
+                  Directions
                 </button>
 
                 {detail.sourcing.length > 0 && (

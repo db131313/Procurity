@@ -243,17 +243,6 @@ export function RoutePlanner({ defaultCity }: Props) {
               >
                 Show on map
               </Link>
-              {result.fullRouteUrl && (
-                <a
-                  href={result.fullRouteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-white px-3 text-xs font-bold text-ink"
-                >
-                  <Navigation className="h-3.5 w-3.5" aria-hidden />
-                  Open full route
-                </a>
-              )}
             </div>
           </div>
 
