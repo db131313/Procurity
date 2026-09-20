@@ -64,7 +64,7 @@ export default async function AppHomePage() {
       </Link>
 
       <Link
-        href="/app/route"
+        href="/app/map?route=1"
         className="mt-3 flex h-12 items-center justify-center rounded-full border-2 border-line bg-white text-sm font-bold text-ink transition active:scale-[0.98]"
       >
         Plan today&apos;s route
