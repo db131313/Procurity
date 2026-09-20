@@ -15,6 +15,7 @@ import {
   mapFirebaseAuthError,
 } from "@/lib/firebase/client";
 import { CITY_COOKIE } from "@/lib/cities/picker";
+import { safeAppNext } from "@/lib/route/safe-next";
 
 type Props = {
   mode: "login" | "signup";
@@ -23,6 +24,8 @@ type Props = {
   /** When set, skip free map and start Stripe checkout after signup */
   checkout?: boolean;
   tier?: string | null;
+  /** Safe /app path to continue after auth (e.g. Plan My Day). */
+  next?: string | null;
 };
 
 export function AuthForm({
@@ -30,12 +33,14 @@ export function AuthForm({
   city = null,
   checkout = false,
   tier = "growth",
+  next = null,
 }: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const firebaseReady =
     typeof window !== "undefined" ? isFirebaseConfigured() : false;
+  const continueTo = safeAppNext(next);
 
   function persistCity() {
     if (!city) return;
@@ -115,7 +120,11 @@ export function AuthForm({
           }
 
           persistCity();
-          router.push(result.redirectTo || mapPath());
+          const dest =
+            result.redirectTo?.startsWith("/waitlist")
+              ? result.redirectTo
+              : continueTo || result.redirectTo || mapPath();
+          router.push(dest);
           router.refresh();
         } catch (err) {
           setError(mapFirebaseAuthError(err));
@@ -126,6 +135,7 @@ export function AuthForm({
       formData.set("mode", mode);
       if (checkout) formData.set("checkout", "1");
       if (city) formData.set("city", city);
+      if (continueTo) formData.set("next", continueTo);
       const result = await signInWithPassword(formData);
       if (result?.error) {
         setError(result.error);
@@ -142,7 +152,7 @@ export function AuthForm({
     setError(null);
     startTransition(async () => {
       persistCity();
-      await startDemoSession(city || undefined);
+      await startDemoSession(city || undefined, continueTo || undefined);
     });
   }
 
@@ -267,8 +277,10 @@ export function AuthForm({
             <Link
               href={
                 city
-                  ? `/signup?city=${encodeURIComponent(city)}&checkout=1&tier=${tier || "growth"}`
-                  : "/signup"
+                  ? `/signup?city=${encodeURIComponent(city)}&checkout=1&tier=${tier || "growth"}${continueTo ? `&next=${encodeURIComponent(continueTo)}` : ""}`
+                  : continueTo
+                    ? `/signup?next=${encodeURIComponent(continueTo)}`
+                    : "/signup"
               }
               className="font-semibold text-purple"
             >
@@ -278,7 +290,14 @@ export function AuthForm({
         ) : (
           <>
             Already have access?{" "}
-            <Link href="/login" className="font-semibold text-purple">
+            <Link
+              href={
+                continueTo
+                  ? `/login?next=${encodeURIComponent(continueTo)}`
+                  : "/login"
+              }
+              className="font-semibold text-purple"
+            >
               Log in
             </Link>
           </>

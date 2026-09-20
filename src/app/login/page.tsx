@@ -2,9 +2,16 @@ import Link from "next/link";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Logo } from "@/components/brand/Logo";
 import { redirectIfAuthenticated } from "@/lib/auth/redirect-if-authenticated";
+import { safeAppNext } from "@/lib/route/safe-next";
 
-export default async function LoginPage() {
-  await redirectIfAuthenticated();
+type Props = {
+  searchParams: Promise<{ next?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const next = safeAppNext(sp.next);
+  await redirectIfAuthenticated(next || "/app/home");
 
   return (
     <main className="grid min-h-[100dvh] lg:grid-cols-2">
@@ -44,7 +51,7 @@ export default async function LoginPage() {
             Sign in with email or jump into the demo.
           </p>
           <div className="mt-8">
-            <AuthForm mode="login" />
+            <AuthForm mode="login" next={next} />
           </div>
           <p className="mt-8 text-center text-sm text-slate">
             <Link href="/" className="font-semibold text-purple">

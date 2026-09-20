@@ -29,7 +29,24 @@ export type RouteResult = {
   zip?: string;
   usedGeolocation?: boolean;
   error?: string;
+  /** Set by Plan My Day orchestration — short agent framing for the map. */
+  agentMessage?: string;
 };
+
+/** Default stop cap for agent Plan My Day (8 stops + origin ≈ Maps limit). */
+export const PLAN_MY_DAY_STOP_LIMIT = 8;
+
+export function buildAgentRouteMessage(result: {
+  stopCount: number;
+  mode: "near" | "zip";
+  zip?: string;
+}): string {
+  const n = result.stopCount;
+  if (result.mode === "zip" && result.zip) {
+    return `Found ${n} strong opportunities in ${result.zip} today`;
+  }
+  return `Found ${n} strong opportunities near you today`;
+}
 
 /** sessionStorage key: hand a generated route from /app/route onto the map. */
 export const MAP_ROUTE_KEY = "pc_daily_route_v1";

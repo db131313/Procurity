@@ -22,6 +22,7 @@ import {
 import { MapCityPicker } from "@/components/app/MapCityPicker";
 import { MapRoutePanel } from "@/components/app/MapRoutePanel";
 import { MapRouteStartFab } from "@/components/app/MapRouteStartFab";
+import { PlanMyDayAgentBanner } from "@/components/app/PlanMyDayAgentBanner";
 import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
 import {
   DEFAULT_MAP_CAMERA,
@@ -175,6 +176,7 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
   ]);
   const [routeOpen, setRouteOpen] = useState(false);
   const [route, setRoute] = useState<RouteResult | null>(null);
+  const [agentBanner, setAgentBanner] = useState<string | null>(null);
   const fetchGen = useRef(0);
   const cityRef = useRef(activeCity);
   cityRef.current = activeCity;
@@ -203,9 +205,20 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
             },
       );
     }
-    if (params.get("route") === "1") setRouteOpen(true);
+    // Agent Plan My Day lands with route already saved — keep panel closed so
+    // the map + Start FAB are the focus (manual ?route=1 still opens the panel).
+    const fromAgent = params.get("agent") === "1";
+    if (params.get("route") === "1" && !fromAgent) setRouteOpen(true);
     const saved = loadMapRoute();
-    if (saved?.stops?.length) setRoute(saved);
+    if (saved?.stops?.length) {
+      setRoute(saved);
+      if (fromAgent || saved.agentMessage) {
+        setAgentBanner(
+          saved.agentMessage ||
+            `Found ${saved.stopCount} strong opportunities near you today`,
+        );
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -859,7 +872,11 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
           open={routeOpen}
           onOpenChange={setRouteOpen}
           route={route}
-          onRouteChange={setRoute}
+          onRouteChange={(next) => {
+            setRoute(next);
+            // Manual regenerate clears agent framing.
+            if (!next?.agentMessage) setAgentBanner(null);
+          }}
         />
         <MapFilters value={filters} onChange={updateFilters} />
       </div>
@@ -891,6 +908,13 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
         </div>
       </div>
 
+      {agentBanner && !selectedSnapshot ? (
+        <PlanMyDayAgentBanner
+          message={agentBanner}
+          onDismiss={() => setAgentBanner(null)}
+        />
+      ) : null}
+
       {!selectedSnapshot && (
         <MapRouteStartFab
           mapsUrl={route?.fullRouteUrl ?? null}
@@ -913,6 +937,7 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
         }}
         onDirections={(next) => {
           setRoute(next);
+          setAgentBanner(null);
           setSelectedSnapshot(null);
           setRouteOpen(false);
           if (typeof window !== "undefined") {

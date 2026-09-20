@@ -23,7 +23,9 @@ export function proxy(request: NextRequest) {
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
   if (!hasSession) {
     const login = new URL("/login", request.nextUrl.origin);
-    login.searchParams.set("next", path);
+    const next =
+      path + (request.nextUrl.search ? request.nextUrl.search : "");
+    login.searchParams.set("next", next);
     // Redirect — never 401 — so browsers and crawlers get a usable response.
     return NextResponse.redirect(login);
   }

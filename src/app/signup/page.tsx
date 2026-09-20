@@ -3,12 +3,14 @@ import { AuthForm } from "@/components/auth/AuthForm";
 import { Logo } from "@/components/brand/Logo";
 import { redirectIfAuthenticated } from "@/lib/auth/redirect-if-authenticated";
 import { getPickerCity } from "@/lib/cities/picker";
+import { safeAppNext } from "@/lib/route/safe-next";
 
 type Props = {
   searchParams: Promise<{
     city?: string;
     checkout?: string;
     tier?: string;
+    next?: string;
   }>;
 };
 
@@ -18,11 +20,12 @@ export default async function SignUpPage({ searchParams }: Props) {
   const checkout = sp.checkout === "1" || sp.checkout === "true";
   const tier = typeof sp.tier === "string" ? sp.tier : "growth";
   const picker = getPickerCity(city);
+  const next = safeAppNext(sp.next);
 
-  const afterAuth = city
-    ? `/app/map?city=${encodeURIComponent(city)}`
-    : "/app/home";
-  await redirectIfAuthenticated(checkout ? afterAuth : "/app/home");
+  const afterAuth =
+    next ||
+    (city ? `/app/map?city=${encodeURIComponent(city)}` : "/app/home");
+  await redirectIfAuthenticated(checkout ? afterAuth : next || "/app/home");
 
   return (
     <main className="grid min-h-[100dvh] lg:grid-cols-2">
@@ -80,6 +83,7 @@ export default async function SignUpPage({ searchParams }: Props) {
               city={city}
               checkout={checkout}
               tier={tier}
+              next={next}
             />
           </div>
           <p className="mt-8 text-center text-sm text-slate">
