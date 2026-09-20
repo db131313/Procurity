@@ -21,6 +21,7 @@ import {
 } from "@/components/app/MapFilters";
 import { MapCityPicker } from "@/components/app/MapCityPicker";
 import { MapRoutePanel } from "@/components/app/MapRoutePanel";
+import { MapRouteStartFab } from "@/components/app/MapRouteStartFab";
 import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
 import {
   DEFAULT_MAP_CAMERA,
@@ -890,6 +891,13 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
         </div>
       </div>
 
+      {!selectedSnapshot && (
+        <MapRouteStartFab
+          mapsUrl={route?.fullRouteUrl ?? null}
+          stopCount={route?.stopCount ?? 0}
+        />
+      )}
+
       <ProjectDetailOverlay
         project={selectedSnapshot}
         open={Boolean(selectedSnapshot)}
@@ -901,6 +909,17 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
               url.searchParams.delete("pin");
               router.replace(url.pathname + url.search, { scroll: false });
             }
+          }
+        }}
+        onDirections={(next) => {
+          setRoute(next);
+          setSelectedSnapshot(null);
+          setRouteOpen(false);
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("pin");
+            url.searchParams.set("route", "1");
+            router.replace(url.pathname + url.search, { scroll: false });
           }
         }}
         displayScore={selectedScore}
