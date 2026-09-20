@@ -937,6 +937,7 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
         }}
         onDirections={(next) => {
           setRoute(next);
+          setAgentBanner(null);
           setSelectedSnapshot(null);
           setRouteOpen(false);
           if (typeof window !== "undefined") {
