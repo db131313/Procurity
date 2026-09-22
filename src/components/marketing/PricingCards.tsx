@@ -4,6 +4,10 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { formatPlanZipAccess, PLAN_PRICING } from "@/lib/db/types";
 import { cn } from "@/lib/cn";
+import {
+  normalizePromoCodeInput,
+  PROMO_CODE_STORAGE_KEY,
+} from "@/lib/stripe/promotion-codes";
 
 const FEATURES = {
   starter: [
@@ -35,17 +39,49 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
   const [error, setError] = useState<string | null>(null);
   const tiers = ["starter", "growth", "pro"] as const;
 
+  function readPromoCode(): string {
+    try {
+      const fromQuery =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("code") || ""
+          : "";
+      const fromStore =
+        typeof window !== "undefined"
+          ? sessionStorage.getItem(PROMO_CODE_STORAGE_KEY) || ""
+          : "";
+      return (
+        normalizePromoCodeInput(fromQuery) ||
+        normalizePromoCodeInput(fromStore)
+      );
+    } catch {
+      return "";
+    }
+  }
+
   async function startTrial(tier: (typeof tiers)[number]) {
     setLoading(tier);
     setError(null);
     try {
+      const promotionCode = readPromoCode();
+      if (promotionCode) {
+        try {
+          sessionStorage.setItem(PROMO_CODE_STORAGE_KEY, promotionCode);
+        } catch {
+          // ignore
+        }
+      }
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({
+          tier,
+          ...(promotionCode ? { promotionCode } : {}),
+        }),
       });
       if (res.status === 401) {
-        window.location.href = `${ctaHref}?tier=${tier}`;
+        const q = new URLSearchParams({ tier, checkout: "1" });
+        if (promotionCode) q.set("code", promotionCode);
+        window.location.href = `${ctaHref}?${q.toString()}`;
         return;
       }
       const data = (await res.json()) as {

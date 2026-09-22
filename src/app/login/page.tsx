@@ -5,12 +5,14 @@ import { redirectIfAuthenticated } from "@/lib/auth/redirect-if-authenticated";
 import { safeAppNext } from "@/lib/route/safe-next";
 
 type Props = {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; code?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: Props) {
   const sp = await searchParams;
   const next = safeAppNext(sp.next);
+  const initialPromoCode =
+    typeof sp.code === "string" ? sp.code.trim().slice(0, 40) : null;
   await redirectIfAuthenticated(next || "/app/home");
 
   return (
@@ -51,7 +53,11 @@ export default async function LoginPage({ searchParams }: Props) {
             Sign in with email to open your map and pipeline.
           </p>
           <div className="mt-8">
-            <AuthForm mode="login" next={next} />
+            <AuthForm
+              mode="login"
+              next={next}
+              initialPromoCode={initialPromoCode}
+            />
           </div>
           <p className="mt-8 text-center text-sm text-slate">
             <Link href="/" className="font-semibold text-purple">

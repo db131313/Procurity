@@ -11,6 +11,7 @@ type Props = {
     checkout?: string;
     tier?: string;
     next?: string;
+    code?: string;
   }>;
 };
 
@@ -21,6 +22,8 @@ export default async function SignUpPage({ searchParams }: Props) {
   const tier = typeof sp.tier === "string" ? sp.tier : "growth";
   const picker = getPickerCity(city);
   const next = safeAppNext(sp.next);
+  const initialPromoCode =
+    typeof sp.code === "string" ? sp.code.trim().slice(0, 40) : null;
 
   const afterAuth =
     next ||
@@ -84,6 +87,7 @@ export default async function SignUpPage({ searchParams }: Props) {
               checkout={checkout}
               tier={tier}
               next={next}
+              initialPromoCode={initialPromoCode}
             />
           </div>
           <p className="mt-8 text-center text-sm text-slate">
