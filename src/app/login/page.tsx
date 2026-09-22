@@ -48,7 +48,7 @@ export default async function LoginPage({ searchParams }: Props) {
             Welcome back
           </h2>
           <p className="mt-2 text-sm text-slate">
-            Sign in with email or jump into the demo.
+            Sign in with email to open your map and pipeline.
           </p>
           <div className="mt-8">
             <AuthForm mode="login" next={next} />

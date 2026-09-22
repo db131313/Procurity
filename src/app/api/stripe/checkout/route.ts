@@ -6,8 +6,13 @@ import {
   stripeConfigured,
   type CheckoutTier,
 } from "@/lib/stripe";
+import {
+  ensureDiscountCoupons,
+  ensureTestModePromoCodes,
+  isStripeTestMode,
+} from "@/lib/stripe/promotion-codes";
 import { upsertUser } from "@/lib/db/store";
-import { getAppUrl } from "@/lib/env";
+import { resolveCheckoutOrigin } from "@/lib/env";
 
 const TIERS: CheckoutTier[] = ["starter", "growth", "pro"];
 
@@ -56,6 +61,16 @@ export async function POST(request: Request) {
     );
   }
 
+  // Ensure standard coupons (+ test-mode QA codes) exist before Checkout.
+  try {
+    const coupons = await ensureDiscountCoupons(stripe);
+    if (isStripeTestMode(process.env.STRIPE_SECRET_KEY)) {
+      await ensureTestModePromoCodes(stripe, coupons);
+    }
+  } catch (err) {
+    console.warn("[stripe/checkout] ensure coupons", err);
+  }
+
   let customerId = user.stripeCustomerId ?? undefined;
   if (!customerId) {
     const customer = await stripe.customers.create({
@@ -71,13 +86,17 @@ export async function POST(request: Request) {
     });
   }
 
-  const origin = getAppUrl();
+  const origin = resolveCheckoutOrigin(request);
   const successCity = city ? `&city=${encodeURIComponent(city)}` : "";
 
   const checkout = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
+    // Native Stripe promo field on Checkout (Task 1).
+    allow_promotion_codes: true,
+    // Skip card collection when a 100% code brings the total to $0.
+    payment_method_collection: "if_required",
     success_url:
       tier === "pro"
         ? `${origin}/app/map?checkout=success&tier=${tier}${successCity}`

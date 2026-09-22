@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   establishFirebaseSession,
   signInWithPassword,
-  startDemoSession,
 } from "@/app/actions/session";
 import {
   firebaseSignIn,
@@ -38,8 +37,6 @@ export function AuthForm({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const firebaseReady =
-    typeof window !== "undefined" ? isFirebaseConfigured() : false;
   const continueTo = safeAppNext(next);
 
   function persistCity() {
@@ -148,20 +145,22 @@ export function AuthForm({
     });
   }
 
-  function onDemo() {
-    setError(null);
-    startTransition(async () => {
-      persistCity();
-      await startDemoSession(city || undefined, continueTo || undefined);
-    });
-  }
-
   return (
     <div className="space-y-4">
       {checkout && mode === "signup" && (
         <p className="rounded-2xl border border-teal/30 bg-teal/10 px-3 py-2 text-sm font-semibold text-ink">
           After signup you&apos;ll continue to checkout
           {city ? ` · then open the ${city.replace(/_/g, " ")} map` : ""}.
+          Have an access code? Enter it on the Stripe Checkout page.
+        </p>
+      )}
+      {mode === "login" && (
+        <p className="rounded-2xl border border-line bg-offwhite px-3 py-2 text-sm text-slate">
+          Need access?{" "}
+          <Link href="/pricing" className="font-semibold text-purple">
+            Choose a plan
+          </Link>{" "}
+          and use a promotion code at checkout if you have one.
         </p>
       )}
       <form action={onSubmit} className="space-y-4">
@@ -202,11 +201,6 @@ export function AuthForm({
             type="email"
             required
             autoComplete="email"
-            defaultValue={
-              mode === "login" && !firebaseReady
-                ? "demo@procurity.pro"
-                : undefined
-            }
             className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
             placeholder="you@company.com"
           />
@@ -220,9 +214,6 @@ export function AuthForm({
             minLength={6}
             autoComplete={
               mode === "login" ? "current-password" : "new-password"
-            }
-            defaultValue={
-              mode === "login" && !firebaseReady ? "demo1234" : undefined
             }
             className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none ring-purple/30 focus:ring-2"
             placeholder="••••••••"
@@ -260,15 +251,6 @@ export function AuthForm({
                 : "Create account"}
         </button>
       </form>
-
-      <button
-        type="button"
-        disabled={pending}
-        onClick={onDemo}
-        className="flex h-12 w-full items-center justify-center rounded-full border border-line bg-offwhite text-sm font-bold text-ink disabled:opacity-60"
-      >
-        Try demo session
-      </button>
 
       <p className="text-center text-sm text-slate">
         {mode === "login" ? (
