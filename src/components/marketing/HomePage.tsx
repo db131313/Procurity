@@ -292,7 +292,8 @@ export function HomePage({ stats, isLoggedIn = false }: Props) {
       <section className="bg-ink px-5 py-16 text-center text-white md:px-10">
         <h2 className="text-3xl font-bold md:text-4xl">Start your free trial.</h2>
         <p className="mx-auto mt-3 max-w-md text-white/65">
-          7 days of full access. No credit card required in demo mode.
+          7 days of full access. Use a promotion code at checkout if you have
+          one.
         </p>
         <Link
           href="/signup"
