@@ -52,8 +52,7 @@ export default async function SettingsPage({
           <p className="mt-2 text-sm text-slate">
             Pick up to {user.zipAllowance} zip{" "}
             {user.zipAllowance === 1 ? "code" : "codes"} from the 8 live metros.
-            Empty list keeps unrestricted access until you save a selection
-            (grandfathered).
+            Until you save a selection, the map shows no pins in your territory.
           </p>
         )}
 
