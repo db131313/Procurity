@@ -12,7 +12,7 @@ import {
   isStripeTestMode,
 } from "@/lib/stripe/promotion-codes";
 import { upsertUser } from "@/lib/db/store";
-import { getAppUrl } from "@/lib/env";
+import { resolveCheckoutOrigin } from "@/lib/env";
 
 const TIERS: CheckoutTier[] = ["starter", "growth", "pro"];
 
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const origin = getAppUrl();
+  const origin = resolveCheckoutOrigin(request);
   const successCity = city ? `&city=${encodeURIComponent(city)}` : "";
 
   const checkout = await stripe.checkout.sessions.create({
