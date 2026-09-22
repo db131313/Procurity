@@ -9,6 +9,7 @@ const ZIP_GATE_ALLOW = new Set([
   "/app/onboarding",
   "/app/billing",
   "/app/settings",
+  "/app/admin/dev-plan",
 ]);
 
 export default async function AuthenticatedLayout({

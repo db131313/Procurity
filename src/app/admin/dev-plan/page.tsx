@@ -39,12 +39,20 @@ export default async function AdminDevPlanPage({
   if (!isAdminEmail(session.email)) {
     return (
       <main className="mx-auto max-w-lg px-5 py-12">
-        <h1 className="text-2xl font-bold text-ink">Admin · Dev plan</h1>
+        <p className="text-xs font-bold uppercase tracking-wide text-slate">
+          Internal · 403
+        </p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">Admin · Dev plan</h1>
         <p className="mt-3 text-sm text-slate">
-          Your account ({session.email}) is not on the admin allow-list. Set{" "}
+          Your account ({session.email}) is not on the admin allow-list. This is
+          not a missing page — set{" "}
           <code className="rounded bg-offwhite px-1">ADMIN_EMAILS</code> or{" "}
-          <code className="rounded bg-offwhite px-1">ADMIN_EMAIL</code> on the
-          server.
+          <code className="rounded bg-offwhite px-1">ADMIN_EMAIL</code> on
+          Netlify to your login email, then hard-refresh.
+        </p>
+        <p className="mt-2 text-sm text-slate">
+          Canonical URL:{" "}
+          <code className="rounded bg-offwhite px-1">/admin/dev-plan</code>
         </p>
         <Link href="/app/home" className="mt-6 inline-block text-sm font-semibold text-purple">
           ← Back to app

@@ -24,3 +24,8 @@
 # Default Netlify function timeout is too short for DOB ingest.
 [functions."*"]
   timeout = 60
+
+# Deploy-preview only: allow a known QA email so agents can verify /admin/dev-plan.
+# Production uses ADMIN_EMAILS / ADMIN_EMAIL (Netlify UI) plus server bootstrap owners.
+[context.deploy-preview.environment]
+  ADMIN_EMAIL = "devplan-preview-admin@example.com"
