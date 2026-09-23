@@ -1,16 +1,20 @@
 /**
- * Mapillary street-imagery helpers (replaces Google Street View Static).
- * Requires MAPILLARY_ACCESS_TOKEN (server-only).
- * When unset or no nearby coverage, callers show a clean fallback — never a broken image.
+ * Street imagery: Google Street View Static (primary) + Mapillary (fallback).
+ * Keys stay server-only. When neither has coverage, callers show a clean empty state.
  */
+
+export type StreetViewProvider = "google" | "mapillary";
 
 export type StreetViewMeta = {
   available: boolean;
   /** Capture date label seed, e.g. "2023-05" */
   date: string | null;
   status: string;
-  /** Mapillary image id when available */
+  provider?: StreetViewProvider | null;
+  /** Mapillary image id when provider is mapillary */
   imageId?: string | null;
+  /** Google pano id when available (optional) */
+  panoId?: string | null;
 };
 
 function mapillaryToken(): string | null {
@@ -20,8 +24,24 @@ function mapillaryToken(): string | null {
   return key || null;
 }
 
-export function isStreetViewConfigured(): boolean {
+function googleMapsApiKey(): string | null {
+  const key =
+    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
+    process.env.GOOGLE_STREET_VIEW_API_KEY?.trim();
+  return key || null;
+}
+
+export function isGoogleStreetViewConfigured(): boolean {
+  return Boolean(googleMapsApiKey());
+}
+
+export function isMapillaryConfigured(): boolean {
   return Boolean(mapillaryToken());
+}
+
+/** True if either Google or Mapillary can serve imagery. */
+export function isStreetViewConfigured(): boolean {
+  return isGoogleStreetViewConfigured() || isMapillaryConfigured();
 }
 
 /** Format "2023-05" → "May 2023" */
@@ -153,12 +173,87 @@ export async function findNearbyMapillaryImage(
   return searchBboxClosest(lat, lng);
 }
 
-export async function fetchStreetViewMeta(
+type GoogleMetaResponse = {
+  status?: string;
+  date?: string;
+  pano_id?: string;
+  copyright?: string;
+};
+
+/**
+ * Free Google Street View metadata check (no image bill until Static fetch).
+ * https://developers.google.com/maps/documentation/streetview/metadata
+ */
+export async function fetchGoogleStreetViewMeta(
+  lat: number,
+  lng: number,
+): Promise<StreetViewMeta> {
+  const key = googleMapsApiKey();
+  if (!key) {
+    return {
+      available: false,
+      date: null,
+      status: "NO_KEY",
+      provider: null,
+    };
+  }
+  try {
+    const url = new URL(
+      "https://maps.googleapis.com/maps/api/streetview/metadata",
+    );
+    url.searchParams.set("location", `${lat},${lng}`);
+    url.searchParams.set("source", "outdoor");
+    url.searchParams.set("key", key);
+    const res = await fetch(url.toString(), {
+      next: { revalidate: 3600 },
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) {
+      return {
+        available: false,
+        date: null,
+        status: "ERROR",
+        provider: "google",
+      };
+    }
+    const body = (await res.json()) as GoogleMetaResponse;
+    if (body.status !== "OK") {
+      return {
+        available: false,
+        date: null,
+        status: body.status || "NO_IMAGERY",
+        provider: "google",
+      };
+    }
+    return {
+      available: true,
+      date: body.date || null,
+      status: "OK",
+      provider: "google",
+      panoId: body.pano_id || null,
+    };
+  } catch {
+    return {
+      available: false,
+      date: null,
+      status: "ERROR",
+      provider: "google",
+    };
+  }
+}
+
+export async function fetchMapillaryStreetViewMeta(
   lat: number,
   lng: number,
 ): Promise<StreetViewMeta> {
   if (!mapillaryToken()) {
-    return { available: false, date: null, status: "NO_KEY", imageId: null };
+    return {
+      available: false,
+      date: null,
+      status: "NO_KEY",
+      provider: null,
+      imageId: null,
+    };
   }
   try {
     const img = await findNearbyMapillaryImage(lat, lng);
@@ -167,6 +262,7 @@ export async function fetchStreetViewMeta(
         available: false,
         date: null,
         status: "NO_IMAGERY",
+        provider: "mapillary",
         imageId: null,
       };
     }
@@ -174,11 +270,45 @@ export async function fetchStreetViewMeta(
       available: true,
       date: dateKeyFromMs(img.captured_at),
       status: "OK",
+      provider: "mapillary",
       imageId: img.id,
     };
   } catch {
-    return { available: false, date: null, status: "ERROR", imageId: null };
+    return {
+      available: false,
+      date: null,
+      status: "ERROR",
+      provider: "mapillary",
+      imageId: null,
+    };
   }
+}
+
+/**
+ * Preferred chain: Google first, Mapillary if Google has no coverage / no key.
+ */
+export async function fetchStreetViewMeta(
+  lat: number,
+  lng: number,
+): Promise<StreetViewMeta> {
+  let googleResult: StreetViewMeta | null = null;
+  if (isGoogleStreetViewConfigured()) {
+    googleResult = await fetchGoogleStreetViewMeta(lat, lng);
+    if (googleResult.available) return googleResult;
+  }
+  if (isMapillaryConfigured()) {
+    return fetchMapillaryStreetViewMeta(lat, lng);
+  }
+  if (googleResult) {
+    // Google configured but no imagery (and no Mapillary) — preserve status.
+    return googleResult;
+  }
+  return {
+    available: false,
+    date: null,
+    status: "NO_KEY",
+    provider: null,
+  };
 }
 
 /** Resolve a thumbnail URL for a known Mapillary image id (server-side). */
@@ -196,4 +326,37 @@ export async function mapillaryThumbUrl(
 
 export function mapillaryAppUrl(imageId: string): string {
   return `https://www.mapillary.com/app/?pKey=${encodeURIComponent(imageId)}`;
+}
+
+/** Google “Report a problem” / Street View deep link (required attribution UI). */
+export function googleStreetViewReportUrl(lat: number, lng: number): string {
+  return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${encodeURIComponent(`${lat},${lng}`)}`;
+}
+
+/**
+ * Upstream Google Static Street View URL (server-side only — includes API key).
+ * Prefer proxying via /api/streetview/image so the key never reaches the browser.
+ */
+export function googleStreetViewStaticUrl(
+  lat: number,
+  lng: number,
+  opts?: { width?: number; height?: number; panoId?: string | null },
+): string | null {
+  const key = googleMapsApiKey();
+  if (!key) return null;
+  const w = Math.min(Math.max(opts?.width ?? 640, 100), 640);
+  const h = Math.min(Math.max(opts?.height ?? 400, 100), 640);
+  const url = new URL("https://maps.googleapis.com/maps/api/streetview");
+  url.searchParams.set("size", `${w}x${h}`);
+  url.searchParams.set("fov", "90");
+  url.searchParams.set("pitch", "0");
+  url.searchParams.set("source", "outdoor");
+  url.searchParams.set("return_error_code", "true");
+  if (opts?.panoId) {
+    url.searchParams.set("pano", opts.panoId);
+  } else {
+    url.searchParams.set("location", `${lat},${lng}`);
+  }
+  url.searchParams.set("key", key);
+  return url.toString();
 }
