@@ -9,10 +9,13 @@ import {
 import {
   ensureDiscountCoupons,
   ensureTestModePromoCodes,
+  findActivePromotionCode,
   isStripeTestMode,
+  normalizePromoCodeInput,
 } from "@/lib/stripe/promotion-codes";
 import { upsertUser } from "@/lib/db/store";
 import { resolveCheckoutOrigin } from "@/lib/env";
+import type Stripe from "stripe";
 
 const TIERS: CheckoutTier[] = ["starter", "growth", "pro"];
 
@@ -24,13 +27,25 @@ export async function POST(request: Request) {
 
   let tier: CheckoutTier = "growth";
   let city: string | undefined;
+  let promotionCodeRaw: string | undefined;
   try {
-    const body = (await request.json()) as { tier?: string; city?: string };
+    const body = (await request.json()) as {
+      tier?: string;
+      city?: string;
+      promotionCode?: string;
+      promoCode?: string;
+      code?: string;
+    };
     if (body.tier && TIERS.includes(body.tier as CheckoutTier)) {
       tier = body.tier as CheckoutTier;
     }
     if (body.city && typeof body.city === "string") {
       city = body.city.trim().slice(0, 64) || undefined;
+    }
+    const raw =
+      body.promotionCode || body.promoCode || body.code || "";
+    if (typeof raw === "string" && raw.trim()) {
+      promotionCodeRaw = raw;
     }
   } catch {
     // default growth
@@ -71,6 +86,37 @@ export async function POST(request: Request) {
     console.warn("[stripe/checkout] ensure coupons", err);
   }
 
+  // Customer-entered code from public signup/login → pre-apply on Checkout.
+  // Stripe forbids combining `discounts` with `allow_promotion_codes`.
+  let resolvedPromo: Stripe.PromotionCode | null = null;
+  if (promotionCodeRaw) {
+    const normalized = normalizePromoCodeInput(promotionCodeRaw);
+    if (!normalized) {
+      return NextResponse.json(
+        { error: "Enter a valid access code, or leave the field blank." },
+        { status: 400 },
+      );
+    }
+    try {
+      resolvedPromo = await findActivePromotionCode(stripe, normalized);
+    } catch (err) {
+      console.warn("[stripe/checkout] promo lookup", err);
+      return NextResponse.json(
+        { error: "Could not verify that access code. Try again." },
+        { status: 502 },
+      );
+    }
+    if (!resolvedPromo) {
+      return NextResponse.json(
+        {
+          error:
+            "That access code is not valid, expired, or already used up.",
+        },
+        { status: 400 },
+      );
+    }
+  }
+
   let customerId = user.stripeCustomerId ?? undefined;
   if (!customerId) {
     const customer = await stripe.customers.create({
@@ -88,20 +134,21 @@ export async function POST(request: Request) {
 
   const origin = resolveCheckoutOrigin(request);
   const successCity = city ? `&city=${encodeURIComponent(city)}` : "";
+  const cancelCode = resolvedPromo
+    ? `&code=${encodeURIComponent(resolvedPromo.code)}`
+    : "";
 
-  const checkout = await stripe.checkout.sessions.create({
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    // Native Stripe promo field on Checkout (Task 1).
-    allow_promotion_codes: true,
     // Skip card collection when a 100% code brings the total to $0.
     payment_method_collection: "if_required",
     success_url:
       tier === "pro"
         ? `${origin}/app/map?checkout=success&tier=${tier}${successCity}`
         : `${origin}/app/onboarding?checkout=success&tier=${tier}${successCity}`,
-    cancel_url: `${origin}/signup?checkout=cancel${city ? `&city=${encodeURIComponent(city)}` : ""}`,
+    cancel_url: `${origin}/signup?checkout=cancel${city ? `&city=${encodeURIComponent(city)}` : ""}${cancelCode}`,
     client_reference_id: user.id,
     metadata: {
       userId: user.id,
@@ -109,6 +156,7 @@ export async function POST(request: Request) {
       tier,
       firebaseUid: user.firebaseUid,
       ...(city ? { city } : {}),
+      ...(resolvedPromo ? { promotionCode: resolvedPromo.code } : {}),
     },
     subscription_data: {
       metadata: {
@@ -116,9 +164,22 @@ export async function POST(request: Request) {
         email: user.email,
         tier,
         ...(city ? { city } : {}),
+        ...(resolvedPromo ? { promotionCode: resolvedPromo.code } : {}),
       },
     },
-  });
+  };
 
-  return NextResponse.json({ url: checkout.url });
+  if (resolvedPromo) {
+    sessionParams.discounts = [{ promotion_code: resolvedPromo.id }];
+  } else {
+    // No code from signup — still let them enter one on Stripe Checkout.
+    sessionParams.allow_promotion_codes = true;
+  }
+
+  const checkout = await stripe.checkout.sessions.create(sessionParams);
+
+  return NextResponse.json({
+    url: checkout.url,
+    appliedPromotionCode: resolvedPromo?.code ?? null,
+  });
 }

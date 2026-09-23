@@ -15,6 +15,10 @@ import {
 } from "@/lib/firebase/client";
 import { CITY_COOKIE } from "@/lib/cities/picker";
 import { safeAppNext } from "@/lib/route/safe-next";
+import {
+  normalizePromoCodeInput,
+  PROMO_CODE_STORAGE_KEY,
+} from "@/lib/stripe/promotion-codes";
 
 type Props = {
   mode: "login" | "signup";
@@ -25,7 +29,33 @@ type Props = {
   tier?: string | null;
   /** Safe /app path to continue after auth (e.g. Plan My Day). */
   next?: string | null;
+  /** Prefill from ?code= on signup/login */
+  initialPromoCode?: string | null;
 };
+
+function persistPromoCode(code: string) {
+  const normalized = normalizePromoCodeInput(code);
+  try {
+    if (normalized) {
+      sessionStorage.setItem(PROMO_CODE_STORAGE_KEY, normalized);
+    } else {
+      sessionStorage.removeItem(PROMO_CODE_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+  return normalized;
+}
+
+function readStoredPromoCode(): string {
+  try {
+    return normalizePromoCodeInput(
+      sessionStorage.getItem(PROMO_CODE_STORAGE_KEY) || "",
+    );
+  } catch {
+    return "";
+  }
+}
 
 export function AuthForm({
   mode,
@@ -33,10 +63,14 @@ export function AuthForm({
   checkout = false,
   tier = "growth",
   next = null,
+  initialPromoCode = null,
 }: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [promoCode, setPromoCode] = useState(() =>
+    normalizePromoCodeInput(initialPromoCode || ""),
+  );
   const continueTo = safeAppNext(next);
 
   function persistCity() {
@@ -48,14 +82,20 @@ export function AuthForm({
     }
   }
 
-  async function startCheckoutAndGo() {
+  async function startCheckoutAndGo(codeOverride?: string) {
     persistCity();
+    const code =
+      normalizePromoCodeInput(codeOverride ?? promoCode) ||
+      readStoredPromoCode();
+    if (code) persistPromoCode(code);
+
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         tier: tier || "growth",
         city: city || undefined,
+        ...(code ? { promotionCode: code } : {}),
       }),
     });
     const data = (await res.json()) as {
@@ -81,6 +121,13 @@ export function AuthForm({
     const password = String(formData.get("password") || "");
     const name = String(formData.get("name") || "").trim() || undefined;
     const zip = String(formData.get("zip") || "").trim();
+    const codeFromForm = normalizePromoCodeInput(
+      String(formData.get("promoCode") || promoCode || ""),
+    );
+    if (codeFromForm) {
+      setPromoCode(codeFromForm);
+      persistPromoCode(codeFromForm);
+    }
 
     startTransition(async () => {
       if (mode === "signup" && !checkout) {
@@ -112,7 +159,13 @@ export function AuthForm({
           }
 
           if (checkout && mode === "signup") {
-            await startCheckoutAndGo();
+            try {
+              await startCheckoutAndGo(codeFromForm);
+            } catch (err) {
+              setError(
+                err instanceof Error ? err.message : "Checkout unavailable",
+              );
+            }
             return;
           }
 
@@ -139,11 +192,33 @@ export function AuthForm({
         return;
       }
       if (result?.needsCheckout) {
-        await startCheckoutAndGo();
+        try {
+          await startCheckoutAndGo(codeFromForm);
+        } catch (err) {
+          setError(
+            err instanceof Error ? err.message : "Checkout unavailable",
+          );
+        }
         return;
       }
     });
   }
+
+  const signupWithCodeHref = (() => {
+    const params = new URLSearchParams();
+    params.set("checkout", "1");
+    params.set("tier", tier || "starter");
+    if (city) params.set("city", city);
+    if (continueTo) params.set("next", continueTo);
+    const code = normalizePromoCodeInput(promoCode);
+    if (code) params.set("code", code);
+    return `/signup?${params.toString()}`;
+  })();
+
+  const pricingWithCodeHref = (() => {
+    const code = normalizePromoCodeInput(promoCode);
+    return code ? `/pricing?code=${encodeURIComponent(code)}` : "/pricing";
+  })();
 
   return (
     <div className="space-y-4">
@@ -151,17 +226,44 @@ export function AuthForm({
         <p className="rounded-2xl border border-teal/30 bg-teal/10 px-3 py-2 text-sm font-semibold text-ink">
           After signup you&apos;ll continue to checkout
           {city ? ` · then open the ${city.replace(/_/g, " ")} map` : ""}.
-          Have an access code? Enter it on the Stripe Checkout page.
+          Enter an access code below if you have one — it applies before
+          payment.
         </p>
       )}
       {mode === "login" && (
-        <p className="rounded-2xl border border-line bg-offwhite px-3 py-2 text-sm text-slate">
-          Need access?{" "}
-          <Link href="/pricing" className="font-semibold text-purple">
-            Choose a plan
-          </Link>{" "}
-          and use a promotion code at checkout if you have one.
-        </p>
+        <div className="space-y-3 rounded-2xl border border-line bg-offwhite px-3 py-3 text-sm text-slate">
+          <p>
+            Need access or a free trial?{" "}
+            <Link href={pricingWithCodeHref} className="font-semibold text-purple">
+              Choose a plan
+            </Link>{" "}
+            and enter your access code on signup — or type it here first.
+          </p>
+          <label className="block space-y-1.5 text-sm font-semibold text-ink">
+            <span>Have a code?</span>
+            <input
+              name="promoCodeLogin"
+              value={promoCode}
+              onChange={(e) =>
+                setPromoCode(normalizePromoCodeInput(e.target.value))
+              }
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full rounded-2xl border border-line bg-white px-4 py-3 font-mono text-sm uppercase tracking-wide outline-none ring-purple/30 focus:ring-2"
+              placeholder="e.g. PC100"
+            />
+          </label>
+          <Link
+            href={signupWithCodeHref}
+            className="inline-flex font-semibold text-purple hover:underline"
+            onClick={() => {
+              const code = normalizePromoCodeInput(promoCode);
+              if (code) persistPromoCode(code);
+            }}
+          >
+            Continue with code → create account
+          </Link>
+        </div>
       )}
       <form action={onSubmit} className="space-y-4">
         {mode === "signup" && !checkout && (
@@ -220,6 +322,31 @@ export function AuthForm({
           />
         </label>
 
+        {mode === "signup" && (
+          <label className="block space-y-1.5 text-sm font-semibold text-ink">
+            <span>
+              Have a code?{" "}
+              <span className="font-medium text-slate">(optional)</span>
+            </span>
+            <input
+              name="promoCode"
+              value={promoCode}
+              onChange={(e) =>
+                setPromoCode(normalizePromoCodeInput(e.target.value))
+              }
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full rounded-2xl border border-line bg-white px-4 py-3 font-mono text-sm uppercase tracking-wide outline-none ring-purple/30 focus:ring-2"
+              placeholder="Access / discount code"
+            />
+            <span className="block text-xs font-medium text-slate">
+              {checkout
+                ? "Applied automatically on Stripe Checkout before you pay."
+                : "Saved for checkout when you pick a plan — or enter it again at payment."}
+            </span>
+          </label>
+        )}
+
         {mode === "login" && (
           <p className="text-right text-sm">
             <Link
@@ -259,12 +386,18 @@ export function AuthForm({
             <Link
               href={
                 city
-                  ? `/signup?city=${encodeURIComponent(city)}&checkout=1&tier=${tier || "growth"}${continueTo ? `&next=${encodeURIComponent(continueTo)}` : ""}`
+                  ? `/signup?city=${encodeURIComponent(city)}&checkout=1&tier=${tier || "growth"}${continueTo ? `&next=${encodeURIComponent(continueTo)}` : ""}${promoCode ? `&code=${encodeURIComponent(normalizePromoCodeInput(promoCode))}` : ""}`
                   : continueTo
-                    ? `/signup?next=${encodeURIComponent(continueTo)}`
-                    : "/signup"
+                    ? `/signup?next=${encodeURIComponent(continueTo)}${promoCode ? `&code=${encodeURIComponent(normalizePromoCodeInput(promoCode))}` : ""}`
+                    : promoCode
+                      ? `/signup?code=${encodeURIComponent(normalizePromoCodeInput(promoCode))}`
+                      : "/signup"
               }
               className="font-semibold text-purple"
+              onClick={() => {
+                const code = normalizePromoCodeInput(promoCode);
+                if (code) persistPromoCode(code);
+              }}
             >
               Create an account
             </Link>

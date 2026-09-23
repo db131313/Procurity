@@ -21,8 +21,8 @@ export default function PricingPage() {
             Pricing that scales with your territory
           </h1>
           <p className="mt-4 max-w-xl text-white/70">
-            Start free for 7 days. Upgrade when you&apos;re ready to cover more
-            zips and close more deals.
+            Start free for 7 days. Have an access code? Enter it on signup — or
+            on Stripe Checkout — and it applies before you pay.
           </p>
         </div>
       </section>

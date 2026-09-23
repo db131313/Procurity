@@ -40,6 +40,9 @@ export default async function AdminPromosPage({ searchParams }: Props) {
         <p className="mt-3 text-sm text-slate">
           Your account ({session.email}) is not on the admin allow-list.
         </p>
+        <p className="mt-3 text-sm text-slate">
+          Your account ({session.email}) is not on the admin allow-list.
+        </p>
         <Link
           href="/app/home"
           className="mt-6 inline-block text-sm font-semibold text-purple"
@@ -83,9 +86,12 @@ export default async function AdminPromosPage({ searchParams }: Props) {
         Promotion codes
       </h1>
       <p className="mt-2 text-sm text-slate">
-        Generates Stripe Promotion Codes tied to the standard 25 / 50 / 75 /
-        100% coupons. Checkout already shows Stripe&apos;s native &quot;Add
-        promotion code&quot; field.
+        Admin-only: generate Stripe Promotion Codes for prospects (25 / 50 / 75 /
+        100%). Customers enter those codes on public{" "}
+        <Link href="/signup" className="font-semibold text-purple">
+          /signup
+        </Link>{" "}
+        or Stripe Checkout — not here.
       </p>
 
       {!stripeOk ? (

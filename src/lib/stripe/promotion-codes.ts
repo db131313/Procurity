@@ -135,3 +135,41 @@ export async function createProspectPromotionCode(
 export function isStripeTestMode(secretKey: string | undefined): boolean {
   return Boolean(secretKey?.startsWith("sk_test"));
 }
+
+/** Normalize a customer-entered access/promo code for lookup. */
+export function normalizePromoCodeInput(raw: string): string {
+  return raw
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, "")
+    .slice(0, 40);
+}
+
+/**
+ * Resolve an active Stripe Promotion Code by its customer-facing code string.
+ * Returns null when missing / inactive / exhausted.
+ */
+export async function findActivePromotionCode(
+  stripe: Stripe,
+  rawCode: string,
+): Promise<Stripe.PromotionCode | null> {
+  const code = normalizePromoCodeInput(rawCode);
+  if (!code) return null;
+  const listed = await stripe.promotionCodes.list({
+    code,
+    active: true,
+    limit: 1,
+  });
+  const promo = listed.data[0];
+  if (!promo) return null;
+  if (
+    typeof promo.max_redemptions === "number" &&
+    promo.times_redeemed >= promo.max_redemptions
+  ) {
+    return null;
+  }
+  return promo;
+}
+
+/** sessionStorage key so organic signup → later checkout still carries the code. */
+export const PROMO_CODE_STORAGE_KEY = "pc_access_code";
