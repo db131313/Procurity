@@ -7,6 +7,7 @@ import {
   isFirebaseConfigured,
   mapFirebaseAuthError,
 } from "@/lib/firebase/client";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 
 export function ForgotPasswordForm() {
   const [error, setError] = useState<string | null>(null);
@@ -77,8 +78,10 @@ export function ForgotPasswordForm() {
         <button
           type="submit"
           disabled={pending}
-          className="pc-gradient-bg flex h-14 w-full items-center justify-center rounded-full text-[15px] font-bold text-white disabled:opacity-60"
+          aria-busy={pending || undefined}
+          className="pc-gradient-bg flex h-14 w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-white disabled:opacity-60"
         >
+          {pending ? <WorkingSpinner /> : null}
           {pending ? "Sending…" : "Send reset link"}
         </button>
       </form>

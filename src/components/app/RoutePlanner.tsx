@@ -212,7 +212,8 @@ export function RoutePlanner({ defaultCity }: Props) {
         <Button
           type="button"
           onClick={generate}
-          disabled={pending || (mode === "zip" && zip.length !== 5)}
+          pending={pending}
+          disabled={mode === "zip" && zip.length !== 5}
           className="h-14 w-full"
         >
           {pending ? "Building route…" : "Generate route"}

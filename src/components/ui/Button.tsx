@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/cn";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 
 type Variant = "primary" | "secondary" | "ghost" | "dark";
 
@@ -9,6 +10,8 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
   href?: string;
   children: ReactNode;
+  /** When true: disabled + spinner + aria-busy. */
+  pending?: boolean;
 };
 
 const variants: Record<Variant, string> = {
@@ -24,6 +27,8 @@ export function Button({
   variant = "primary",
   className,
   children,
+  pending = false,
+  disabled,
   ...props
 }: ButtonProps) {
   return (
@@ -33,8 +38,11 @@ export function Button({
         variants[variant],
         className,
       )}
+      disabled={disabled || pending}
+      aria-busy={pending || undefined}
       {...props}
     >
+      {pending ? <WorkingSpinner /> : null}
       {children}
     </button>
   );

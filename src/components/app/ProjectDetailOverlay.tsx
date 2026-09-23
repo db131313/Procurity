@@ -5,6 +5,8 @@ import { Navigation } from "lucide-react";
 import { StreetViewHeader } from "@/components/app/StreetViewHeader";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { StatusChip } from "@/components/ui/StatusChip";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 import { DataFreshnessBadge } from "@/components/ui/DataFreshnessBadge";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { formatMoneyRange, relativeTime, scoreBandLabel } from "@/lib/format";
@@ -247,9 +249,20 @@ export function ProjectDetailOverlay({
             </div>
 
             {!detail && !loadError && (
-              <p className="mt-6 text-sm font-semibold text-slate">
-                Loading project detail…
-              </p>
+              <div className="mt-6 space-y-3" aria-busy="true" aria-live="polite">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate">
+                  <WorkingSpinner />
+                  Loading project detail…
+                </div>
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-8 w-full" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-7 w-20 rounded-full" />
+                  <Skeleton className="h-7 w-24 rounded-full" />
+                  <Skeleton className="h-7 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-16 w-full" />
+              </div>
             )}
             {loadError && (
               <p className="mt-6 rounded-xl border border-dashed border-line bg-offwhite px-3 py-3 text-sm text-slate">
@@ -327,8 +340,10 @@ export function ProjectDetailOverlay({
                       }
                     });
                   }}
-                  className="pc-gradient-bg mt-5 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white disabled:opacity-50"
+                  className="pc-gradient-bg mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-white disabled:opacity-50"
+                  aria-busy={pending || undefined}
                 >
+                  {pending ? <WorkingSpinner /> : null}
                   {inPipeline
                     ? "Already in pipeline"
                     : pending

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Route as RouteIcon, X } from "lucide-react";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 import { PICKER_CITIES } from "@/lib/cities/picker";
 import { METRO_ZIP_OPTIONS } from "@/lib/geo/zip-to-metro";
 import { cn } from "@/lib/cn";
@@ -236,8 +237,10 @@ export function MapRoutePanel({
             type="button"
             disabled={pending || (mode === "zip" && zip.length !== 5)}
             onClick={generate}
-            className="pc-gradient-bg mt-3 flex h-11 w-full items-center justify-center rounded-full text-sm font-bold text-white disabled:opacity-50"
+            className="pc-gradient-bg mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-white disabled:opacity-50"
+            aria-busy={pending || undefined}
           >
+            {pending ? <WorkingSpinner /> : null}
             {pending ? "Building…" : "Generate on map"}
           </button>
 

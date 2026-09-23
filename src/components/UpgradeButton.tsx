@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 
 export function UpgradeButton({
   label = "Upgrade to Pro",
@@ -34,11 +35,13 @@ export function UpgradeButton({
         type="button"
         onClick={startCheckout}
         disabled={loading}
+        aria-busy={loading || undefined}
         className={
           className ||
-          "rounded-md bg-amber px-4 py-2 text-sm font-semibold text-ink transition hover:brightness-110 disabled:opacity-60"
+          "inline-flex items-center justify-center gap-2 rounded-md bg-amber px-4 py-2 text-sm font-semibold text-ink transition hover:brightness-110 disabled:opacity-60"
         }
       >
+        {loading ? <WorkingSpinner /> : null}
         {loading ? "Redirecting…" : label}
       </button>
       {error && <p className="mt-2 text-xs text-amber">{error}</p>}

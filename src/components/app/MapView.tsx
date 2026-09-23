@@ -24,6 +24,7 @@ import { MapRoutePanel } from "@/components/app/MapRoutePanel";
 import { MapRouteStartFab } from "@/components/app/MapRouteStartFab";
 import { PlanMyDayAgentBanner } from "@/components/app/PlanMyDayAgentBanner";
 import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
+import { WorkingPill } from "@/components/ui/WorkingIndicator";
 import {
   DEFAULT_MAP_CAMERA,
   clearMapCamera,
@@ -166,6 +167,8 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
   const [filters, setFilters] = useState<MapFilterState>(DEFAULT_MAP_FILTERS);
   const [projects, setProjects] = useState<MapProject[]>(initialProjects);
   const [pinsLoading, setPinsLoading] = useState(initialProjects.length === 0);
+  /** Subtle refresh chip while pins already on screen (city switch / pan). */
+  const [pinsRefreshing, setPinsRefreshing] = useState(false);
   const [pinCount, setPinCount] = useState<number | null>(
     initialProjects.length ? initialProjects.length : null,
   );
@@ -321,7 +324,10 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
     [visible],
   );
 
-  const fetchPins = (bounds: LonLatBounds, opts?: { preferCity?: string }) => {
+  const fetchPins = (
+    bounds: LonLatBounds,
+    opts?: { preferCity?: string; quiet?: boolean },
+  ) => {
     const gen = ++fetchGen.current;
     const prefer = opts?.preferCity ?? cityRef.current;
     const intersecting = citiesIntersectingBounds(bounds);
@@ -336,6 +342,11 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
         : intersecting;
 
     setVisibleCities(scope.length ? scope : [prefer]);
+    if (!opts?.quiet) {
+      setPinsLoading(true);
+    } else {
+      setPinsRefreshing(true);
+    }
 
     const qs = new URLSearchParams({
       west: String(bounds.west),
@@ -377,14 +388,16 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
         // Keep current pins on network failure
       })
       .finally(() => {
-        if (gen === fetchGen.current) setPinsLoading(false);
+        if (gen === fetchGen.current) {
+          setPinsLoading(false);
+          setPinsRefreshing(false);
+        }
       });
   };
 
   // First load / metro jump — city-scoped bounds (fast).
   useEffect(() => {
     const cityBounds = boundsForCity(activeCity);
-    setPinsLoading(true);
     void fetchPins(cityBounds, { preferCity: activeCity });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCity]);
@@ -437,12 +450,15 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
       const sw = mapBounds.getSouthWest();
       const latPad = (ne.lat - sw.lat) * 0.15;
       const lngPad = (ne.lng - sw.lng) * 0.15;
-      void fetchPins({
-        west: sw.lng - lngPad,
-        south: sw.lat - latPad,
-        east: ne.lng + lngPad,
-        north: ne.lat + latPad,
-      });
+      void fetchPins(
+        {
+          west: sw.lng - lngPad,
+          south: sw.lat - latPad,
+          east: ne.lng + lngPad,
+          north: ne.lat + latPad,
+        },
+        { quiet: true },
+      );
       captureCamera(map);
     };
 
@@ -854,14 +870,25 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
           {cityBadgeLabel}
           {pinCount != null ? ` · ${pinCount.toLocaleString()} in view` : ""}
           {pinsTruncated ? " · top scores" : ""}
+          {pinsRefreshing ? " · updating…" : ""}
         </p>
       </div>
 
       {pinsLoading && projects.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-          <div className="rounded-2xl border border-line bg-white/95 px-4 py-3 text-sm font-semibold text-slate shadow-md backdrop-blur">
-            Loading pins…
-          </div>
+          <WorkingPill>Loading pins…</WorkingPill>
+        </div>
+      )}
+      {pinsLoading && projects.length > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-20 flex justify-center md:bottom-24">
+          <WorkingPill className="shadow-lg">Switching metro…</WorkingPill>
+        </div>
+      )}
+      {pinsRefreshing && !pinsLoading && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-20 z-20 flex justify-center md:bottom-24">
+          <WorkingPill className="py-2 text-xs shadow-lg">
+            Updating map…
+          </WorkingPill>
         </div>
       )}
 

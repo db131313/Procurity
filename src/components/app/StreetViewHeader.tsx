@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 
 type Props = {
   lat: number;
@@ -27,11 +28,13 @@ type MetaResponse = {
 export function StreetViewHeader({ lat, lng, className }: Props) {
   const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setMeta(null);
     setImgError(false);
+    setImgLoaded(false);
     void fetch(
       `/api/streetview?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`,
       { credentials: "same-origin" },
@@ -58,13 +61,33 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
   return (
     <div className={cn("relative overflow-hidden bg-ink", className)}>
       {showImage ? (
-        // eslint-disable-next-line @next/next/no-img-element -- proxied API image
-        <img
-          src={meta!.imagePath!}
-          alt="Street-level photo of project location"
-          className={cn(frameClass, "object-cover")}
-          onError={() => setImgError(true)}
-        />
+        <>
+          {!imgLoaded && (
+            <div
+              className={cn(
+                frameClass,
+                "absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-ink to-slate/80 text-white/70",
+              )}
+            >
+              <WorkingSpinner className="text-white/80" size="md" />
+              <p className="text-xs font-semibold tracking-wide">
+                Loading street imagery…
+              </p>
+            </div>
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element -- proxied API image */}
+          <img
+            src={meta!.imagePath!}
+            alt="Street-level photo of project location"
+            className={cn(
+              frameClass,
+              "object-cover transition-opacity duration-300",
+              imgLoaded ? "opacity-100" : "opacity-0",
+            )}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
+          />
+        </>
       ) : (
         <div
           className={cn(
@@ -72,7 +95,11 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
             "flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-ink to-slate/80 text-white/70",
           )}
         >
-          <MapPin className="h-7 w-7" aria-hidden />
+          {meta == null ? (
+            <WorkingSpinner className="text-white/80" size="md" />
+          ) : (
+            <MapPin className="h-7 w-7" aria-hidden />
+          )}
           <p className="text-xs font-semibold tracking-wide">
             {meta == null
               ? "Checking street imagery…"
@@ -83,7 +110,7 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
         </div>
       )}
 
-      {showImage && (
+      {showImage && imgLoaded && (
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-8 text-[11px] text-white">
           <div>
             <p className="font-bold tracking-wide">

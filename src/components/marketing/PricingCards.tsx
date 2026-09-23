@@ -8,6 +8,7 @@ import {
   normalizePromoCodeInput,
   PROMO_CODE_STORAGE_KEY,
 } from "@/lib/stripe/promotion-codes";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 
 const FEATURES = {
   starter: [
@@ -34,7 +35,6 @@ const FEATURES = {
 } as const;
 
 export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
-  const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const tiers = ["starter", "growth", "pro"] as const;
@@ -101,36 +101,33 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-center gap-3">
-        <span className={cn("text-sm font-semibold", !annual ? "text-ink" : "text-slate")}>
-          Monthly
-        </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={annual}
-          onClick={() => setAnnual((v) => !v)}
-          className={cn(
-            "relative h-8 w-14 rounded-full transition",
-            annual ? "pc-gradient-bg" : "bg-line",
-          )}
-        >
-          <span
-            className={cn(
-              "absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow transition",
-              annual && "translate-x-6",
-            )}
-          />
-        </button>
-        <span className={cn("text-sm font-semibold", annual ? "text-ink" : "text-slate")}>
-          Annual <span className="text-purple">~20% off</span>
-        </span>
+      <div className="mb-8 flex flex-col items-center gap-2">
+        <div className="flex items-center justify-center gap-3">
+          <span className="text-sm font-semibold text-ink">Monthly</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={false}
+            aria-disabled="true"
+            disabled
+            title="Annual billing coming soon — checkout is monthly for now"
+            className="relative h-8 w-14 cursor-not-allowed rounded-full bg-line opacity-60"
+          >
+            <span className="absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow" />
+          </button>
+          <span className="text-sm font-semibold text-slate">
+            Annual <span className="text-slate/80">· soon</span>
+          </span>
+        </div>
+        <p className="text-xs text-slate">
+          Checkout is monthly today. Annual plans are on the way.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {tiers.map((tier) => {
           const plan = PLAN_PRICING[tier];
-          const price = annual ? plan.annual : plan.monthly;
+          const price = plan.monthly;
           const featured = tier === "growth";
           const zipLabel = formatPlanZipAccess(tier);
           return (
@@ -166,12 +163,14 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
                 disabled={loading !== null}
                 onClick={() => startTrial(tier)}
                 className={cn(
-                  "mt-6 flex h-12 w-full items-center justify-center rounded-full text-sm font-bold transition active:scale-[0.98] disabled:opacity-60",
+                  "mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition active:scale-[0.98] disabled:opacity-60",
                   featured
                     ? "bg-white text-ink"
                     : "pc-gradient-bg text-white",
                 )}
+                aria-busy={loading === tier || undefined}
               >
+                {loading === tier ? <WorkingSpinner /> : null}
                 {loading === tier ? "Starting…" : "Start free trial"}
               </button>
             </article>
