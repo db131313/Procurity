@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatPlanZipAccess, PLAN_PRICING } from "@/lib/db/types";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 
 const TIERS = ["starter", "growth", "pro"] as const;
 
@@ -34,11 +35,13 @@ export function CheckoutButtons() {
           key={tier}
           type="button"
           disabled={loading !== null}
+          aria-busy={loading === tier || undefined}
           onClick={() => checkout(tier)}
           className="rounded-2xl border border-line bg-white px-4 py-3 text-left transition hover:shadow-md disabled:opacity-60"
         >
           <p className="text-sm font-bold text-ink">{PLAN_PRICING[tier].name}</p>
-          <p className="mt-1 text-xs text-slate">
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-slate">
+            {loading === tier ? <WorkingSpinner className="text-purple" /> : null}
             ${PLAN_PRICING[tier].monthly}/mo · {formatPlanZipAccess(tier)} ·{" "}
             {loading === tier ? "Redirecting…" : "Checkout"}
           </p>

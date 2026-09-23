@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 
 export function WaitlistForm({ cityLabel }: { cityLabel: string }) {
   const [email, setEmail] = useState("");
@@ -55,8 +56,10 @@ export function WaitlistForm({ cityLabel }: { cityLabel: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="pc-gradient-bg flex h-12 w-full items-center justify-center rounded-full text-sm font-bold text-white disabled:opacity-60"
+        aria-busy={pending || undefined}
+        className="pc-gradient-bg flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-white disabled:opacity-60"
       >
+        {pending ? <WorkingSpinner /> : null}
         {pending ? "Joining…" : "Join the waitlist"}
       </button>
     </form>

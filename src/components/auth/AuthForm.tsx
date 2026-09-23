@@ -19,6 +19,7 @@ import {
   normalizePromoCodeInput,
   PROMO_CODE_STORAGE_KEY,
 } from "@/lib/stripe/promotion-codes";
+import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 
 type Props = {
   mode: "login" | "signup";
@@ -68,10 +69,12 @@ export function AuthForm({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [promoCode, setPromoCode] = useState(() =>
     normalizePromoCodeInput(initialPromoCode || ""),
   );
   const continueTo = safeAppNext(next);
+  const busy = pending || checkoutBusy;
 
   function persistCity() {
     if (!city) return;
@@ -89,24 +92,30 @@ export function AuthForm({
       readStoredPromoCode();
     if (code) persistPromoCode(code);
 
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tier: tier || "growth",
-        city: city || undefined,
-        ...(code ? { promotionCode: code } : {}),
-      }),
-    });
-    const data = (await res.json()) as {
-      url?: string;
-      error?: string;
-      demo?: boolean;
-    };
-    if (!res.ok || !data.url) {
-      throw new Error(data.error || "Checkout unavailable");
+    setCheckoutBusy(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tier: tier || "growth",
+          city: city || undefined,
+          ...(code ? { promotionCode: code } : {}),
+        }),
+      });
+      const data = (await res.json()) as {
+        url?: string;
+        error?: string;
+        demo?: boolean;
+      };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Checkout unavailable");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setCheckoutBusy(false);
+      throw err;
     }
-    window.location.href = data.url;
   }
 
   function mapPath() {
@@ -366,11 +375,15 @@ export function AuthForm({
 
         <button
           type="submit"
-          disabled={pending}
-          className="pc-gradient-bg flex h-14 w-full items-center justify-center rounded-full text-[15px] font-bold text-white disabled:opacity-60"
+          disabled={busy}
+          aria-busy={busy || undefined}
+          className="pc-gradient-bg flex h-14 w-full items-center justify-center gap-2 rounded-full text-[15px] font-bold text-white disabled:opacity-60"
         >
-          {pending
-            ? "Working…"
+          {busy ? <WorkingSpinner /> : null}
+          {busy
+            ? checkoutBusy
+              ? "Starting checkout…"
+              : "Working…"
             : mode === "login"
               ? "Log in"
               : checkout

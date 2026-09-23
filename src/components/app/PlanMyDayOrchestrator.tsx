@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
+import { WorkingPill } from "@/components/ui/WorkingIndicator";
 import { zipToMetro } from "@/lib/geo/zip-to-metro";
 import {
   PLAN_MY_DAY_STOP_LIMIT,
@@ -143,7 +144,12 @@ export function PlanMyDayOrchestrator({ zipCodes, defaultCity }: Props) {
             </div>
           </>
         ) : (
-          <p className="mt-3 text-sm font-medium text-slate">{status}</p>
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <WorkingPill agent>{status}</WorkingPill>
+            <p className="text-xs text-slate">
+              This usually takes a few seconds…
+            </p>
+          </div>
         )}
       </div>
     </main>
