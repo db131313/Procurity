@@ -18,12 +18,13 @@ type MetaResponse = {
   imagePath?: string | null;
   reportProblemUrl?: string | null;
   attribution?: string | null;
+  provider?: "google" | "mapillary" | null;
   status?: string;
 };
 
 /**
- * Full-width street-imagery header for project overlays (Mapillary).
- * Metadata first; clean fallback when no token / no coverage.
+ * Full-width street-imagery header for project overlays.
+ * Google Street View primary → Mapillary fallback → clean empty state.
  */
 export function StreetViewHeader({ lat, lng, className }: Props) {
   const [meta, setMeta] = useState<MetaResponse | null>(null);
@@ -55,6 +56,7 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
   }, [lat, lng]);
 
   const showImage = Boolean(meta?.available && meta.imagePath && !imgError);
+  const isGoogle = meta?.provider === "google" || meta?.attribution === "Google";
   // Fixed height so sheet animation doesn't jump when imagery resolves
   const frameClass = "h-56 w-full sm:h-72 md:h-80";
 
@@ -118,7 +120,9 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
               {meta?.dateLabel ? `: ${meta.dateLabel}` : ""}
             </p>
             <p className="text-white/75">
-              Imagery © Mapillary — not live / not real-time
+              {isGoogle
+                ? "Imagery © Google — not live / not real-time"
+                : "Imagery © Mapillary — not live / not real-time"}
             </p>
           </div>
           {meta?.reportProblemUrl && (
@@ -128,7 +132,7 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
               rel="noreferrer"
               className="shrink-0 underline decoration-white/50 underline-offset-2 hover:decoration-white"
             >
-              View on Mapillary
+              {isGoogle ? "Report a problem" : "View on Mapillary"}
             </a>
           )}
         </div>

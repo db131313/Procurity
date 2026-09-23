@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import {
   fetchStreetViewMeta,
   formatStreetViewDate,
+  googleStreetViewReportUrl,
   isStreetViewConfigured,
   mapillaryAppUrl,
 } from "@/lib/geo/street-view";
@@ -10,8 +11,9 @@ import {
 export const dynamic = "force-dynamic";
 
 /**
- * Street imagery metadata + proxied image URL for project overlays (Mapillary).
- * Auth required. Returns available:false (not an error) when no token / no coverage.
+ * Street imagery metadata + proxied image URL for project overlays.
+ * Prefer Google Street View; fall back to Mapillary. Auth required.
+ * Returns available:false (not an error) when no keys / no coverage.
  */
 export async function GET(request: Request) {
   const user = await getCurrentUser();
@@ -35,13 +37,14 @@ export async function GET(request: Request) {
       dateLabel: null,
       imagePath: null,
       reportProblemUrl: null,
-      attribution: "Mapillary",
+      attribution: null,
+      provider: null,
       status: "NO_KEY",
     });
   }
 
   const meta = await fetchStreetViewMeta(lat, lng);
-  if (!meta.available || !meta.imageId) {
+  if (!meta.available) {
     return NextResponse.json({
       ok: true,
       configured: true,
@@ -50,12 +53,50 @@ export async function GET(request: Request) {
       dateLabel: null,
       imagePath: null,
       reportProblemUrl: null,
-      attribution: "Mapillary",
+      attribution: null,
+      provider: meta.provider ?? null,
       status: meta.status,
     });
   }
 
-  const imagePath = `/api/streetview/image?id=${encodeURIComponent(meta.imageId)}`;
+  if (meta.provider === "google") {
+    const qs = new URLSearchParams({
+      provider: "google",
+      lat: String(lat),
+      lng: String(lng),
+    });
+    if (meta.panoId) qs.set("pano", meta.panoId);
+    return NextResponse.json({
+      ok: true,
+      configured: true,
+      available: true,
+      date: meta.date,
+      dateLabel: formatStreetViewDate(meta.date),
+      imagePath: `/api/streetview/image?${qs.toString()}`,
+      reportProblemUrl: googleStreetViewReportUrl(lat, lng),
+      attribution: "Google",
+      provider: "google",
+      status: meta.status,
+    });
+  }
+
+  // Mapillary
+  if (!meta.imageId) {
+    return NextResponse.json({
+      ok: true,
+      configured: true,
+      available: false,
+      date: null,
+      dateLabel: null,
+      imagePath: null,
+      reportProblemUrl: null,
+      attribution: null,
+      provider: "mapillary",
+      status: meta.status || "NO_IMAGERY",
+    });
+  }
+
+  const imagePath = `/api/streetview/image?provider=mapillary&id=${encodeURIComponent(meta.imageId)}`;
 
   return NextResponse.json({
     ok: true,
@@ -67,6 +108,7 @@ export async function GET(request: Request) {
     imageId: meta.imageId,
     reportProblemUrl: mapillaryAppUrl(meta.imageId),
     attribution: "Mapillary",
+    provider: "mapillary",
     status: meta.status,
   });
 }
