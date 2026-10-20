@@ -11,6 +11,7 @@ import { DataFreshnessBadge } from "@/components/ui/DataFreshnessBadge";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { formatMoneyRange, relativeTime, scoreBandLabel } from "@/lib/format";
 import { addProjectToPipeline } from "@/app/actions/pipeline";
+import { startJobFromProject } from "@/app/actions/jobs";
 import type { ProcurementLead } from "@/lib/projects/leads";
 import { searchLink } from "@/lib/projects/leads";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
@@ -349,6 +350,23 @@ export function ProjectDetailOverlay({
                     : pending
                       ? "Adding…"
                       : "Add to Pipeline"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => {
+                    startTransition(async () => {
+                      try {
+                        await startJobFromProject(project.id);
+                      } catch {
+                        // redirect throws; other errors stay on overlay
+                      }
+                    });
+                  }}
+                  className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-line bg-white text-sm font-bold text-ink disabled:opacity-50"
+                >
+                  Start job
                 </button>
 
                 <button
