@@ -93,6 +93,21 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
+
+      // Job invoice one-time payments (PaymentProvider Checkout)
+      if (
+        session.mode === "payment" &&
+        session.metadata?.kind === "job_invoice"
+      ) {
+        const { markInvoicePaidBySession } = await import("@/lib/jobs/store");
+        const paymentIntentId =
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : null;
+        await markInvoicePaidBySession(session.id, paymentIntentId);
+        break;
+      }
+
       if (session.mode && session.mode !== "subscription") break;
       const plan = tierFromMetadata(session.metadata);
       const email =

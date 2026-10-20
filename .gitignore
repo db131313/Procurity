@@ -26,6 +26,8 @@
 
 # local JSON store (seeded at runtime)
 /data/store.json
+/data/jobs-store.json
+/data/uploads/
 
 # debug
 npm-debug.log*

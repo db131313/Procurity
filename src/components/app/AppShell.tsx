@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
+  Briefcase,
   Home,
   Map,
   MoreHorizontal,
@@ -18,6 +19,7 @@ const TABS = [
   { href: "/app/home", label: "Home", icon: Home },
   { href: "/app/map", label: "Map", icon: Map },
   { href: "/app/route", label: "Route", icon: Route },
+  { href: "/app/jobs", label: "Jobs", icon: Briefcase },
   { href: "/app/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/app/alerts", label: "Alerts", icon: Bell },
   { href: "/app/settings", label: "More", icon: MoreHorizontal },

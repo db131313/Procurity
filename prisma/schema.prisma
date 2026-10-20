@@ -55,6 +55,7 @@ model User {
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   pipelineItems        PipelineItem[]
+  jobs                 Job[]
 
   @@index([stripeCustomerId])
 }
@@ -107,6 +108,7 @@ model Project {
   permits              Permit[]
   events               ProjectEvent[]
   pipelineItems        PipelineItem[]
+  jobs                 Job[]
 
   @@index([city])
   @@index([zip])
@@ -178,4 +180,197 @@ model SyncMeta {
   lastSyncAt   DateTime?
   projectCount Int       @default(0)
   meta         Json?
+}
+
+// ─── Job workflow (sign estimate → quote → invoice) ───────────────────────────
+
+enum JobStatus {
+  start
+  site_capture
+  design
+  estimate
+  invoice
+  completed
+}
+
+enum ScanType {
+  photo
+  scan_3d
+  pdf
+  other
+}
+
+enum MeasureUnit {
+  in
+  ft
+}
+
+enum LineItemCategory {
+  material
+  labor
+  install
+  permit
+}
+
+enum QuoteStatus {
+  draft
+  sent
+  accepted
+  declined
+  expired
+}
+
+enum InvoiceType {
+  deposit
+  balance
+  full
+}
+
+enum InvoiceStatus {
+  draft
+  open
+  paid
+  void
+}
+
+enum PaymentStatus {
+  pending
+  succeeded
+  failed
+  refunded
+}
+
+model Job {
+  id              String        @id @default(cuid())
+  ownerId         String
+  owner           User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  projectId       String?
+  project         Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  customerName    String        @default("")
+  customerEmail   String        @default("")
+  customerPhone   String        @default("")
+  siteAddress     String        @default("")
+  status          JobStatus     @default(start)
+  taxRatePct      Float         @default(8.875)
+  companyName     String        @default("Procurity Signs")
+  terms           String        @default("Quote valid for 30 days. 50% deposit due on acceptance unless otherwise agreed.")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  scans           Scan[]
+  measurements    Measurement[]
+  designSpec      DesignSpec?
+  lineItems       LineItem[]
+  quotes          Quote[]
+  invoices        Invoice[]
+
+  @@index([ownerId])
+  @@index([projectId])
+  @@index([status])
+}
+
+model Scan {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  fileUrl   String
+  fileName  String   @default("")
+  mimeType  String   @default("")
+  type      ScanType @default(photo)
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+}
+
+model Measurement {
+  id          String      @id @default(cuid())
+  jobId       String
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  label       String
+  width       Float?
+  height      Float?
+  unit        MeasureUnit @default(in)
+  /// Annotated-photo metadata: { scanId, x1, y1, x2, y2, realLength }
+  annotation  Json?
+  createdAt   DateTime    @default(now())
+
+  @@index([jobId])
+}
+
+model DesignSpec {
+  id              String   @id @default(cuid())
+  jobId           String   @unique
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  signType        String   @default("")
+  description     String   @default("")
+  notes           String   @default("")
+  /// Array of { url, fileName } reference art uploads
+  referenceImages Json     @default("[]")
+  updatedAt       DateTime @updatedAt
+}
+
+model LineItem {
+  id          String           @id @default(cuid())
+  jobId       String
+  job         Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  category    LineItemCategory @default(material)
+  description String
+  qty         Float            @default(1)
+  unitCost    Float            @default(0)
+  markupPct   Float            @default(40)
+  catalogKey  String?
+  sortOrder   Int              @default(0)
+  createdAt   DateTime         @default(now())
+
+  @@index([jobId])
+}
+
+model Quote {
+  id           String      @id @default(cuid())
+  jobId        String
+  job          Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  version      Int         @default(1)
+  subtotal     Float       @default(0)
+  tax          Float       @default(0)
+  total        Float       @default(0)
+  pdfUrl       String?
+  status       QuoteStatus @default(draft)
+  acceptToken  String      @unique @default(cuid())
+  validUntil   DateTime?
+  sentAt       DateTime?
+  acceptedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([jobId])
+  @@index([acceptToken])
+}
+
+model Invoice {
+  id                    String        @id @default(cuid())
+  jobId                 String
+  job                   Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type                  InvoiceType
+  amount                Float
+  status                InvoiceStatus @default(draft)
+  stripeCheckoutSessionId String?
+  pdfUrl                String?
+  unlockAfterId         String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  payments              Payment[]
+
+  @@index([jobId])
+  @@index([stripeCheckoutSessionId])
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  invoiceId             String
+  invoice               Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount                Float
+  status                PaymentStatus @default(pending)
+  stripePaymentIntentId String?
+  createdAt             DateTime      @default(now())
+
+  @@index([invoiceId])
 }
