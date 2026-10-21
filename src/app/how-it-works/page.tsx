@@ -4,16 +4,16 @@ import { Logo } from "@/components/brand/Logo";
 
 const STEPS = [
   {
-    title: "See projects ready to buy",
-    body: "Open the map for your city and spot new construction that needs signs now.",
+    title: "See what's about to be built",
+    body: "Open the map for your city and spot new construction that's ready for outreach.",
   },
   {
-    title: "Know who to call and why now",
+    title: "Know who to contact and why now",
     body: "Each project includes a contact path and a Buy Score with plain-English reasons.",
   },
   {
-    title: "Quote and get paid in one place",
-    body: "Measure on site, build a quote, send it, and collect a deposit without leaving the app.",
+    title: "Measure, quote, and get paid in one place",
+    body: "Take the job from the map to a deposit without juggling tools.",
   },
 ];
 
@@ -30,8 +30,9 @@ export default function HowItWorksPage() {
             From map to paid job
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-slate">
-            Procurity helps you find projects that are ready for signage, reach
-            the right person, and close without juggling tools.
+            Procurity helps sales teams that sell to new construction find
+            projects that are ready to buy, reach the right person, and close
+            without juggling tools.
           </p>
         </div>
       </section>
@@ -52,10 +53,10 @@ export default function HowItWorksPage() {
         </div>
         <div className="mt-12 flex flex-wrap gap-3">
           <Link
-            href="/demo"
+            href="/"
             className="inline-flex h-12 items-center justify-center rounded-full bg-[#2563EB] px-6 text-sm font-bold text-white"
           >
-            Try the live demo
+            Open the map
           </Link>
           <Link
             href="/signup"
