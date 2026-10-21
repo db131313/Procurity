@@ -1,7 +1,8 @@
 "use client";
 
 import { scoreModeLabel, type ScoreMode } from "@/components/app/MapFilters";
-import { pinColorForScore } from "@/lib/map/pin-filters";
+import { pinColorForScore, pinColorForScorePublic } from "@/lib/map/pin-filters";
+import { cn } from "@/lib/cn";
 
 const ROWS = [
   { min: 90, t: "90+ Act now" },
@@ -14,7 +15,7 @@ const ROWS = [
 type Props = {
   scoreMode?: ScoreMode;
   className?: string;
-  /** Use public blue–violet ramp colors */
+  /** Use public construction heat ramp */
   publicRamp?: boolean;
 };
 
@@ -26,21 +27,36 @@ export function MapPinLegend({
 }: Props) {
   return (
     <div className={className}>
-      <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
-        <p className="mb-1.5 font-bold text-ink">
+      <div
+        className={cn(
+          "pointer-events-auto rounded-xl border px-3 py-2.5 text-[11px]",
+          publicRamp
+            ? "border-[#E7DFD0] bg-[#FBF7F0]/95 text-[#5B6475]"
+            : "border-line bg-white/95 text-slate shadow-md",
+        )}
+      >
+        <p
+          className={cn(
+            "mb-1.5 font-semibold",
+            publicRamp ? "text-[#14213D]" : "font-bold text-ink",
+          )}
+        >
           {scoreMode === "general"
             ? "Buy Score"
             : `${scoreModeLabel(scoreMode)} Score`}
         </p>
-        <ul className="space-y-1 font-semibold text-slate">
+        <ul className="space-y-1 font-medium">
           {ROWS.map((row) => (
             <li key={row.t} className="flex items-center gap-2">
               <span
-                className="inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white"
+                className="inline-block h-2.5 w-2.5 rounded-full"
                 style={{
                   background: publicRamp
-                    ? publicColor(row.min)
+                    ? pinColorForScorePublic(row.min === 0 ? 50 : row.min)
                     : pinColorForScore(row.min === 0 ? 50 : row.min),
+                  boxShadow: publicRamp
+                    ? `0 0 0 1px #E7DFD0`
+                    : "0 0 0 2px #fff",
                 }}
               />
               {row.t}
@@ -50,12 +66,4 @@ export function MapPinLegend({
       </div>
     </div>
   );
-}
-
-function publicColor(min: number): string {
-  if (min >= 90) return "#5B21B6";
-  if (min >= 80) return "#6D28D9";
-  if (min >= 70) return "#2563EB";
-  if (min >= 60) return "#3B82F6";
-  return "#93C5FD";
 }

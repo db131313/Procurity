@@ -55,7 +55,7 @@ export function AppWaitlistForm({ source = "home" }: { source?: string }) {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="brand-gradient inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-bold text-white disabled:opacity-60"
+        className="mkt-btn-primary inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-medium disabled:opacity-60"
       >
         {status === "loading" ? <WorkingSpinner /> : "Notify me"}
       </button>

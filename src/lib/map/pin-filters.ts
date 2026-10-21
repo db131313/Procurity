@@ -25,13 +25,13 @@ export function pinColorForScore(score: number): string {
   return "#64748B";
 }
 
-/** Public home map: blue → violet ramp (still readable on light tiles). */
+/** Public home map: construction heat ramp (cool → mid → hot). */
 export function pinColorForScorePublic(score: number): string {
-  if (score >= 90) return "#5B21B6";
-  if (score >= 80) return "#6D28D9";
-  if (score >= 70) return "#2563EB";
-  if (score >= 60) return "#3B82F6";
-  return "#93C5FD";
+  if (score >= 90) return "#F26B3A";
+  if (score >= 80) return "#F08A3C";
+  if (score >= 70) return "#F2B544";
+  if (score >= 60) return "#C4B89A";
+  return "#9FB4CC";
 }
 
 function tradeScoresFor(p: FilterablePin): TradeScores {

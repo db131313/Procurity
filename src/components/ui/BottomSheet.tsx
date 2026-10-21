@@ -32,6 +32,8 @@ type BottomSheetProps = {
   children: ReactNode;
   /** `full` = nearly full-height project overlay; default = compact preview */
   variant?: "default" | "full";
+  /** Paper surface + ease-out for public marketing sheets */
+  tone?: "default" | "paper";
 };
 
 const DISMISS_OFFSET_PX = 120;
@@ -42,9 +44,11 @@ export function BottomSheet({
   onClose,
   children,
   variant = "default",
+  tone = "default",
 }: BottomSheetProps) {
   const controls = useDragControls();
   const isFull = variant === "full";
+  const isPaper = tone === "paper";
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -112,8 +116,12 @@ export function BottomSheet({
           <motion.div
             role="dialog"
             aria-modal
+            data-pc-sheet={isPaper ? "project-public" : "project"}
             className={cn(
-              "fixed inset-x-0 z-50 mx-auto flex flex-col overflow-hidden bg-white shadow-2xl",
+              "fixed inset-x-0 z-50 mx-auto flex flex-col overflow-hidden",
+              isPaper
+                ? "border border-[#E7DFD0] bg-[#FBF7F0]"
+                : "bg-white shadow-2xl",
               isFull
                 ? "bottom-0 max-h-[min(92dvh,900px)] max-w-xl rounded-t-[24px] pb-[env(safe-area-inset-bottom)] md:bottom-3 md:max-h-[min(90dvh,900px)] md:max-w-2xl"
                 : "bottom-0 max-w-lg rounded-t-[24px] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2",
@@ -121,7 +129,11 @@ export function BottomSheet({
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 420, damping: 38, mass: 0.9 }}
+            transition={
+              isPaper
+                ? { duration: 0.38, ease: [0.22, 1, 0.36, 1] }
+                : { type: "spring", stiffness: 420, damping: 38, mass: 0.9 }
+            }
             drag="y"
             dragControls={controls}
             dragListener={false}
@@ -139,7 +151,12 @@ export function BottomSheet({
               data-sheet-handle
             >
               <div className="flex w-full items-center justify-center pb-2 pt-3">
-                <div className="h-1.5 w-12 rounded-full bg-line shadow-sm ring-1 ring-black/5" />
+                <div
+                  className={cn(
+                    "h-1.5 w-12 rounded-full",
+                    isPaper ? "bg-[#E7DFD0]" : "bg-line shadow-sm ring-1 ring-black/5",
+                  )}
+                />
               </div>
               <span className="sr-only">Drag down to close</span>
             </div>

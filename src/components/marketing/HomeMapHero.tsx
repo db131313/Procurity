@@ -11,7 +11,6 @@ import {
   LngLatBounds,
 } from "maplibre-gl";
 import { AnimatePresence, motion } from "framer-motion";
-import { MapPin, MessageSquare, Wallet } from "lucide-react";
 import {
   DEFAULT_MAP_FILTERS,
   MapFilters,
@@ -22,6 +21,7 @@ import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
 import type { MapProject } from "@/components/app/MapView";
 import { Logo } from "@/components/brand/Logo";
 import { PricingCards } from "./PricingCards";
+import { AskProcurity } from "./AskProcurity";
 import { PICKER_CITIES, CITY_COOKIE, type PickerCity } from "@/lib/cities/picker";
 import {
   TEASER_FREE_VIEWS,
@@ -33,6 +33,11 @@ import {
   pinColorForScorePublic,
   type FilterablePin,
 } from "@/lib/map/pin-filters";
+import { applyWarmBasemap } from "@/lib/map/warm-basemap";
+import {
+  formatAskResultLine,
+  type AskIntent,
+} from "@/lib/marketing/ask-procurity";
 import { cn } from "@/lib/cn";
 import type { ProjectPhase } from "@/lib/db/types";
 import { IphoneAppSection } from "./IphoneAppSection";
@@ -83,6 +88,11 @@ function setCityCookie(cityId: string) {
   }
 }
 
+function prefersReducedMotion() {
+  if (typeof window === "undefined") return true;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 type TeaserPin = FilterablePin & {
   projectType?: string;
 };
@@ -101,6 +111,8 @@ export function HomeMapHero({ initialCityId }: Props) {
   const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fittedRef = useRef(false);
   const paywallRef = useRef(false);
+  const revealDoneRef = useRef(false);
+  const askTypeRef = useRef<string[] | null>(null);
 
   const [ready, setReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
@@ -108,6 +120,7 @@ export function HomeMapHero({ initialCityId }: Props) {
   const [pins, setPins] = useState<TeaserPin[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<MapFilterState>(DEFAULT_MAP_FILTERS);
+  const [askTypeKeywords, setAskTypeKeywords] = useState<string[] | null>(null);
   const [viewedIds, setViewedIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<MapProject | null>(null);
   const [overlayOpen, setOverlayOpen] = useState(false);
@@ -115,6 +128,7 @@ export function HomeMapHero({ initialCityId }: Props) {
   const [paywallMessage, setPaywallMessage] = useState(
     "You've explored 3 projects. Pick a plan to keep going.",
   );
+  const [proofLine, setProofLine] = useState<string | null>(null);
 
   const city = cityRef.current;
   const remaining = Math.max(0, TEASER_FREE_VIEWS - viewedIds.length);
@@ -129,12 +143,44 @@ export function HomeMapHero({ initialCityId }: Props) {
     paywallRef.current = paywall;
   }, [paywall]);
 
+  useEffect(() => {
+    askTypeRef.current = askTypeKeywords;
+  }, [askTypeKeywords]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/teaser/stats")
+      .then((r) => r.json())
+      .then((d: { projectCount?: number; cityCount?: number }) => {
+        if (cancelled) return;
+        const n = Number(d.projectCount) || 0;
+        const cities = Number(d.cityCount) || SERVED.length;
+        if (n > 0) {
+          setProofLine(
+            `${n.toLocaleString()} commercial projects tracked across ${cities} cities`,
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filtered = useMemo(() => {
-    return filterPins(pins, filters).map((p) => ({
+    let rows = filterPins(pins, filters).map((p) => ({
       ...p,
       color: pinColorForScorePublic(p.displayScore),
     }));
-  }, [pins, filters]);
+    if (askTypeKeywords?.length) {
+      const keys = askTypeKeywords.map((k) => k.toLowerCase());
+      rows = rows.filter((p) => {
+        const hay = `${p.projectType || ""} ${p.phase || ""}`.toLowerCase();
+        return keys.some((k) => hay.includes(k));
+      });
+    }
+    return rows;
+  }, [pins, filters, askTypeKeywords]);
 
   const selectedScore = selected
     ? effectivePinScore(selected, filters.scoreMode)
@@ -152,6 +198,12 @@ export function HomeMapHero({ initialCityId }: Props) {
       const next = Array.isArray(data.pins) ? data.pins : [];
       pinsRef.current = next;
       setPins(next);
+      try {
+        (window as unknown as { __pcHomePinCount?: number }).__pcHomePinCount =
+          next.length;
+      } catch {
+        // ignore
+      }
     } catch (e) {
       if ((e as { name?: string })?.name === "AbortError") return;
     } finally {
@@ -192,6 +244,63 @@ export function HomeMapHero({ initialCityId }: Props) {
     [],
   );
 
+  /** First-load signature: reveal pins cool → hot with a brief hot glow. */
+  const revealPinsInScoreOrder = useCallback(
+    (map: MapLibreMap, rows: typeof filtered) => {
+      if (revealDoneRef.current) {
+        paintPins(map, rows);
+        return;
+      }
+      revealDoneRef.current = true;
+      if (prefersReducedMotion() || rows.length === 0) {
+        paintPins(map, rows);
+        return;
+      }
+
+      const sorted = [...rows].sort((a, b) => a.displayScore - b.displayScore);
+      const buckets = 8;
+      let step = 0;
+
+      const tick = () => {
+        step += 1;
+        const take = Math.ceil((sorted.length * step) / buckets);
+        const slice = sorted.slice(0, take);
+        paintPins(map, slice);
+        if (step < buckets) {
+          window.setTimeout(tick, 70);
+        } else {
+          // brief glow on hottest pins via halo opacity pulse
+          try {
+            if (map.getLayer("project-pins-halo")) {
+              map.setPaintProperty("project-pins-halo", "circle-opacity", [
+                "case",
+                [">=", ["get", "score"], 90],
+                0.45,
+                0.22,
+              ]);
+              window.setTimeout(() => {
+                try {
+                  map.setPaintProperty(
+                    "project-pins-halo",
+                    "circle-opacity",
+                    0.22,
+                  );
+                } catch {
+                  // ignore
+                }
+              }, 900);
+            }
+          } catch {
+            // ignore
+          }
+        }
+      };
+      paintPins(map, []);
+      window.setTimeout(tick, 40);
+    },
+    [paintPins],
+  );
+
   const addLayers = useCallback((map: MapLibreMap) => {
     if (map.getSource("projects")) return;
     map.addSource("projects", {
@@ -207,11 +316,11 @@ export function HomeMapHero({ initialCityId }: Props) {
       source: "projects",
       filter: ["has", "point_count"],
       paint: {
-        "circle-color": "#2563EB",
+        "circle-color": "#F26B3A",
         "circle-radius": ["step", ["get", "point_count"], 16, 25, 22, 100, 28],
-        "circle-opacity": 0.92,
+        "circle-opacity": 0.9,
         "circle-stroke-width": 2,
-        "circle-stroke-color": "#ffffff",
+        "circle-stroke-color": "#FBF7F0",
       },
     });
     map.addLayer({
@@ -223,9 +332,8 @@ export function HomeMapHero({ initialCityId }: Props) {
         "text-field": ["get", "point_count_abbreviated"],
         "text-size": 12,
       },
-      paint: { "text-color": "#ffffff" },
+      paint: { "text-color": "#FBF7F0" },
     });
-    // Same pin styling language as MapView (halo + fill + score label)
     map.addLayer({
       id: "project-pins-halo",
       type: "circle",
@@ -246,7 +354,7 @@ export function HomeMapHero({ initialCityId }: Props) {
         "circle-radius": 8,
         "circle-color": ["get", "color"],
         "circle-stroke-width": 2,
-        "circle-stroke-color": "#ffffff",
+        "circle-stroke-color": "#FBF7F0",
       },
     });
     map.addLayer({
@@ -262,33 +370,39 @@ export function HomeMapHero({ initialCityId }: Props) {
         "text-ignore-placement": true,
       },
       paint: {
-        "text-color": "#ffffff",
-        "text-halo-color": "rgba(0,0,0,0.25)",
+        "text-color": "#FBF7F0",
+        "text-halo-color": "rgba(20,33,61,0.35)",
         "text-halo-width": 0.5,
       },
     });
   }, []);
 
-  const fitCity = useCallback((map: MapLibreMap, all: TeaserPin[]) => {
-    const cityPins = all.filter((p) => p.city === cityRef.current.id);
-    const use = cityPins.length ? cityPins : all;
-    if (!use.length) {
-      map.flyTo({
-        center: cityRef.current.center,
-        zoom: cityRef.current.zoom,
-        duration: 600,
+  const fitCity = useCallback(
+    (map: MapLibreMap, all: TeaserPin[], opts?: { glide?: boolean }) => {
+      const cityPins = all.filter((p) => p.city === cityRef.current.id);
+      const use = cityPins.length ? cityPins : all;
+      const duration = opts?.glide && !prefersReducedMotion() ? 1400 : 700;
+      if (!use.length) {
+        map.easeTo({
+          center: cityRef.current.center,
+          zoom: cityRef.current.zoom,
+          duration,
+          easing: (t) => 1 - Math.pow(1 - t, 3),
+        });
+        return;
+      }
+      const bounds = new LngLatBounds();
+      for (const p of use) bounds.extend([p.longitude, p.latitude]);
+      map.fitBounds(bounds, {
+        padding: { top: 160, bottom: 80, left: 48, right: 48 },
+        maxZoom: 12,
+        duration,
+        essential: true,
+        easing: (t) => 1 - Math.pow(1 - t, 3),
       });
-      return;
-    }
-    const bounds = new LngLatBounds();
-    for (const p of use) bounds.extend([p.longitude, p.latitude]);
-    map.fitBounds(bounds, {
-      padding: 64,
-      maxZoom: 12,
-      duration: 700,
-      essential: true,
-    });
-  }, []);
+    },
+    [],
+  );
 
   // Map init — wrapper sizing avoids MapLibre position:relative height collapse
   useEffect(() => {
@@ -337,14 +451,25 @@ export function HomeMapHero({ initialCityId }: Props) {
       clearTimer();
       setMapFailed(false);
       try {
+        applyWarmBasemap(map);
         if (!map.getSource("projects")) addLayers(map);
-        paintPins(map, filterPins(pinsRef.current, filters).map((p) => ({
+        const rows = filterPins(pinsRef.current, filters).map((p) => ({
           ...p,
           color: pinColorForScorePublic(p.displayScore),
-        })));
+        }));
         if (!fittedRef.current) {
-          fitCity(map, pinsRef.current);
+          // Start slightly pulled back, then glide in
+          if (!prefersReducedMotion()) {
+            map.jumpTo({
+              center: cityRef.current.center,
+              zoom: Math.max(9, cityRef.current.zoom - 1.4),
+            });
+          }
+          fitCity(map, pinsRef.current, { glide: true });
           fittedRef.current = true;
+          revealPinsInScoreOrder(map, rows);
+        } else {
+          paintPins(map, rows);
         }
         map.resize();
         setReady(true);
@@ -362,6 +487,7 @@ export function HomeMapHero({ initialCityId }: Props) {
       }
       styleIndexRef.current = 0;
       fittedRef.current = false;
+      revealDoneRef.current = false;
       setReady(false);
       setMapFailed(false);
 
@@ -381,6 +507,9 @@ export function HomeMapHero({ initialCityId }: Props) {
       (window as unknown as { __pcHomeMap?: MapLibreMap }).__pcHomeMap = map;
 
       map.on("load", onLoad);
+      map.on("styledata", () => {
+        if (map && map.isStyleLoaded()) applyWarmBasemap(map);
+      });
       map.on("error", (e) => {
         const msg = String(
           (e as unknown as { error?: { message?: string } }).error?.message || e,
@@ -408,16 +537,15 @@ export function HomeMapHero({ initialCityId }: Props) {
       }
       setReady(false);
     };
-    // filters captured via pinsRef paint on load; don't re-init on filter change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addLayers, fitCity, mapKey, paintPins]);
+  }, [addLayers, fitCity, mapKey, paintPins, revealPinsInScoreOrder]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
     paintPins(map, filtered);
     if (!fittedRef.current && pins.length > 0) {
-      fitCity(map, pins);
+      fitCity(map, pins, { glide: true });
       fittedRef.current = true;
     }
   }, [filtered, ready, paintPins, fitCity, pins]);
@@ -427,6 +555,18 @@ export function HomeMapHero({ initialCityId }: Props) {
       if (paywallRef.current) {
         setPaywall(true);
         return;
+      }
+      // Optimistic local view count so closing before detail returns still gates
+      const already = readLocalViews();
+      if (!already.includes(id) && already.length >= TEASER_FREE_VIEWS) {
+        setPaywall(true);
+        return;
+      }
+      if (!already.includes(id)) {
+        // Append (don't drop newer ids if somehow over limit)
+        const next = [...already, id];
+        writeLocalViews(next.slice(-TEASER_FREE_VIEWS));
+        setViewedIds(next.slice(-TEASER_FREE_VIEWS));
       }
       const found = pinsRef.current.find((p) => p.id === id);
       setSelected({
@@ -447,6 +587,20 @@ export function HomeMapHero({ initialCityId }: Props) {
     },
     [],
   );
+
+  // Test/helper hook — open a pin by id without relying on canvas hit-testing
+  useEffect(() => {
+    (window as unknown as { __pcOpenHomeProject?: typeof openProject }).__pcOpenHomeProject =
+      openProject;
+    return () => {
+      try {
+        delete (window as unknown as { __pcOpenHomeProject?: unknown })
+          .__pcOpenHomeProject;
+      } catch {
+        // ignore
+      }
+    };
+  }, [openProject]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -482,7 +636,12 @@ export function HomeMapHero({ initialCityId }: Props) {
           type: string;
           coordinates: [number, number];
         };
-        map.easeTo({ center: geom.coordinates, zoom, duration: 400 });
+        map.easeTo({
+          center: geom.coordinates,
+          zoom,
+          duration: 400,
+          easing: (t) => 1 - Math.pow(1 - t, 3),
+        });
       } catch {
         // ignore
       }
@@ -519,18 +678,61 @@ export function HomeMapHero({ initialCityId }: Props) {
   }
 
   function handleOverlayClose() {
-    const nextRemaining = Math.max(0, TEASER_FREE_VIEWS - viewedIds.length);
+    // Prefer localStorage — React state can lag behind onPublicViewed
+    const ids = readLocalViews();
     setOverlayOpen(false);
     setSelected(null);
-    // After the 3rd card is closed, slide up pricing
-    if (nextRemaining === 0 && viewedIds.length >= TEASER_FREE_VIEWS) {
+    setViewedIds(ids);
+    if (ids.length >= TEASER_FREE_VIEWS) {
       showPaywall();
     }
   }
 
+  function applyAskIntent(intent: AskIntent): { resultLine: string } {
+    setFilters(intent.filters);
+    setAskTypeKeywords(intent.typeKeywords ?? null);
+
+    if (intent.cityId) {
+      const next = cityById(intent.cityId);
+      cityRef.current = next;
+      setCityCookie(next.id);
+      const map = mapRef.current;
+      if (map) {
+        const cityPins = pinsRef.current.filter((p) => p.city === next.id);
+        fitCity(map, cityPins.length ? cityPins : pinsRef.current, {
+          glide: true,
+        });
+      }
+    }
+
+    // Compute result against the intent filters + type keywords
+    let rows = filterPins(pinsRef.current, intent.filters);
+    if (intent.typeKeywords?.length) {
+      const keys = intent.typeKeywords.map((k) => k.toLowerCase());
+      rows = rows.filter((p) => {
+        const hay = `${(p as TeaserPin).projectType || ""} ${p.phase || ""}`.toLowerCase();
+        return keys.some((k) => hay.includes(k));
+      });
+    }
+    if (intent.cityId) {
+      rows = rows.filter((p) => p.city === intent.cityId);
+    }
+    const hotCount = rows.filter((p) => p.displayScore >= 85).length;
+    const cityLabel = intent.cityId
+      ? cityById(intent.cityId).shortLabel
+      : undefined;
+    return {
+      resultLine: formatAskResultLine({
+        count: rows.length,
+        cityLabel,
+        hotCount,
+      }),
+    };
+  }
+
   return (
     <>
-      <section className="relative h-[100dvh] w-full overflow-hidden bg-[#dfe7ef]">
+      <section className="relative h-[100dvh] w-full overflow-hidden bg-[#EDE6DA]">
         <div
           ref={wrapperRef}
           className={cn(
@@ -546,73 +748,106 @@ export function HomeMapHero({ initialCityId }: Props) {
           />
         </div>
 
-        {/* Top: wordmark · pill · auth links */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:px-6">
-          <div className="flex items-center justify-between gap-2">
+        {/* Top bar: 64px + safe-area, solid paper, no blur */}
+        <header
+          className="pointer-events-none absolute inset-x-0 top-0 z-30"
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0px)",
+          }}
+        >
+          <div
+            className="pointer-events-auto flex h-16 items-center justify-between border-b border-[#E7DFD0]/80 bg-[#FBF7F0]/92 pl-5 pr-3 md:pl-6 md:pr-5"
+            data-testid="home-topbar"
+          >
             <Link
               href="/"
-              className="pointer-events-auto shrink-0 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
+              className="flex h-full shrink-0 items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
               aria-label="Procurity home"
             >
               <Logo variant="dark" size={28} />
             </Link>
-            <nav className="pointer-events-auto flex shrink-0 items-center">
+            <nav className="flex shrink-0 items-center gap-1 sm:gap-2">
               <Link
-                href="/pricing"
-                className="inline-flex h-11 items-center px-2.5 text-sm font-semibold text-ink underline-offset-4 hover:underline sm:px-3"
+                href="#pricing"
+                className="inline-flex h-10 items-center px-2.5 text-sm font-medium text-[#14213D] hover:opacity-80 sm:px-3"
               >
                 Pricing
               </Link>
               <Link
                 href="/login"
-                className="inline-flex h-11 items-center px-2.5 text-sm font-semibold text-ink underline-offset-4 hover:underline sm:px-3"
+                className="mkt-btn-ghost inline-flex h-10 items-center rounded-lg px-2.5 text-sm font-medium sm:px-3"
               >
                 Log in
               </Link>
+              <Link
+                href={signupHref.replace("&checkout=1&tier=growth", "")}
+                className="mkt-btn-primary inline-flex h-10 items-center rounded-lg px-3.5 text-sm font-medium"
+              >
+                Start free
+              </Link>
             </nav>
           </div>
-          <div className="mt-2 flex justify-center">
-            <p className="brand-gradient rounded-full px-3 py-2 text-center text-[11px] font-semibold leading-snug text-white shadow-sm sm:text-xs">
-              See which new construction projects are ready to buy ·{" "}
+        </header>
+
+        {/* Left-aligned hero copy + Ask Procurity on the map */}
+        <div className="pointer-events-none absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top,0px))] z-20 px-5 pt-4 md:px-8 md:pt-6">
+          <div className="max-w-xl">
+            <h1 className="font-display text-[1.75rem] leading-[1.15] tracking-tight text-[#14213D] sm:text-3xl md:text-4xl">
+              Know which projects are about to need you.
+            </h1>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-[#5B6475] md:text-base">
+              Spot the sites heating up for signage, lighting, glass, security,
+              and flooring — before your competitors do.
+            </p>
+            <div className="pointer-events-auto mt-4">
+              <AskProcurity onApply={applyAskIntent} />
+            </div>
+            <p className="mt-2 text-[11px] font-medium text-[#5B6475]">
               {remaining} free view{remaining === 1 ? "" : "s"} left
             </p>
           </div>
         </div>
 
-        {/* Real map filters — same component & placement language as /app/map */}
-        <div className="pointer-events-none absolute inset-x-0 top-[5.5rem] z-20 flex justify-center px-3 md:top-24 md:justify-start md:px-5">
+        <div className="pointer-events-none absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top,0px)+11.5rem)] z-20 flex justify-center px-3 sm:top-[calc(4rem+env(safe-area-inset-top,0px)+10rem)] md:top-auto md:bottom-24 md:left-5 md:right-auto md:justify-start md:px-0">
           <div className="pointer-events-auto max-w-full">
-            <MapFilters value={filters} onChange={setFilters} />
+            <MapFilters
+              value={filters}
+              onChange={(next) => {
+                setAskTypeKeywords(null);
+                setFilters(next);
+              }}
+            />
           </div>
         </div>
 
-        <div className="pointer-events-none absolute bottom-3 left-3 z-20 md:bottom-6 md:left-5">
+        <div className="pointer-events-none absolute bottom-3 left-3 z-20 md:bottom-6 md:left-auto md:right-16">
           <MapPinLegend scoreMode={filters.scoreMode} publicRamp />
         </div>
 
         {loading && (
           <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center">
-            <span className="rounded-full border border-line bg-white/95 px-4 py-2 text-xs font-bold text-ink shadow-sm">
+            <span className="rounded-lg border border-[#E7DFD0] bg-[#FBF7F0] px-4 py-2 text-xs font-medium text-[#14213D]">
               Loading projects…
             </span>
           </div>
         )}
 
         {mapFailed && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#dfe7ef] px-4">
-            <div className="flex max-w-sm flex-col items-center gap-3 rounded-2xl border border-line bg-white px-5 py-6 text-center shadow-sm">
-              <p className="text-sm font-semibold text-ink">
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#EDE6DA] px-4">
+            <div className="flex max-w-sm flex-col items-center gap-3 rounded-xl border border-[#E7DFD0] bg-[#FBF7F0] px-5 py-6 text-center">
+              <p className="text-sm font-medium text-[#14213D]">
                 The map didn&apos;t load. Retry
               </p>
               <button
                 type="button"
                 onClick={() => {
                   fittedRef.current = false;
+                  revealDoneRef.current = false;
                   styleIndexRef.current = 0;
                   setMapFailed(false);
                   setMapKey((k) => k + 1);
                 }}
-                className="brand-gradient inline-flex h-11 min-w-[120px] items-center justify-center rounded-full px-4 text-sm font-bold text-white"
+                className="mkt-btn-primary inline-flex h-11 min-w-[120px] items-center justify-center rounded-lg px-4 text-sm font-medium"
               >
                 Retry
               </button>
@@ -638,71 +873,61 @@ export function HomeMapHero({ initialCityId }: Props) {
                 : "You've explored 3 projects. Pick a plan to keep going.",
             );
           }}
-          onPublicViewed={({ projectId, viewedCount }) => {
+          onPublicViewed={({ projectId }) => {
             const next = [...new Set([...readLocalViews(), projectId])].slice(
-              0,
-              TEASER_FREE_VIEWS,
+              -TEASER_FREE_VIEWS,
             );
             writeLocalViews(next);
             setViewedIds(next);
-            if (viewedCount >= TEASER_FREE_VIEWS) {
-              // paywall after close — handled in handleOverlayClose
-            }
           }}
         />
 
-        {/* Pricing slide-up (not full-screen) */}
         <AnimatePresence>
           {paywall && (
             <>
               <motion.button
                 type="button"
                 aria-label="Dismiss"
-                className="absolute inset-0 z-40 bg-ink/45"
+                className="absolute inset-0 z-40 bg-[#14213D]/40"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 onClick={() => setPaywall(false)}
               />
               <motion.div
                 role="dialog"
                 aria-modal
-                className="absolute inset-x-0 bottom-0 z-50 mx-auto max-h-[min(85dvh,720px)] w-full max-w-4xl overflow-y-auto rounded-t-3xl border border-line bg-white p-5 shadow-2xl sm:p-8"
+                data-pc-sheet="pricing"
+                className="absolute inset-x-0 bottom-0 z-50 mx-auto max-h-[min(85dvh,720px)] w-full max-w-4xl overflow-y-auto rounded-t-2xl border border-[#E7DFD0] bg-[#FBF7F0] p-5 sm:p-8"
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
-                transition={{
-                  type: "spring",
-                  stiffness: 380,
-                  damping: 36,
-                  mass: 0.9,
-                }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line" />
-                <h2 className="text-center text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                  {paywallMessage.includes("Start a job") ? (
-                    <>
-                      Start a job with a{" "}
-                      <span className="brand-gradient-text">plan</span>
-                    </>
-                  ) : (
-                    <>
-                      You&apos;ve explored 3 projects. Pick a plan to{" "}
-                      <span className="brand-gradient-text">keep going</span>.
-                    </>
-                  )}
+                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[#E7DFD0]" />
+                <h2 className="font-display text-center text-2xl tracking-tight text-[#14213D] sm:text-3xl">
+                  {paywallMessage.includes("Start a job")
+                    ? "Start a job with a plan"
+                    : "You've explored 3 projects. Pick a plan to keep going."}
                 </h2>
-                <p className="mx-auto mt-2 max-w-md text-center text-sm text-slate">
+                <p className="mx-auto mt-2 max-w-md text-center text-sm text-[#5B6475]">
                   Your city ({city.shortLabel}) carries into signup and checkout.
                 </p>
                 <div className="mt-6">
-                  <PricingCards ctaHref={signupHref.replace("&checkout=1&tier=growth", "")} />
+                  <PricingCards
+                    variant="marketing"
+                    ctaHref={signupHref.replace(
+                      "&checkout=1&tier=growth",
+                      "",
+                    )}
+                  />
                 </div>
-                <p className="mt-6 text-center text-sm">
+                <p className="mt-6 text-center text-sm text-[#5B6475]">
                   Already have an account?{" "}
                   <Link
                     href="/login"
-                    className="font-bold text-[#2563EB] underline-offset-2 hover:underline"
+                    className="font-medium text-[#2563EB] underline-offset-2 hover:underline"
                   >
                     Log in
                   </Link>
@@ -712,79 +937,229 @@ export function HomeMapHero({ initialCityId }: Props) {
           )}
         </AnimatePresence>
       </section>
+
+      {proofLine && (
+        <p
+          className="border-b border-[#E7DFD0] px-5 py-4 text-center text-sm text-[#5B6475] md:px-10"
+          data-testid="proof-line"
+        >
+          {proofLine}
+        </p>
+      )}
     </>
   );
 }
 
-const STEPS = [
+const HOW_STEPS = [
   {
-    title: "See what's about to be built",
-    body: "Open the map and spot new construction that's ready for outreach.",
-    Icon: MapPin,
+    n: "01",
+    title: "See what's heating up on the map",
+    body: "Heat-colored dots show which sites are ready for outreach — cool to hot.",
+    crop: "map",
   },
   {
-    title: "Know who to contact and why now",
-    body: "Buy Score and plain-English reasons show you where to start.",
-    Icon: MessageSquare,
+    n: "02",
+    title: "Open a project and check the street",
+    body: "Tap a dot for the location card, score, and street view before you drive.",
+    crop: "card",
   },
   {
-    title: "Measure, quote, and get paid in one place",
-    body: "Take the job from the map to a deposit without juggling tools.",
-    Icon: Wallet,
+    n: "03",
+    title: "Quote and get paid in one place",
+    body: "Take the lead from the map to a deposit without juggling five tools.",
+    crop: "quote",
   },
-];
+] as const;
 
 export function HomeBelowFold() {
   return (
-    <div className="relative bg-transparent">
-      <IphoneAppSection />
-      <HomeVideoSection />
+    <div className="relative">
+      <section className="px-5 py-16 md:px-10 md:py-24">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="font-display text-3xl tracking-tight text-[#14213D] md:text-4xl">
+            How it works
+          </h2>
+          <p className="mt-2 max-w-lg text-[#5B6475]">
+            Three steps from the map to a paid job — no jargon, no filler.
+          </p>
+          <ol className="mt-12 space-y-16">
+            {HOW_STEPS.map((s, i) => (
+              <li
+                key={s.n}
+                className={cn(
+                  "grid items-center gap-8 md:grid-cols-12 md:gap-10",
+                  i % 2 === 1 && "md:[&>*:first-child]:order-2",
+                )}
+              >
+                <div className="md:col-span-5">
+                  <p className="text-sm font-medium tabular-nums text-[#2563EB]">
+                    {s.n}
+                  </p>
+                  <h3 className="mt-2 font-display text-2xl tracking-tight text-[#14213D]">
+                    {s.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[#5B6475]">
+                    {s.body}
+                  </p>
+                </div>
+                <div className="md:col-span-7">
+                  <HowCrop kind={s.crop} />
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
 
-      <section className="border-t border-white/40 px-5 py-14 md:px-10 md:py-16">
-        <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-3 md:gap-8">
-          {STEPS.map((s) => (
-            <div key={s.title} className="text-center md:text-left">
-              <div className="brand-gradient mx-auto flex h-12 w-12 items-center justify-center rounded-full text-white md:mx-0">
-                <s.Icon className="h-6 w-6" aria-hidden />
-              </div>
-              <h2 className="mt-4 text-lg font-bold text-ink">{s.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate">{s.body}</p>
-            </div>
-          ))}
+      <section className="border-t border-[#E7DFD0] px-5 py-16 md:px-10 md:py-24">
+        <div className="mx-auto grid max-w-5xl items-start gap-12 md:grid-cols-12 md:gap-10">
+          <div className="md:col-span-5">
+            <IphoneAppSection embedded />
+          </div>
+          <div className="md:col-span-7 md:pt-8">
+            <HomeVideoSection embedded />
+          </div>
         </div>
       </section>
 
       <section
         id="pricing"
-        className="border-t border-white/40 px-5 py-14 md:px-10 md:py-16"
+        className="border-t border-[#E7DFD0] px-5 py-16 md:px-10 md:py-24"
       >
-        <div className="mx-auto max-w-6xl rounded-3xl border border-white/60 bg-white/90 p-6 shadow-sm backdrop-blur md:p-10">
-          <h2 className="text-center text-2xl font-bold text-ink md:text-3xl">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="font-display text-3xl tracking-tight text-[#14213D] md:text-4xl">
             Simple pricing
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-center text-slate">
-            Start with a free trial. Upgrade when your coverage grows.
+          <p className="mt-2 max-w-md text-[#5B6475]">
+            Start free. Upgrade when your coverage grows.
           </p>
-          <div className="mt-8">
-            <PricingCards />
+          <div className="mt-10">
+            <PricingCards variant="marketing" />
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-white/40 px-5 py-8 md:px-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Logo variant="dark" size={28} />
-          <div className="flex flex-wrap gap-4 text-sm font-semibold text-slate">
-            <Link href="/how-it-works">How it works</Link>
-            <Link href="/pricing">Pricing</Link>
-            <Link href="/login">Log in</Link>
-            <Link href="/signup">Create account</Link>
+      <section className="border-t border-[#E7DFD0] px-5 py-16 md:px-10">
+        <div className="mx-auto max-w-5xl">
+          <p className="font-display text-2xl tracking-tight text-[#14213D] md:text-3xl">
+            Your next job is already on the map.
+          </p>
+          <Link
+            href="/signup"
+            className="mkt-btn-primary mt-6 inline-flex h-11 items-center rounded-lg px-5 text-sm font-medium"
+          >
+            Start free
+          </Link>
+        </div>
+      </section>
+
+      <footer className="border-t border-[#E7DFD0] px-5 py-8 md:px-10">
+        <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Logo variant="dark" size={24} />
+          <div className="flex flex-wrap gap-4 text-sm font-medium text-[#5B6475]">
+            <Link href="/how-it-works" className="hover:text-[#14213D]">
+              How it works
+            </Link>
+            <Link href="/pricing" className="hover:text-[#14213D]">
+              Pricing
+            </Link>
+            <Link href="/login" className="hover:text-[#14213D]">
+              Log in
+            </Link>
+            <Link href="/signup" className="hover:text-[#14213D]">
+              Create account
+            </Link>
           </div>
-          <p className="text-xs text-slate">
+          <p className="text-xs text-[#5B6475]">
             © {new Date().getFullYear()} Procurity · Find your next job.
           </p>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function HowCrop({ kind }: { kind: "map" | "card" | "quote" }) {
+  if (kind === "map") {
+    return (
+      <div className="overflow-hidden rounded-xl border border-[#E7DFD0] bg-[#EDE6DA]">
+        <div className="relative aspect-[16/10]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/hero-city-bg.png"
+            alt=""
+            className="h-full w-full object-cover opacity-90"
+          />
+          <div className="absolute inset-0 flex items-center justify-center gap-6">
+            {[
+              { c: "#9FB4CC", s: 10 },
+              { c: "#F2B544", s: 12 },
+              { c: "#F26B3A", s: 14 },
+            ].map((d, i) => (
+              <span
+                key={i}
+                className="rounded-full"
+                style={{
+                  width: d.s,
+                  height: d.s,
+                  background: d.c,
+                  boxShadow: `0 0 0 2px #FBF7F0`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (kind === "card") {
+    return (
+      <div className="rounded-xl border border-[#E7DFD0] bg-[#FBF7F0] p-5">
+        <div className="flex items-start gap-4">
+          <span
+            className="flex h-14 w-14 items-center justify-center rounded-full border-2 text-sm font-semibold tabular-nums text-[#14213D]"
+            style={{ borderColor: "#F26B3A", color: "#F26B3A" }}
+          >
+            92
+          </span>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-[#F26B3A]">
+              Act now
+            </p>
+            <p className="mt-1 text-base font-medium text-[#14213D]">
+              New hotel · finishing
+            </p>
+            <p className="mt-1 text-sm text-[#5B6475]">
+              Street view ready · score explains why now
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 h-px bg-[#E7DFD0]" />
+        <p className="mt-3 text-sm text-[#5B6475]">
+          Start a job when you&apos;re ready — contacts unlock on a plan.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-xl border border-[#E7DFD0] bg-[#FBF7F0] p-5">
+      <p className="text-xs font-medium text-[#5B6475]">Quote draft</p>
+      <p className="mt-2 font-display text-xl text-[#14213D]">
+        Exterior identity package
+      </p>
+      <div className="mt-4 space-y-2 border-t border-[#E7DFD0] pt-4 text-sm text-[#5B6475]">
+        <div className="flex justify-between">
+          <span>Channel letters</span>
+          <span className="tabular-nums text-[#14213D]">$4,200</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Install</span>
+          <span className="tabular-nums text-[#14213D]">$1,100</span>
+        </div>
+      </div>
+      <div className="mt-4 flex h-10 items-center justify-center rounded-lg bg-[#2563EB] text-sm font-medium text-[#FBF7F0]">
+        Send for deposit
+      </div>
     </div>
   );
 }

@@ -17,7 +17,10 @@ import { searchLink } from "@/lib/projects/leads";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
 import { navigateToStopUrl } from "@/lib/route/maps-links";
 import { saveMapRoute, type RouteResult } from "@/lib/route/types";
-import { pinColorForScore } from "@/lib/map/pin-filters";
+import {
+  pinColorForScore,
+  pinColorForScorePublic,
+} from "@/lib/map/pin-filters";
 
 type OverlayProject = {
   id: string;
@@ -253,7 +256,12 @@ export function ProjectDetailOverlay({
   }
 
   return (
-    <BottomSheet open={open && Boolean(project)} onClose={onClose} variant="full">
+    <BottomSheet
+      open={open && Boolean(project)}
+      onClose={onClose}
+      variant="full"
+      tone={isPublic ? "paper" : "default"}
+    >
       {project && (
         <>
           {hasStreetCoords ? (
@@ -284,11 +292,20 @@ export function ProjectDetailOverlay({
               </button>
             </div>
             <div className="flex items-start gap-3">
-              <ScoreRing score={displayScore} size={68} stroke={5} />
+              <ScoreRing
+                score={displayScore}
+                size={68}
+                stroke={5}
+                heat={isPublic}
+              />
               <div className="min-w-0 flex-1">
                 <p
                   className="text-[11px] font-bold uppercase tracking-wide"
-                  style={{ color: pinColorForScore(displayScore) }}
+                  style={{
+                    color: isPublic
+                      ? pinColorForScorePublic(displayScore)
+                      : pinColorForScore(displayScore),
+                  }}
                 >
                   {scoreBand(displayScore)}
                   {p ? ` · ${scoreBandLabel(p.score)}` : ""}
@@ -483,7 +500,7 @@ export function ProjectDetailOverlay({
                       }
                     });
                   }}
-                  className={`${isPublic ? "brand-gradient" : "pc-gradient-bg"} mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-white disabled:opacity-50`}
+                  className={`${isPublic ? "bg-[#2563EB] hover:bg-[#1d4ed8]" : "pc-gradient-bg"} mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-[#FBF7F0] disabled:opacity-50`}
                   aria-busy={jobPending || undefined}
                 >
                   {jobPending ? <WorkingSpinner /> : null}
