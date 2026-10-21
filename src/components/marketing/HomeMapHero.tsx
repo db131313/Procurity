@@ -41,7 +41,11 @@ import {
 import { cn } from "@/lib/cn";
 import type { ProjectPhase } from "@/lib/db/types";
 import { IphoneAppSection } from "./IphoneAppSection";
-import { HomeVideoSection } from "./HomeVideoSection";
+import {
+  HOME_SHOTS,
+  type HomeMediaAvailability,
+} from "@/lib/marketing/home-media-shared";
+import { ChevronDown } from "lucide-react";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
@@ -394,7 +398,7 @@ export function HomeMapHero({ initialCityId }: Props) {
       const bounds = new LngLatBounds();
       for (const p of use) bounds.extend([p.longitude, p.latitude]);
       map.fitBounds(bounds, {
-        padding: { top: 160, bottom: 80, left: 48, right: 48 },
+        padding: { top: 120, bottom: 220, left: 48, right: 48 },
         maxZoom: 12,
         duration,
         essential: true,
@@ -498,6 +502,16 @@ export function HomeMapHero({ initialCityId }: Props) {
         zoom: cityRef.current.zoom,
         maxPitch: 45,
         attributionControl: {},
+        // Plain wheel/one-finger scroll the page; Ctrl/Cmd+wheel or two fingers zoom/pan
+        cooperativeGestures: true,
+        locale: {
+          "CooperativeGesturesHandler.WindowsHelpText":
+            "Use Ctrl + scroll to zoom the map",
+          "CooperativeGesturesHandler.MacHelpText":
+            "Use Ctrl + scroll to zoom the map",
+          "CooperativeGesturesHandler.MobileHelpText":
+            "Use two fingers to move the map",
+        },
       });
       map.addControl(
         new NavigationControl({ visualizePitch: false }),
@@ -730,9 +744,14 @@ export function HomeMapHero({ initialCityId }: Props) {
     };
   }
 
+  const freeSignup = signupHref.replace("&checkout=1&tier=growth", "");
+
   return (
     <>
-      <section className="relative h-[100dvh] w-full overflow-hidden bg-[#EDE6DA]">
+      <section
+        className="relative h-[88dvh] w-full overflow-hidden bg-[#EDE6DA]"
+        data-testid="home-hero"
+      >
         <div
           ref={wrapperRef}
           className={cn(
@@ -780,7 +799,7 @@ export function HomeMapHero({ initialCityId }: Props) {
                 Log in
               </Link>
               <Link
-                href={signupHref.replace("&checkout=1&tier=growth", "")}
+                href={freeSignup}
                 className="mkt-btn-primary inline-flex h-10 items-center rounded-lg px-3.5 text-sm font-medium"
               >
                 Start free
@@ -789,18 +808,44 @@ export function HomeMapHero({ initialCityId }: Props) {
           </div>
         </header>
 
-        {/* Left-aligned hero copy + Ask Procurity on the map */}
-        <div className="pointer-events-none absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top,0px))] z-20 px-5 pt-4 md:px-8 md:pt-6">
-          <div className="max-w-xl">
-            <h1 className="font-display text-[1.75rem] leading-[1.15] tracking-tight text-[#14213D] sm:text-3xl md:text-4xl">
+        {/* Value prop panel — left on desktop, bottom-left on mobile */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-14 top-[calc(4rem+env(safe-area-inset-top,0px))] z-20 flex flex-col justify-end px-4 md:bottom-8 md:left-0 md:right-auto md:top-[calc(4rem+env(safe-area-inset-top,0px)+1rem)] md:justify-start md:px-8">
+          <div
+            className="pointer-events-auto w-full max-w-md rounded-xl border border-[#E7DFD0] bg-[#FBF7F0]/92 p-4 sm:p-5 md:max-w-lg md:p-6"
+            data-testid="value-prop"
+          >
+            <h1 className="font-display text-[1.65rem] leading-[1.12] tracking-tight text-[#14213D] sm:text-3xl md:text-[2.35rem]">
               Know which projects are about to need you.
             </h1>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-[#5B6475] md:text-base">
-              Spot the sites heating up for signage, lighting, glass, security,
-              and flooring — before your competitors do.
+            <p className="mt-2.5 text-sm leading-relaxed text-[#5B6475] md:text-[15px]">
+              Procurity shows you new commercial construction near you, scored
+              by how ready it is to buy, with who to contact and when. Then
+              measure, quote, and get paid in one place.
             </p>
-            <div className="pointer-events-auto mt-4">
-              <AskProcurity onApply={applyAskIntent} />
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Link
+                href={freeSignup}
+                className="mkt-btn-primary inline-flex h-11 items-center rounded-lg px-4 text-sm font-medium"
+              >
+                Start free
+              </Link>
+              <Link
+                href="#pricing"
+                className="mkt-btn-ghost inline-flex h-11 items-center rounded-lg border border-[#E7DFD0] px-4 text-sm font-medium"
+              >
+                See pricing
+              </Link>
+            </div>
+            {proofLine && (
+              <p
+                className="mt-3 text-xs font-medium text-[#5B6475]"
+                data-testid="proof-line"
+              >
+                {proofLine}
+              </p>
+            )}
+            <div className="mt-4 border-t border-[#E7DFD0] pt-3">
+              <AskProcurity onApply={applyAskIntent} compact />
             </div>
             <p className="mt-2 text-[11px] font-medium text-[#5B6475]">
               {remaining} free view{remaining === 1 ? "" : "s"} left
@@ -808,7 +853,7 @@ export function HomeMapHero({ initialCityId }: Props) {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top,0px)+11.5rem)] z-20 flex justify-center px-3 sm:top-[calc(4rem+env(safe-area-inset-top,0px)+10rem)] md:top-auto md:bottom-24 md:left-5 md:right-auto md:justify-start md:px-0">
+        <div className="pointer-events-none absolute right-3 top-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)] z-20 md:right-5">
           <div className="pointer-events-auto max-w-full">
             <MapFilters
               value={filters}
@@ -820,9 +865,18 @@ export function HomeMapHero({ initialCityId }: Props) {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute bottom-3 left-3 z-20 md:bottom-6 md:left-auto md:right-16">
+        <div className="pointer-events-none absolute bottom-3 right-3 z-20 md:bottom-6 md:right-16">
           <MapPinLegend scoreMode={filters.scoreMode} publicRamp />
         </div>
+
+        <a
+          href="#what-you-get"
+          className="pointer-events-auto absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-0.5 text-[11px] font-medium text-[#14213D]/80"
+          data-testid="scroll-cue"
+        >
+          <span>Scroll</span>
+          <ChevronDown className="h-4 w-4" aria-hidden strokeWidth={2} />
+        </a>
 
         {loading && (
           <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center">
@@ -937,94 +991,151 @@ export function HomeMapHero({ initialCityId }: Props) {
           )}
         </AnimatePresence>
       </section>
-
-      {proofLine && (
-        <p
-          className="border-b border-[#E7DFD0] px-5 py-4 text-center text-sm text-[#5B6475] md:px-10"
-          data-testid="proof-line"
-        >
-          {proofLine}
-        </p>
-      )}
     </>
   );
 }
 
-const HOW_STEPS = [
+const WHAT_YOU_GET = [
   {
-    n: "01",
-    title: "See what's heating up on the map",
-    body: "Heat-colored dots show which sites are ready for outreach — cool to hot.",
-    crop: "map",
+    title: "See what's about to be built.",
+    body: "A live map of commercial sites near you, scored by how ready they are to buy.",
   },
   {
-    n: "02",
-    title: "Open a project and check the street",
-    body: "Tap a dot for the location card, score, and street view before you drive.",
-    crop: "card",
+    title: "Know who to call and why now.",
+    body: "Open a project for the street view, score reasons, and the right moment to reach out.",
   },
   {
-    n: "03",
-    title: "Quote and get paid in one place",
-    body: "Take the lead from the map to a deposit without juggling five tools.",
-    crop: "quote",
+    title: "Measure, quote, and get paid without leaving the app.",
+    body: "Take the job from the map to a deposit in one workflow — no tool-juggling.",
   },
 ] as const;
 
-export function HomeBelowFold() {
+export function HomeBelowFold({ media }: { media: HomeMediaAvailability }) {
+  const shots = HOME_SHOTS.filter((s) => media[s.key]);
+  const hasVideo = media.fieldVideoMp4 || media.fieldVideoWebm;
+
   return (
     <div className="relative">
-      <section className="px-5 py-16 md:px-10 md:py-24">
-        <div className="mx-auto max-w-5xl">
+      <section
+        id="what-you-get"
+        className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-20"
+      >
+        <div className="mx-auto max-w-3xl">
           <h2 className="font-display text-3xl tracking-tight text-[#14213D] md:text-4xl">
-            How it works
+            What you get
           </h2>
-          <p className="mt-2 max-w-lg text-[#5B6475]">
-            Three steps from the map to a paid job — no jargon, no filler.
-          </p>
-          <ol className="mt-12 space-y-16">
-            {HOW_STEPS.map((s, i) => (
-              <li
-                key={s.n}
-                className={cn(
-                  "grid items-center gap-8 md:grid-cols-12 md:gap-10",
-                  i % 2 === 1 && "md:[&>*:first-child]:order-2",
-                )}
-              >
-                <div className="md:col-span-5">
-                  <p className="text-sm font-medium tabular-nums text-[#2563EB]">
-                    {s.n}
-                  </p>
-                  <h3 className="mt-2 font-display text-2xl tracking-tight text-[#14213D]">
-                    {s.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#5B6475]">
-                    {s.body}
-                  </p>
-                </div>
-                <div className="md:col-span-7">
-                  <HowCrop kind={s.crop} />
-                </div>
+          <ul className="mt-10 space-y-10">
+            {WHAT_YOU_GET.map((item) => (
+              <li key={item.title}>
+                <h3 className="text-lg font-medium text-[#14213D] md:text-xl">
+                  {item.title}
+                </h3>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#5B6475] md:text-base">
+                  {item.body}
+                </p>
               </li>
             ))}
-          </ol>
+          </ul>
         </div>
       </section>
 
-      <section className="border-t border-[#E7DFD0] px-5 py-16 md:px-10 md:py-24">
-        <div className="mx-auto grid max-w-5xl items-start gap-12 md:grid-cols-12 md:gap-10">
-          <div className="md:col-span-5">
+      {media.heroPhoto && (
+        <section className="px-5 pb-14 md:px-10 md:pb-20">
+          <div className="mx-auto max-w-5xl overflow-hidden rounded-xl border border-[#E7DFD0]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/home/hero-photo.jpg"
+              alt="Commercial construction site"
+              className="aspect-[16/9] w-full object-cover"
+            />
+          </div>
+        </section>
+      )}
+
+      {shots.length > 0 && (
+        <section className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-20">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="font-display text-3xl tracking-tight text-[#14213D] md:text-4xl">
+              How it works
+            </h2>
+            <p className="mt-2 max-w-lg text-[#5B6475]">
+              Real screens from the product — not mockups.
+            </p>
+            <ol className="mt-12 space-y-14">
+              {shots.map((shot, i) => (
+                <li
+                  key={shot.src}
+                  className={cn(
+                    "grid items-center gap-8 md:grid-cols-12 md:gap-10",
+                    i % 2 === 1 && "md:[&>*:first-child]:order-2",
+                  )}
+                >
+                  <div className="md:col-span-5">
+                    <p className="text-sm font-medium tabular-nums text-[#2563EB]">
+                      {String(i + 1).padStart(2, "0")}
+                    </p>
+                    <h3 className="mt-2 font-display text-2xl tracking-tight text-[#14213D]">
+                      {shot.caption}
+                    </h3>
+                  </div>
+                  <div className="md:col-span-7">
+                    <div className="overflow-hidden rounded-xl border border-[#E7DFD0] bg-[#FBF7F0]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={shot.src}
+                        alt={shot.alt}
+                        className="h-auto w-full"
+                      />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
+
+      {hasVideo && (
+        <section className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-20">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="font-display text-2xl tracking-tight text-[#14213D] md:text-3xl">
+              See it in use
+            </h2>
+            <div className="mt-6 overflow-hidden rounded-xl border border-[#E7DFD0] bg-[#FBF7F0]">
+              <video
+                className="aspect-video w-full bg-[#14213D]"
+                poster={
+                  media.fieldPoster ? "/home/field-poster.jpg" : undefined
+                }
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                controls
+              >
+                {media.fieldVideoWebm && (
+                  <source src="/home/field-video.webm" type="video/webm" />
+                )}
+                {media.fieldVideoMp4 && (
+                  <source src="/home/field-video.mp4" type="video/mp4" />
+                )}
+              </video>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {media.showIphoneApp && (
+        <section className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-20">
+          <div className="mx-auto max-w-5xl">
             <IphoneAppSection embedded />
           </div>
-          <div className="md:col-span-7 md:pt-8">
-            <HomeVideoSection embedded />
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section
         id="pricing"
-        className="border-t border-[#E7DFD0] px-5 py-16 md:px-10 md:py-24"
+        className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-20"
       >
         <div className="mx-auto max-w-5xl">
           <h2 className="font-display text-3xl tracking-tight text-[#14213D] md:text-4xl">
@@ -1039,7 +1150,7 @@ export function HomeBelowFold() {
         </div>
       </section>
 
-      <section className="border-t border-[#E7DFD0] px-5 py-16 md:px-10">
+      <section className="border-t border-[#E7DFD0] px-5 py-14 md:px-10">
         <div className="mx-auto max-w-5xl">
           <p className="font-display text-2xl tracking-tight text-[#14213D] md:text-3xl">
             Your next job is already on the map.
@@ -1075,91 +1186,6 @@ export function HomeBelowFold() {
           </p>
         </div>
       </footer>
-    </div>
-  );
-}
-
-function HowCrop({ kind }: { kind: "map" | "card" | "quote" }) {
-  if (kind === "map") {
-    return (
-      <div className="overflow-hidden rounded-xl border border-[#E7DFD0] bg-[#EDE6DA]">
-        <div className="relative aspect-[16/10]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/hero-city-bg.png"
-            alt=""
-            className="h-full w-full object-cover opacity-90"
-          />
-          <div className="absolute inset-0 flex items-center justify-center gap-6">
-            {[
-              { c: "#9FB4CC", s: 10 },
-              { c: "#F2B544", s: 12 },
-              { c: "#F26B3A", s: 14 },
-            ].map((d, i) => (
-              <span
-                key={i}
-                className="rounded-full"
-                style={{
-                  width: d.s,
-                  height: d.s,
-                  background: d.c,
-                  boxShadow: `0 0 0 2px #FBF7F0`,
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (kind === "card") {
-    return (
-      <div className="rounded-xl border border-[#E7DFD0] bg-[#FBF7F0] p-5">
-        <div className="flex items-start gap-4">
-          <span
-            className="flex h-14 w-14 items-center justify-center rounded-full border-2 text-sm font-semibold tabular-nums text-[#14213D]"
-            style={{ borderColor: "#F26B3A", color: "#F26B3A" }}
-          >
-            92
-          </span>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-[#F26B3A]">
-              Act now
-            </p>
-            <p className="mt-1 text-base font-medium text-[#14213D]">
-              New hotel · finishing
-            </p>
-            <p className="mt-1 text-sm text-[#5B6475]">
-              Street view ready · score explains why now
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 h-px bg-[#E7DFD0]" />
-        <p className="mt-3 text-sm text-[#5B6475]">
-          Start a job when you&apos;re ready — contacts unlock on a plan.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-xl border border-[#E7DFD0] bg-[#FBF7F0] p-5">
-      <p className="text-xs font-medium text-[#5B6475]">Quote draft</p>
-      <p className="mt-2 font-display text-xl text-[#14213D]">
-        Exterior identity package
-      </p>
-      <div className="mt-4 space-y-2 border-t border-[#E7DFD0] pt-4 text-sm text-[#5B6475]">
-        <div className="flex justify-between">
-          <span>Channel letters</span>
-          <span className="tabular-nums text-[#14213D]">$4,200</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Install</span>
-          <span className="tabular-nums text-[#14213D]">$1,100</span>
-        </div>
-      </div>
-      <div className="mt-4 flex h-10 items-center justify-center rounded-lg bg-[#2563EB] text-sm font-medium text-[#FBF7F0]">
-        Send for deposit
-      </div>
     </div>
   );
 }
