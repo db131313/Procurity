@@ -10,12 +10,19 @@ export default async function NewJobPage({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (!hasJobsAccess(user)) redirect("/app/jobs");
+  if (!hasJobsAccess(user)) redirect("/app/billing");
 
   const { projectId } = await searchParams;
-  if (projectId?.trim()) {
-    await startJobFromProject(projectId.trim());
-  } else {
-    await startBlankJob();
+  const result = projectId?.trim()
+    ? await startJobFromProject(projectId.trim())
+    : await startBlankJob();
+
+  // Success path redirects inside the action and never returns.
+  if (result && result.ok === false) {
+    if (result.error === "Unauthorized") redirect("/login");
+    if (result.error === "Jobs requires a paid plan") redirect("/app/billing");
+    redirect(`/app/jobs?error=${encodeURIComponent(result.error)}`);
   }
+
+  redirect("/app/jobs");
 }

@@ -29,6 +29,10 @@ import type {
   MeasurementAnnotation,
 } from "@/lib/jobs/types";
 
+export type StartJobResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
 async function requireJobsUser() {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
@@ -41,26 +45,66 @@ function revalidateJob(jobId: string) {
   revalidatePath(`/app/jobs/${jobId}`);
 }
 
-export async function startJobFromProject(projectId: string) {
-  const user = await requireJobsUser();
-  const project = await getProject(projectId);
-  const job = await createJob({
-    ownerId: user.id,
-    projectId: project?.id ?? projectId,
-    siteAddress: project
-      ? [project.address, project.borough, project.zip].filter(Boolean).join(", ")
-      : "",
-    customerName: project?.ownerName || project?.gcName || "",
-  });
-  revalidateJob(job.id);
-  redirect(`/app/jobs/${job.id}`);
+/**
+ * Create a job from a map project. Redirects on success.
+ * Returns `{ ok: false, error }` on failure so callers can show UI
+ * (auth/plan failures never throw; redirect only runs after create succeeds).
+ */
+export async function startJobFromProject(
+  projectId: string,
+): Promise<StartJobResult> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Unauthorized" };
+  if (!hasJobsAccess(user)) {
+    return { ok: false, error: "Jobs requires a paid plan" };
+  }
+
+  let jobId: string;
+  try {
+    const project = await getProject(projectId);
+    const job = await createJob({
+      ownerId: user.id,
+      projectId: project?.id ?? projectId,
+      siteAddress: project
+        ? [project.address, project.borough, project.zip]
+            .filter(Boolean)
+            .join(", ")
+        : "",
+      customerName: project?.ownerName || project?.gcName || "",
+    });
+    jobId = job.id;
+    revalidateJob(job.id);
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Could not create job",
+    };
+  }
+  redirect(`/app/jobs/${jobId}`);
 }
 
-export async function startBlankJob() {
-  const user = await requireJobsUser();
-  const job = await createJob({ ownerId: user.id });
-  revalidateJob(job.id);
-  redirect(`/app/jobs/${job.id}`);
+/**
+ * Create a blank job. Redirects on success; returns error object on failure.
+ */
+export async function startBlankJob(): Promise<StartJobResult> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Unauthorized" };
+  if (!hasJobsAccess(user)) {
+    return { ok: false, error: "Jobs requires a paid plan" };
+  }
+
+  let jobId: string;
+  try {
+    const job = await createJob({ ownerId: user.id });
+    jobId = job.id;
+    revalidateJob(job.id);
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Could not create job",
+    };
+  }
+  redirect(`/app/jobs/${jobId}`);
 }
 
 export async function saveJobStartAction(

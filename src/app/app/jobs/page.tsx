@@ -3,12 +3,16 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasJobsAccess } from "@/lib/jobs/access";
 import { listJobsForOwner } from "@/lib/jobs/store";
-import { startBlankJob } from "@/app/actions/jobs";
 import { stageIndex } from "@/lib/jobs/types";
 
-export default async function JobsIndexPage() {
+export default async function JobsIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  const { error } = await searchParams;
   if (!hasJobsAccess(user)) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
@@ -38,15 +42,24 @@ export default async function JobsIndexPage() {
             Estimate → quote → invoice for sign work
           </p>
         </div>
-        <form action={startBlankJob}>
-          <button
-            type="submit"
-            className="pc-gradient-bg rounded-full px-5 py-3 text-sm font-bold text-white"
-          >
-            New job
-          </button>
-        </form>
+        <Link
+          href="/app/jobs/new"
+          prefetch
+          className="pc-gradient-bg rounded-full px-5 py-3 text-sm font-bold text-white"
+        >
+          New job
+        </Link>
       </div>
+
+      {error ? (
+        <p
+          className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
+          role="alert"
+        >
+          Couldn&apos;t start the job, try again
+          <span className="mt-1 block text-xs opacity-80">{error}</span>
+        </p>
+      ) : null}
 
       {jobs.length === 0 ? (
         <p className="mt-10 rounded-2xl border border-dashed border-line bg-white px-4 py-10 text-center text-sm text-slate">
