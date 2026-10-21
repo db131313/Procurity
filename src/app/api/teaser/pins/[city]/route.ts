@@ -10,10 +10,7 @@ import { ensureMapDataFresh } from "@/lib/map/ensure-fresh";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Path-based teaser pins — unique URL per city so CDNs cannot mix responses.
- * Prefer this from the home map client.
- */
+/** Path-based teaser pins — unique URL per city so CDNs cannot mix responses. */
 export async function GET(
   _request: Request,
   ctx: { params: Promise<{ city: string }> },
@@ -30,13 +27,14 @@ export async function GET(
   void ensureMapDataFresh().catch(() => {});
 
   const projects = await listProjects({ city: city.cityCode });
-  const valid = projects.filter((p) =>
-    isValidTeaserCoord(p.latitude, p.longitude, city),
-  );
+  const valid = projects
+    .filter((p) => isValidTeaserCoord(p.latitude, p.longitude, city))
+    .sort((a, b) => b.score - a.score);
   const pins = valid.slice(0, TEASER_PIN_LIMIT).map((p) => ({
     id: p.id,
     latitude: p.latitude,
     longitude: p.longitude,
+    score: p.score,
     label: projectTeaserLabel(p.jobType, p.occupancy, p.buildingType),
   }));
 

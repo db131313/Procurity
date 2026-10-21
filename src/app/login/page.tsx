@@ -31,11 +31,10 @@ export default async function LoginPage({ searchParams }: Props) {
         </div>
         <div className="relative z-10 max-w-md">
           <h1 className="text-4xl font-bold tracking-tight">
-            Know who&apos;s ready to buy{" "}
-            <span className="pc-gradient-text">before</span> they call.
+            Know who&apos;s ready to buy before they call.
           </h1>
           <p className="mt-4 text-white/70">
-            Log in to your map, pipeline, and daily hot opportunities.
+            Log in to your map, pipeline, and today&apos;s best opportunities.
           </p>
         </div>
         <p className="relative z-10 text-xs text-white/40">© Procurity</p>

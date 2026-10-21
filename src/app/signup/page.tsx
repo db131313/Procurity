@@ -46,22 +46,14 @@ export default async function SignUpPage({ searchParams }: Props) {
         </div>
         <div className="relative z-10 max-w-md">
           <h1 className="text-4xl font-bold tracking-tight">
-            {picker ? (
-              <>
-                Unlock {picker.label}.{" "}
-                <span className="pc-gradient-text">Full map.</span>
-              </>
-            ) : (
-              <>
-                Start selling smarter.{" "}
-                <span className="pc-gradient-text">Map first.</span>
-              </>
-            )}
+            {picker
+              ? `Unlock ${picker.label}. Full map.`
+              : "Start selling smarter. Map first."}
           </h1>
           <p className="mt-4 text-white/70">
             {checkout
-              ? "Create your account, complete checkout, then land on your city’s live project map with Buy Scores."
-              : "Create an account to open the full map, scores, and pipeline."}
+              ? "Create your account, complete checkout, then land on your city’s live project map with Buy Scores and contacts."
+              : "Create an account to open the full map, scores, contacts, and pipeline."}
           </p>
         </div>
         <p className="relative z-10 text-xs text-white/40">© Procurity</p>

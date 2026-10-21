@@ -11,12 +11,10 @@ import { ensureMapDataFresh } from "@/lib/map/ensure-fresh";
 export const dynamic = "force-dynamic";
 
 /**
- * Public teaser pin feed for the marketing home map.
- * Capped locations only — no scores, contacts, or values.
+ * Public teaser pin feed for the home map.
+ * Locations + Buy Score for coloring only — no contacts.
  *
- * IMPORTANT: Netlify must vary cache by `city` query (Netlify-Vary).
- * Without it, one city's response is reused for every city.
- * Prefer `/api/teaser/pins/[city]` from clients for a unique URL per city.
+ * Prefer `/api/teaser/pins/[city]` so CDNs cannot mix cities.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -29,17 +27,17 @@ export async function GET(request: Request) {
     );
   }
 
-  // Non-blocking freshness — never delay the teaser on sync.
   void ensureMapDataFresh().catch(() => {});
 
   const projects = await listProjects({ city: city.cityCode });
-  const valid = projects.filter((p) =>
-    isValidTeaserCoord(p.latitude, p.longitude, city),
-  );
+  const valid = projects
+    .filter((p) => isValidTeaserCoord(p.latitude, p.longitude, city))
+    .sort((a, b) => b.score - a.score);
   const pins = valid.slice(0, TEASER_PIN_LIMIT).map((p) => ({
     id: p.id,
     latitude: p.latitude,
     longitude: p.longitude,
+    score: p.score,
     label: projectTeaserLabel(p.jobType, p.occupancy, p.buildingType),
   }));
 

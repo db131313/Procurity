@@ -150,4 +150,5 @@ export function resolveCityCode(
 
 /** Cookie / query key for the user's chosen city. */
 export const CITY_COOKIE = "pc_city";
-export const TEASER_PIN_LIMIT = 15;
+/** Max pins on the public home map (rough locations only). */
+export const TEASER_PIN_LIMIT = 100;

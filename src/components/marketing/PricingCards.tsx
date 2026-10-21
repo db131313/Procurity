@@ -13,7 +13,7 @@ import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 const FEATURES = {
   starter: [
     "Live map + Buy Score",
-    "Daily project refresh",
+    "Daily data refresh",
     "Pipeline tracking",
     "Email alerts",
     "1 zip code",
@@ -79,9 +79,11 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
         }),
       });
       if (res.status === 401) {
-        const q = new URLSearchParams({ tier, checkout: "1" });
-        if (promotionCode) q.set("code", promotionCode);
-        window.location.href = `${ctaHref}?${q.toString()}`;
+        const url = new URL(ctaHref, window.location.origin);
+        url.searchParams.set("tier", tier);
+        url.searchParams.set("checkout", "1");
+        if (promotionCode) url.searchParams.set("code", promotionCode);
+        window.location.href = `${url.pathname}${url.search}`;
         return;
       }
       const data = (await res.json()) as {

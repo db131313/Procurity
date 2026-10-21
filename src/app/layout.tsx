@@ -3,23 +3,22 @@ import { SiteProviders } from "@/components/SiteProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Procurity — Find your next sign job before anyone else does",
+  title: "Procurity — Find your next job before anyone else does",
   description:
-    "Procurity shows sign makers and trade salespeople which new construction projects are ready to buy right now, who to contact, and helps them measure, quote, and get paid in one place.",
+    "See which new construction projects are ready to buy, who to contact, and go from lead to paid deposit in one place. Built for sales teams that sell to new construction.",
   applicationName: "Procurity",
   openGraph: {
-    title: "Procurity — Find your next sign job before anyone else does",
+    title: "Procurity — Find your next job before anyone else does",
     description:
-      "See which projects are ready to buy, who to call, and go from lead to paid deposit in one place.",
+      "See which new construction projects are ready to buy, who to contact, and go from lead to paid deposit in one place.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Procurity — Find your next sign job before anyone else does",
+    title: "Procurity — Find your next job before anyone else does",
     description:
-      "See which projects are ready to buy, who to call, and go from lead to paid deposit in one place.",
+      "See which new construction projects are ready to buy, who to contact, and go from lead to paid deposit in one place.",
   },
-
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -44,7 +43,9 @@ export const viewport: Viewport = {
   themeColor: "#0B0F19",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="h-full antialiased">
       <head>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { PICKER_CITIES } from "@/lib/cities/picker";
 import { cn } from "@/lib/cn";
 
-/** City quick-pick for the marketing home — no auth required. */
+/** City quick-pick links — used on secondary pages. Home uses the map dropdown. */
 export function CityQuickPick({
   className,
   variant = "light",
@@ -29,14 +29,14 @@ export function CityQuickPick({
           dark ? "text-white/75" : "text-slate",
         )}
       >
-        Peek at projects on the map — sign up when you&apos;re ready for full
-        scores and contacts.
+        Open the map — sign up when you&apos;re ready for full scores and
+        contacts.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         {PICKER_CITIES.map((city) => (
           <Link
             key={city.id}
-            href={`/teaser/${city.id}`}
+            href={city.served ? `/?city=${city.id}` : `/waitlist`}
             className={cn(
               "inline-flex h-11 items-center justify-center rounded-full border px-3.5 text-sm font-bold transition active:scale-[0.98]",
               dark

@@ -6,7 +6,7 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/cn";
 
-/** Hero top bar: logo left + hamburger right at every breakpoint. */
+/** Top bar for secondary marketing pages (pricing, how-it-works, teaser). */
 export function MarketingNav({
   variant = "dark",
 }: {
@@ -15,7 +15,7 @@ export function MarketingNav({
   const [open, setOpen] = useState(false);
   const light = variant === "light";
   const links = [
-    { href: "/demo", label: "Demo" },
+    { href: "/", label: "Map" },
     { href: "/how-it-works", label: "How it works" },
     { href: "/pricing", label: "Pricing" },
     { href: "/login", label: "Log in" },
