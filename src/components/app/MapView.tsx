@@ -14,15 +14,14 @@ import {
   DEFAULT_MAP_FILTERS,
   MapFilters,
   getMapFilters,
-  scoreModeLabel,
   setMapFilters,
   type MapFilterState,
-  type ScoreMode,
 } from "@/components/app/MapFilters";
 import { MapCityPicker } from "@/components/app/MapCityPicker";
 import { MapRoutePanel } from "@/components/app/MapRoutePanel";
 import { MapRouteStartFab } from "@/components/app/MapRouteStartFab";
 import { PlanMyDayAgentBanner } from "@/components/app/PlanMyDayAgentBanner";
+import { MapPinLegend } from "@/components/app/MapPinLegend";
 import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
 import { WorkingPill } from "@/components/ui/WorkingIndicator";
 import {
@@ -37,12 +36,20 @@ import {
   type LonLatBounds,
 } from "@/lib/map/city-bounds";
 import { MAP_PIN_DEFAULT_LIMIT } from "@/lib/map/pin-limits";
+import {
+  effectivePinScore,
+  matchesQuick,
+  matchesScorePreset,
+  pinColorForScore,
+} from "@/lib/map/pin-filters";
 import { CITY_COOKIE } from "@/lib/cities/picker";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
 import {
   loadMapRoute,
   type RouteResult,
 } from "@/lib/route/types";
+
+export { effectivePinScore, pinColorForScore } from "@/lib/map/pin-filters";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
@@ -67,67 +74,6 @@ export type MapProject = {
   updatedAt?: string;
   zip?: string | null;
 };
-
-export function pinColorForScore(score: number): string {
-  if (score >= 90) return "#16A34A";
-  if (score >= 80) return "#0D9488";
-  if (score >= 70) return "#2563EB";
-  if (score >= 60) return "#D97706";
-  return "#64748B";
-}
-
-function tradeScoresFor(p: MapProject): TradeScores {
-  if (p.tradeScores) return p.tradeScores;
-  const s = p.score;
-  return {
-    signage: s,
-    lighting: s,
-    glass: s,
-    security: s,
-    flooring: s,
-  };
-}
-
-export function effectivePinScore(
-  p: MapProject,
-  scoreMode: ScoreMode,
-): number {
-  if (scoreMode === "general") return p.score;
-  const scores = tradeScoresFor(p);
-  return scores[scoreMode] ?? p.score;
-}
-
-function matchesQuick(
-  p: MapProject,
-  score: number,
-  quick: MapFilterState["quick"],
-): boolean {
-  if (quick === "all") return true;
-  if (quick === "hot") return score >= 85;
-  if (quick === "buying") {
-    return (
-      p.phase === "interior_finishing" ||
-      p.phase === "sign_ready" ||
-      score >= 80
-    );
-  }
-  if (quick === "new") {
-    if (!p.updatedAt) return false;
-    return new Date(p.updatedAt).getTime() >= Date.now() - 7 * 86400000;
-  }
-  return true;
-}
-
-function matchesScorePreset(
-  score: number,
-  preset: MapFilterState["scorePreset"],
-): boolean {
-  if (preset === "all") return true;
-  if (preset === "90+") return score >= 90;
-  if (preset === "70-89") return score >= 70 && score <= 89;
-  if (preset === "50-69") return score >= 50 && score <= 69;
-  return true;
-}
 
 function captureCamera(map: MapLibreMap) {
   const c = map.getCenter();
@@ -909,30 +855,7 @@ export function MapView({ projects: initialProjects, city: initialCity }: Props)
       </div>
 
       <div className="pointer-events-none absolute bottom-3 left-3 z-30 md:bottom-6 md:left-5">
-        <div className="pointer-events-auto rounded-2xl border border-line bg-white/95 px-3 py-2.5 text-[11px] shadow-md backdrop-blur">
-          <p className="mb-1.5 font-bold text-ink">
-            {filters.scoreMode === "general"
-              ? "Buy Score"
-              : `${scoreModeLabel(filters.scoreMode)} Score`}
-          </p>
-          <ul className="space-y-1 font-semibold text-slate">
-            {[
-              { c: "#16A34A", t: "90+ Act now" },
-              { c: "#0D9488", t: "80–89 Strong" },
-              { c: "#2563EB", t: "70–79 Solid" },
-              { c: "#D97706", t: "60–69 Warm" },
-              { c: "#64748B", t: "<60 Watch" },
-            ].map((row) => (
-              <li key={row.t} className="flex items-center gap-2">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full ring-2 ring-white"
-                  style={{ background: row.c }}
-                />
-                {row.t}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <MapPinLegend scoreMode={filters.scoreMode} />
       </div>
 
       {agentBanner && !selectedSnapshot ? (

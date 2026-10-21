@@ -24,8 +24,8 @@ function phaseLabel(phase: string): string {
 }
 
 /**
- * Public project detail for the home map.
- * Never returns contacts, filing numbers, or names.
+ * Public project detail for the home map card.
+ * Never returns contacts, filing numbers, or owner/GC/architect names.
  * Enforces 3 distinct free views via signed httpOnly cookie.
  */
 export async function GET(request: Request) {
@@ -64,25 +64,36 @@ export async function GET(request: Request) {
     security: 0,
     flooring: 0,
   };
-  const likelyNeeds = TRADE_LABELS.filter(([key]) => trades[key] >= 55).map(
-    ([key, label]) => ({ trade: label, score: trades[key] }),
+  const sourcing = TRADE_LABELS.filter(([key]) => trades[key] >= 55).map(
+    ([key, label]) => ({
+      trade: label,
+      score: trades[key],
+      reason: `${label} fit looks strong for this phase and project type.`,
+    }),
   );
 
-  // Explicit allow-list — never leak contacts / filing numbers / names
+  const projectType = projectTeaserLabel(
+    project.jobType,
+    project.occupancy,
+    project.buildingType,
+  );
+
+  // Allow-list only — never leak contacts / filing numbers / names
   const detail = {
     id: project.id,
     address: project.address
       .replace(/\b(suite|ste|unit|apt|#)\s*[\w-]+/gi, "")
       .replace(/\s{2,}/g, " ")
       .trim(),
-    projectType: projectTeaserLabel(
-      project.jobType,
-      project.occupancy,
-      project.buildingType,
-    ),
+    borough: project.borough ?? null,
+    zip: project.zip ?? null,
+    latitude: project.latitude,
+    longitude: project.longitude,
+    projectType,
     phase: project.phase,
     phaseLabel: phaseLabel(project.phase),
     score: project.score,
+    scoreConfidence: project.scoreConfidence ?? "medium",
     scoreReasons: (project.scoreReasons?.length
       ? project.scoreReasons
       : [
@@ -95,18 +106,38 @@ export async function GET(request: Request) {
           .replace(/\bpeak signage buying window\b/gi, "peak buying window")
           .replace(/\bsignage\b/gi, "trade"),
       )
-      .slice(0, 4),
-    valueLow: project.estValueLow || 0,
-    valueHigh: project.estValueHigh || 0,
-    likelyNeeds:
-      likelyNeeds.length > 0
-        ? likelyNeeds
-        : [{ trade: "General trade fit", score: project.score }],
+      .slice(0, 5),
+    tradeScores: {
+      signage: trades.signage ?? 0,
+      lighting: trades.lighting ?? 0,
+      glass: trades.glass ?? 0,
+      security: trades.security ?? 0,
+      flooring: trades.flooring ?? 0,
+    },
+    estValueLow: project.estValueLow || 0,
+    estValueHigh: project.estValueHigh || 0,
+    buyingWindowEstimate: project.buyingWindowEstimate || "Timing varies",
+    lastActivityAt: project.lastActivityAt ?? project.updatedAt ?? null,
+    updatedAt: project.updatedAt ?? null,
+    description: null as string | null,
+    // Locked for anonymous — always empty in this endpoint
+    gcName: null as string | null,
+    architectName: null as string | null,
+    hasSignPermit: false,
+    contactsLocked: true as const,
+    sourcing,
+    likelyNeeds: sourcing.map((s) => ({ trade: s.trade, score: s.score })),
   };
 
   const response = NextResponse.json({
     ok: true,
     detail,
+    // Shape compatible with ProjectDetailOverlay public mode
+    project: detail,
+    inPipeline: false,
+    sourcing,
+    leads: [],
+    lastSyncAt: null,
     viewedCount: nextIds.length,
     remaining: remainingFreeViews(nextIds),
     limit: TEASER_FREE_VIEWS,

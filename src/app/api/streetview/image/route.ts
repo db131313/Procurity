@@ -1,32 +1,66 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getProject } from "@/lib/db/store";
 import {
   findNearbyMapillaryImage,
   googleStreetViewStaticUrl,
   mapillaryThumbUrl,
 } from "@/lib/geo/street-view";
+import { readTeaserViewIds } from "@/lib/teaser/view-cookie";
+import { clientIp, rateLimitOk } from "@/lib/teaser/rate-limit";
 
 export const dynamic = "force-dynamic";
 
+const CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+};
+
 /**
  * Proxies Street View / Mapillary bytes so API keys stay server-side.
- * ?provider=google&lat=&lng=[&pano=]  |  ?provider=mapillary&id=  | legacy ?id=
+ * Anonymous callers must pass projectId unlocked in the teaser cookie.
+ * Lat/lng alone is never enough when logged out.
  */
 export async function GET(request: Request) {
   const user = await getCurrentUser();
+  const url = new URL(request.url);
+  const projectId = (url.searchParams.get("projectId") || "").trim();
+
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!projectId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const viewed = await readTeaserViewIds();
+    if (!viewed.includes(projectId)) {
+      return NextResponse.json(
+        { error: "Project not unlocked" },
+        { status: 403 },
+      );
+    }
+    const ip = clientIp(request);
+    if (!rateLimitOk(`sv:img:ip:${ip}`, 40, 60_000)) {
+      return NextResponse.json({ error: "Rate limited" }, { status: 429 });
+    }
   }
 
-  const url = new URL(request.url);
   const provider =
     url.searchParams.get("provider")?.trim().toLowerCase() ||
     (url.searchParams.get("id") ? "mapillary" : null);
 
   if (provider === "google") {
-    const lat = Number(url.searchParams.get("lat"));
-    const lng = Number(url.searchParams.get("lng"));
+    let lat = Number(url.searchParams.get("lat"));
+    let lng = Number(url.searchParams.get("lng"));
     const pano = url.searchParams.get("pano")?.trim() || null;
+
+    // Anonymous: always resolve coords from the unlocked project (ignore spoofed lat/lng)
+    if (!user && projectId) {
+      const project = await getProject(projectId);
+      if (!project) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      lat = project.latitude;
+      lng = project.longitude;
+    }
+
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       return NextResponse.json(
         { error: "lat/lng required for google" },
@@ -41,16 +75,18 @@ export async function GET(request: Request) {
     if (!upstreamUrl) {
       return new NextResponse(null, { status: 503 });
     }
-    const upstream = await fetch(upstreamUrl, { next: { revalidate: 3600 } });
+    const upstream = await fetch(upstreamUrl, { next: { revalidate: 86400 } });
     if (!upstream.ok) {
-      return new NextResponse(null, { status: upstream.status === 404 ? 404 : 502 });
+      return new NextResponse(null, {
+        status: upstream.status === 404 ? 404 : 502,
+      });
     }
     const buf = await upstream.arrayBuffer();
     return new NextResponse(buf, {
       status: 200,
       headers: {
         "Content-Type": upstream.headers.get("Content-Type") || "image/jpeg",
-        "Cache-Control": "private, max-age=3600",
+        ...CACHE_HEADERS,
       },
     });
   }
@@ -59,8 +95,16 @@ export async function GET(request: Request) {
   let imageId = url.searchParams.get("id")?.trim() || "";
 
   if (!imageId) {
-    const lat = Number(url.searchParams.get("lat"));
-    const lng = Number(url.searchParams.get("lng"));
+    let lat = Number(url.searchParams.get("lat"));
+    let lng = Number(url.searchParams.get("lng"));
+    if (!user && projectId) {
+      const project = await getProject(projectId);
+      if (!project) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      lat = project.latitude;
+      lng = project.longitude;
+    }
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       return NextResponse.json(
         { error: "id or lat/lng required" },
@@ -80,7 +124,7 @@ export async function GET(request: Request) {
     return new NextResponse(null, { status: 404 });
   }
 
-  const upstream = await fetch(thumbUrl, { next: { revalidate: 3600 } });
+  const upstream = await fetch(thumbUrl, { next: { revalidate: 86400 } });
   if (!upstream.ok) {
     return new NextResponse(null, { status: 502 });
   }
@@ -90,7 +134,7 @@ export async function GET(request: Request) {
     status: 200,
     headers: {
       "Content-Type": upstream.headers.get("Content-Type") || "image/jpeg",
-      "Cache-Control": "private, max-age=3600",
+      ...CACHE_HEADERS,
     },
   });
 }

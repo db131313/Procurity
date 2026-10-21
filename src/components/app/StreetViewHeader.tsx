@@ -9,6 +9,8 @@ type Props = {
   lat: number;
   lng: number;
   className?: string;
+  /** When set, anonymous street-view is authorized via the teaser cookie. */
+  projectId?: string;
 };
 
 type MetaResponse = {
@@ -26,7 +28,7 @@ type MetaResponse = {
  * Full-width street-imagery header for project overlays.
  * Google Street View primary → Mapillary fallback → clean empty state.
  */
-export function StreetViewHeader({ lat, lng, className }: Props) {
+export function StreetViewHeader({ lat, lng, className, projectId }: Props) {
   const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -36,10 +38,14 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
     setMeta(null);
     setImgError(false);
     setImgLoaded(false);
-    void fetch(
-      `/api/streetview?lat=${encodeURIComponent(String(lat))}&lng=${encodeURIComponent(String(lng))}`,
-      { credentials: "same-origin" },
-    )
+    const qs = new URLSearchParams({
+      lat: String(lat),
+      lng: String(lng),
+    });
+    if (projectId) qs.set("projectId", projectId);
+    void fetch(`/api/streetview?${qs.toString()}`, {
+      credentials: "same-origin",
+    })
       .then(async (res) => {
         if (!res.ok) return null;
         return (await res.json()) as MetaResponse;
@@ -53,7 +59,7 @@ export function StreetViewHeader({ lat, lng, className }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [lat, lng]);
+  }, [lat, lng, projectId]);
 
   const showImage = Boolean(meta?.available && meta.imagePath && !imgError);
   const isGoogle = meta?.provider === "google" || meta?.attribution === "Google";
