@@ -94,6 +94,8 @@ export function ProjectDetailOverlay({
   const [detail, setDetail] = useState<DetailPayload | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [jobPending, setJobPending] = useState(false);
+  const [jobError, setJobError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
 
   function buildSingleStopRoute(): RouteResult | null {
@@ -157,6 +159,8 @@ export function ProjectDetailOverlay({
       setDetail(null);
       setLoadError(null);
       setAdded(false);
+      setJobError(null);
+      setJobPending(false);
       return;
     }
     const projectId = project.id;
@@ -164,6 +168,8 @@ export function ProjectDetailOverlay({
     setDetail(null);
     setLoadError(null);
     setAdded(false);
+    setJobError(null);
+    setJobPending(false);
     void fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
       credentials: "same-origin",
     })
@@ -354,20 +360,73 @@ export function ProjectDetailOverlay({
 
                 <button
                   type="button"
-                  disabled={pending}
+                  disabled={pending || jobPending}
                   onClick={() => {
+                    setJobError(null);
+                    setJobPending(true);
                     startTransition(async () => {
                       try {
-                        await startJobFromProject(project.id);
-                      } catch {
-                        // redirect throws; other errors stay on overlay
+                        const result = await startJobFromProject(project.id);
+                        // Success path redirects (never returns). Failure returns.
+                        if (result && result.ok === false) {
+                          if (result.error === "Unauthorized") {
+                            window.location.href = "/login";
+                            return;
+                          }
+                          setJobError(result.error);
+                        }
+                      } catch (e) {
+                        // NEXT_REDIRECT throws on success — ignore digest redirects.
+                        const digest =
+                          e &&
+                          typeof e === "object" &&
+                          "digest" in e &&
+                          typeof (e as { digest?: unknown }).digest === "string"
+                            ? (e as { digest: string }).digest
+                            : "";
+                        if (digest.startsWith("NEXT_REDIRECT")) return;
+                        setJobError(
+                          e instanceof Error ? e.message : "Unknown error",
+                        );
+                      } finally {
+                        setJobPending(false);
                       }
                     });
                   }}
                   className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-line bg-white text-sm font-bold text-ink disabled:opacity-50"
+                  aria-busy={jobPending || undefined}
                 >
-                  Start job
+                  {jobPending ? <WorkingSpinner /> : null}
+                  {jobPending ? "Starting…" : "Start job"}
                 </button>
+
+                {jobError ? (
+                  <div
+                    className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
+                    role="alert"
+                  >
+                    {jobError === "Jobs requires a paid plan" ? (
+                      <p>
+                        Jobs requires a paid plan.{" "}
+                        <a
+                          href="/app/billing"
+                          className="font-bold underline"
+                        >
+                          Upgrade to start jobs
+                        </a>
+                      </p>
+                    ) : (
+                      <p>
+                        Couldn&apos;t start the job, try again
+                        {jobError ? (
+                          <span className="mt-1 block text-xs opacity-80">
+                            {jobError}
+                          </span>
+                        ) : null}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
 
                 <button
                   type="button"
