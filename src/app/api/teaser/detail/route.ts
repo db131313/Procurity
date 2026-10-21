@@ -89,7 +89,13 @@ export async function GET(request: Request) {
           "Timing and project type look like a good outreach moment",
           "Commercial project size fits typical trade scope",
         ]
-    ).slice(0, 4),
+    )
+      .map((r) =>
+        r
+          .replace(/\bpeak signage buying window\b/gi, "peak buying window")
+          .replace(/\bsignage\b/gi, "trade"),
+      )
+      .slice(0, 4),
     valueLow: project.estValueLow || 0,
     valueHigh: project.estValueHigh || 0,
     likelyNeeds:
