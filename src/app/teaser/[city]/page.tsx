@@ -7,6 +7,8 @@ import {
   getPickerCity,
   TEASER_PIN_LIMIT,
 } from "@/lib/cities/picker";
+import { isValidTeaserCoord } from "@/lib/cities/teaser-bounds";
+import { projectTeaserLabel } from "@/lib/cities/teaser-label";
 import { listProjects } from "@/lib/db/store";
 import { ensureMapDataFresh } from "@/lib/map/ensure-fresh";
 
@@ -34,8 +36,8 @@ export default async function TeaserCityPage({ params }: Props) {
               We&apos;re not in {city.label} yet — join the waitlist
             </h1>
             <p className="mt-3 text-white/70">
-              We&apos;re wiring live permit feeds city by city. Leave your email
-              and we&apos;ll notify you when {city.shortLabel} goes live.
+              We&apos;re adding cities one at a time. Leave your email and
+              we&apos;ll notify you when {city.shortLabel} goes live.
             </p>
             <div className="mt-8 rounded-3xl bg-white p-5 text-ink shadow-xl">
               <WaitlistForm cityLabel={city.label} />
@@ -52,17 +54,20 @@ export default async function TeaserCityPage({ params }: Props) {
     );
   }
 
-  // Best-effort sync so teaser has pins (public page — no auth).
-  await ensureMapDataFresh();
+  // Non-blocking freshness — never delay the teaser on sync.
+  void ensureMapDataFresh().catch(() => {});
   const projects = await listProjects({ city: city.cityCode });
-  const totalCount = projects.length;
-  const pins = projects.slice(0, TEASER_PIN_LIMIT).map((p) => ({
+  const valid = projects.filter((p) =>
+    isValidTeaserCoord(p.latitude, p.longitude, city),
+  );
+  const totalCount = valid.length;
+  const pins = valid.slice(0, TEASER_PIN_LIMIT).map((p) => ({
     id: p.id,
     latitude: p.latitude,
     longitude: p.longitude,
-    permitType: p.jobType || p.buildingType || p.phase.replace(/_/g, " "),
-    // Rough location only — strip unit / suite detail
-    addressRough: p.address.split(",")[0]?.replace(/\d+/g, "···") || "Project site",
+    label: projectTeaserLabel(p.jobType, p.occupancy, p.buildingType),
+    addressRough:
+      p.address.split(",")[0]?.replace(/\d+/g, "···") || "Project site",
   }));
 
   return (
@@ -70,7 +75,7 @@ export default async function TeaserCityPage({ params }: Props) {
       <div className="relative border-b border-line bg-ink text-white">
         <MarketingNav />
         <div className="mx-auto max-w-5xl px-5 pb-8 pt-24 md:pt-28">
-          <p className="text-xs font-bold uppercase tracking-wide text-teal">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#93c5fd]">
             {city.label} · live preview
           </p>
           <h1 className="mt-2 max-w-2xl text-3xl font-bold tracking-tight md:text-4xl">
@@ -79,8 +84,8 @@ export default async function TeaserCityPage({ params }: Props) {
               : `Exploring ${city.label}`}
           </h1>
           <p className="mt-2 max-w-xl text-sm text-white/70 md:text-base">
-            Preview the map for about 15 seconds — pins show permit type and rough
-            location only. Full Buy Scores and contacts require signup + checkout.
+            Preview the map for about 15 seconds — pins show project type and
+            rough location only. Full Buy Scores and contacts require signup.
           </p>
         </div>
       </div>
@@ -97,12 +102,14 @@ export default async function TeaserCityPage({ params }: Props) {
           />
         ) : (
           <div className="rounded-3xl border border-line bg-white p-8 text-center shadow-sm">
-            <p className="font-bold text-ink">Loading {city.label} permits…</p>
+            <p className="font-bold text-ink">
+              Loading {city.label} projects…
+            </p>
             <p className="mt-2 text-sm text-slate">
               Data is syncing.{" "}
               <Link
                 href={`/signup?city=${city.id}&checkout=1&tier=growth`}
-                className="font-semibold text-purple"
+                className="font-semibold text-[#2563EB]"
               >
                 Sign up
               </Link>{" "}
@@ -111,7 +118,7 @@ export default async function TeaserCityPage({ params }: Props) {
           </div>
         )}
         <p className="mt-4 text-center text-sm text-slate">
-          <Link href="/" className="font-semibold text-purple">
+          <Link href="/" className="font-semibold text-[#2563EB]">
             Choose another city
           </Link>
         </p>

@@ -18,8 +18,8 @@ export type TeaserPin = {
   id: string;
   latitude: number;
   longitude: number;
-  /** Permit type only — no score / value / contacts */
-  permitType: string;
+  /** Friendly project label — no scores / contacts */
+  label: string;
   addressRough: string;
 };
 
@@ -33,7 +33,7 @@ type Props = {
 };
 
 /**
- * Public teaser map: limited pins, permit type only, then lock overlay + CTA.
+ * Public teaser map: limited pins, project label only, then lock overlay + CTA.
  */
 export function TeaserMapView({
   cityLabel,
@@ -81,11 +81,12 @@ export function TeaserMapView({
         if (cancelled || !map) return;
         const geojson = {
           type: "FeatureCollection" as const,
-          features: pins.map((p) => ({
+          features: pins.map((p, i) => ({
             type: "Feature" as const,
+            id: i + 1,
             properties: {
-              id: p.id,
-              permitType: p.permitType,
+              projectId: p.id,
+              label: p.label,
             },
             geometry: {
               type: "Point" as const,
@@ -100,7 +101,7 @@ export function TeaserMapView({
           source: "teaser",
           paint: {
             "circle-radius": 7,
-            "circle-color": "#0D9488",
+            "circle-color": "#2563EB",
             "circle-stroke-width": 2,
             "circle-stroke-color": "#ffffff",
           },
@@ -111,7 +112,7 @@ export function TeaserMapView({
           source: "teaser",
           minzoom: 12,
           layout: {
-            "text-field": ["get", "permitType"],
+            "text-field": ["get", "label"],
             "text-size": 10,
             "text-offset": [0, 1.2],
             "text-anchor": "top",
@@ -155,28 +156,28 @@ export function TeaserMapView({
   const signupHref = `/signup?city=${encodeURIComponent(cityId)}&checkout=1&tier=growth`;
 
   return (
-    <div className="relative h-[min(70dvh,560px)] w-full overflow-hidden rounded-3xl border border-line bg-[#dfe7ef] shadow-lg md:h-[640px]">
+    <div className="relative h-[min(70dvh,560px)] w-full overflow-hidden rounded-3xl border border-line bg-[#dfe7ef] shadow-sm md:h-[640px]">
       <div
         ref={containerRef}
         className="absolute inset-0"
         role="application"
-        aria-label={`${cityLabel} teaser map`}
+        aria-label={`${cityLabel} project preview map`}
       />
 
       {!ready && (
         <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-slate">
-          Loading {cityLabel} permits…
+          Loading {cityLabel} projects…
         </div>
       )}
 
       <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-2xl border border-line bg-white/95 px-3 py-2 text-[11px] font-semibold text-slate shadow-sm backdrop-blur">
-        Preview · {pins.length} pins · permit type only
+        Preview · {pins.length} pins · project type only
       </div>
 
       {locked && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-gradient-to-t from-ink/80 via-ink/45 to-ink/20 p-5 pb-8 backdrop-blur-[2px] sm:justify-center sm:pb-5">
-          <div className="w-full max-w-md rounded-3xl border border-white/15 bg-white/95 p-5 text-center shadow-2xl backdrop-blur">
-            <p className="text-xs font-bold uppercase tracking-wide text-purple">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-end bg-ink/55 p-5 pb-8 sm:justify-center sm:pb-5">
+          <div className="w-full max-w-md rounded-3xl border border-line bg-white p-5 text-center shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-[#2563EB]">
               Unlock full map
             </p>
             <h2 className="mt-2 text-xl font-bold tracking-tight text-ink sm:text-2xl">
@@ -184,12 +185,12 @@ export function TeaserMapView({
               {cityLabel}
             </h2>
             <p className="mt-2 text-sm text-slate">
-              Buy Scores, contact intel, and project value unlock after signup and
-              checkout — this preview only shows rough locations and permit type.
+              Buy Scores, contacts, and project value unlock after signup —
+              this preview only shows rough locations and project type.
             </p>
             <Link
               href={signupHref}
-              className="pc-gradient-bg mt-5 flex h-12 items-center justify-center rounded-full text-sm font-bold text-white"
+              className="mt-5 flex h-12 items-center justify-center rounded-full bg-[#2563EB] text-sm font-bold text-white"
             >
               Sign up to unlock
             </Link>

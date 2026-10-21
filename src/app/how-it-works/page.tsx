@@ -1,84 +1,67 @@
 import Link from "next/link";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
-import { PhaseShowcase } from "@/components/marketing/PhaseShowcase";
 import { Logo } from "@/components/brand/Logo";
 
 const STEPS = [
   {
-    title: "Ingest open construction data",
-    body: "Nightly sync of public permit filings and construction activity into city-agnostic project records.",
+    title: "See projects ready to buy",
+    body: "Open the map for your city and spot new construction that needs signs now.",
   },
   {
-    title: "Score the buying window",
-    body: "Phase fit, recency, size, occupancy, and GC signals become a transparent 0–100 Buy Score.",
+    title: "Know who to call and why now",
+    body: "Each project includes a contact path and a Buy Score with plain-English reasons.",
   },
   {
-    title: "Map & prioritize",
-    body: "Hot pins on free OpenFreeMap tiles. Filter Hot / Buying Now / New and open project detail.",
-  },
-  {
-    title: "Pipeline to close",
-    body: "Move deals New → Contacted → Quoted → Won. Celebrate wins and track your rate.",
+    title: "Quote and get paid in one place",
+    body: "Measure on site, build a quote, send it, and collect a deposit without leaving the app.",
   },
 ];
 
 export default function HowItWorksPage() {
   return (
-    <div className="bg-offwhite">
-      <section className="relative overflow-hidden bg-ink pb-16 pt-28 text-white">
-        <div
-          className="absolute inset-0"
-          aria-hidden
-          style={{
-            background:
-              "radial-gradient(ellipse at 20% 20%, rgba(56,217,201,0.25), transparent 45%), linear-gradient(180deg,#0B0F19,#121826)",
-          }}
-        />
-        <MarketingNav />
-        <div className="relative z-10 mx-auto max-w-6xl px-5 md:px-8">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal">
+    <div className="bg-white">
+      <section className="relative border-b border-line bg-offwhite pb-16 pt-28">
+        <MarketingNav variant="light" />
+        <div className="relative z-10 mx-auto max-w-3xl px-5 text-center md:px-8">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#2563EB]">
             How it works
           </p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
-            From permit noise to today&apos;s visit list
+          <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink md:text-5xl">
+            From map to paid job
           </h1>
-          <p className="mt-4 max-w-xl text-white/70">
-            Procurity turns construction activity into signage-ready opportunities
-            your team can act on before the fascia goes dark.
+          <p className="mx-auto mt-4 max-w-xl text-slate">
+            Procurity helps you find projects that are ready for signage, reach
+            the right person, and close without juggling tools.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-16 md:px-8">
-        <div className="grid gap-6 md:grid-cols-2">
+      <section className="mx-auto max-w-5xl px-5 py-16 md:px-8">
+        <div className="grid gap-8 md:grid-cols-3">
           {STEPS.map((step, i) => (
-            <article key={step.title} className="pc-card p-6">
-              <span className="pc-gradient-text text-3xl font-bold tabular-nums">
+            <article key={step.title}>
+              <span className="text-3xl font-bold tabular-nums text-[#2563EB]">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h2 className="mt-3 text-xl font-bold text-ink">{step.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate">{step.body}</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate">
+                {step.body}
+              </p>
             </article>
           ))}
         </div>
-      </section>
-
-      <section className="bg-white px-5 py-16 md:px-8">
-        <div className="mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold tracking-tight text-ink">
-            Phase timeline
-          </h2>
-          <p className="mt-2 max-w-xl text-slate">
-            Interior finishing and sign-ready phases carry the highest buy probability.
-          </p>
-          <div className="mt-10">
-            <PhaseShowcase />
-          </div>
+        <div className="mt-12 flex flex-wrap gap-3">
+          <Link
+            href="/demo"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-[#2563EB] px-6 text-sm font-bold text-white"
+          >
+            Try the live demo
+          </Link>
           <Link
             href="/signup"
-            className="pc-gradient-bg mt-10 inline-flex h-14 items-center justify-center rounded-full px-7 text-sm font-bold text-white"
+            className="inline-flex h-12 items-center justify-center rounded-full border border-line bg-white px-6 text-sm font-bold text-ink"
           >
-            Start Free Trial
+            Start free trial
           </Link>
         </div>
       </section>

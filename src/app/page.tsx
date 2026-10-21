@@ -9,5 +9,6 @@ export default async function Page() {
     getHomeCoverageStats(),
     getSession(),
   ]);
+  // Stats kept for optional future use; home overhaul is copy-first.
   return <HomePage stats={stats} isLoggedIn={Boolean(session)} />;
 }

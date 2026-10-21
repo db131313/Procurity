@@ -17,11 +17,11 @@ export function CityQuickPick({
     <div className={cn("w-full", className)}>
       <p
         className={cn(
-          "text-xs font-bold uppercase tracking-[0.16em]",
-          dark ? "text-white/55" : "text-slate",
+          "text-sm font-bold",
+          dark ? "text-white" : "text-ink",
         )}
       >
-        Pick your city
+        Pick your city to see projects near you
       </p>
       <p
         className={cn(
@@ -29,7 +29,7 @@ export function CityQuickPick({
           dark ? "text-white/75" : "text-slate",
         )}
       >
-        See live permit pins instantly — sign up when you&apos;re ready for full
+        Peek at projects on the map — sign up when you&apos;re ready for full
         scores and contacts.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -38,13 +38,13 @@ export function CityQuickPick({
             key={city.id}
             href={`/teaser/${city.id}`}
             className={cn(
-              "rounded-full border px-3.5 py-2 text-sm font-bold transition active:scale-[0.98]",
+              "inline-flex h-11 items-center justify-center rounded-full border px-3.5 text-sm font-bold transition active:scale-[0.98]",
               dark
                 ? city.served
                   ? "border-white/25 bg-white/10 text-white hover:bg-white/20"
                   : "border-white/15 bg-transparent text-white/55 hover:bg-white/10"
                 : city.served
-                  ? "border-line bg-white text-ink shadow-sm hover:border-purple/40"
+                  ? "border-line bg-white text-ink shadow-sm hover:border-[#2563EB]/40"
                   : "border-dashed border-line bg-offwhite text-slate hover:border-ink/20",
             )}
           >
@@ -58,7 +58,7 @@ export function CityQuickPick({
               {city.state}
             </span>
             {!city.served && (
-              <span className="ml-1 text-[10px] font-semibold text-amber-600">
+              <span className="ml-1 text-[10px] font-semibold text-amber-700">
                 soon
               </span>
             )}

@@ -60,7 +60,7 @@ export default async function SignUpPage({ searchParams }: Props) {
           </h1>
           <p className="mt-4 text-white/70">
             {checkout
-              ? "Create your account, complete checkout, then land on your city’s live permit map with Buy Scores."
+              ? "Create your account, complete checkout, then land on your city’s live project map with Buy Scores."
               : "Create an account to open the full map, scores, and pipeline."}
           </p>
         </div>

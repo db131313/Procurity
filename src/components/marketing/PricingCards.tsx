@@ -13,7 +13,7 @@ import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
 const FEATURES = {
   starter: [
     "Live map + Buy Score",
-    "Daily permit data refresh",
+    "Daily project refresh",
     "Pipeline tracking",
     "Email alerts",
     "1 zip code",
@@ -134,9 +134,9 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
             <article
               key={tier}
               className={cn(
-                "rounded-[22px] border p-6 transition hover:-translate-y-0.5 hover:shadow-lg",
+                "rounded-[22px] border p-6 transition",
                 featured
-                  ? "border-transparent pc-gradient-bg text-white shadow-lg"
+                  ? "border-[#2563EB] bg-[#2563EB] text-white shadow-sm"
                   : "border-line bg-white text-ink",
               )}
             >
@@ -153,7 +153,7 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
               <ul className="mt-5 space-y-2.5">
                 {FEATURES[tier].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className={cn("mt-0.5 h-4 w-4 shrink-0", featured ? "text-teal" : "text-purple")} />
+                    <Check className={cn("mt-0.5 h-4 w-4 shrink-0", featured ? "text-white" : "text-[#2563EB]")} />
                     <span>{f}</span>
                   </li>
                 ))}
@@ -166,7 +166,7 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
                   "mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition active:scale-[0.98] disabled:opacity-60",
                   featured
                     ? "bg-white text-ink"
-                    : "pc-gradient-bg text-white",
+                    : "bg-[#2563EB] text-white",
                 )}
                 aria-busy={loading === tier || undefined}
               >
