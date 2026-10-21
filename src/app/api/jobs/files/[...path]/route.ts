@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
 import path from "path";
-import { localUploadPath } from "@/lib/jobs/storage";
+import { readJobFileBytes } from "@/lib/jobs/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +27,11 @@ export async function GET(
   if (!relative || relative.includes("..")) {
     return new NextResponse("Bad path", { status: 400 });
   }
-  const abs = localUploadPath(relative);
   try {
-    const buf = await fs.readFile(abs);
-    const ext = path.extname(abs).toLowerCase();
-    return new NextResponse(buf, {
+    const buf = await readJobFileBytes(relative);
+    if (!buf) return new NextResponse("Not found", { status: 404 });
+    const ext = path.extname(relative).toLowerCase();
+    return new NextResponse(new Uint8Array(buf), {
       status: 200,
       headers: {
         "Content-Type": MIME[ext] || "application/octet-stream",

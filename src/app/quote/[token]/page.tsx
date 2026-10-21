@@ -58,7 +58,11 @@ export default async function PublicQuotePage({
         <form
           action={async () => {
             "use server";
-            await acceptQuotePublicAction(token);
+            const res = await acceptQuotePublicAction(token);
+            if (!res.ok) {
+              // Surface to the form error boundary with a real message (not #441).
+              throw new Error(res.error);
+            }
           }}
           className="mt-6"
         >
