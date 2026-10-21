@@ -15,13 +15,14 @@ import {
   deleteMeasurement,
   getJobBundle,
   replaceLineItems,
+  saveQuotePdf,
   updateJob,
   updateQuote,
   upsertDesignSpec,
 } from "@/lib/jobs/store";
 import { buildQuotePdf } from "@/lib/jobs/pdf";
-import { storeJobFile } from "@/lib/jobs/storage";
 import { sendQuoteEmail } from "@/lib/jobs/email";
+import { MAX_PDF_RESPONSE_BYTES } from "@/lib/jobs/pdf-urls";
 import type {
   JobStatus,
   LineItemCategory,
@@ -286,15 +287,15 @@ export async function generateQuotePdfAction(
     const bundle = await getJobBundle(jobId, auth.user.id);
     if (!bundle) return { ok: false, error: "Job not found" };
     const pdf = await buildQuotePdf(bundle, quote.id);
-    const stored = await storeJobFile({
-      jobId,
-      fileName: `quote-v${quote.version}.pdf`,
-      mimeType: "application/pdf",
-      bytes: pdf,
-      folder: "quotes",
-    });
-    quote = await updateQuote(quote.id, auth.user.id, { pdfUrl: stored.url });
-    if (!quote) return { ok: false, error: "Could not update quote PDF URL" };
+    if (pdf.length > MAX_PDF_RESPONSE_BYTES) {
+      return {
+        ok: false,
+        error: `Quote PDF is too large (${Math.round(pdf.length / 1024)}KB) for serverless delivery`,
+      };
+    }
+    // Persist bytes in DB (or JSON store); pdfUrl becomes the API route path — never a data: URL.
+    quote = await saveQuotePdf(quote.id, auth.user.id, pdf);
+    if (!quote) return { ok: false, error: "Could not save quote PDF" };
     revalidateJob(jobId);
     return { ok: true, quote };
   } catch (e) {

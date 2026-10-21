@@ -332,7 +332,10 @@ model Quote {
   subtotal     Float       @default(0)
   tax          Float       @default(0)
   total        Float       @default(0)
+  /// Public route path (e.g. /api/jobs/.../pdf). Never a data: URL.
   pdfUrl       String?
+  /// Raw PDF bytes (Neon). Served by authenticated / public PDF routes.
+  pdfData      Bytes?
   status       QuoteStatus @default(draft)
   acceptToken  String      @unique @default(cuid())
   validUntil   DateTime?
@@ -353,7 +356,10 @@ model Invoice {
   amount                Float
   status                InvoiceStatus @default(draft)
   stripeCheckoutSessionId String?
+  /// Public route path (e.g. /api/jobs/.../invoices/.../pdf). Never a data: URL.
   pdfUrl                String?
+  /// Raw PDF bytes (Neon). Served by the authenticated invoice PDF route.
+  pdfData               Bytes?
   unlockAfterId         String?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt

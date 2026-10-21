@@ -20,6 +20,17 @@ import type {
   LineItemCategory,
 } from "./types";
 import { computeTotals } from "./types";
+import {
+  decodeDataUrlPdf,
+  invoicePdfPath,
+  isDataUrlPdf,
+  quotePdfPath,
+  type PdfPayload,
+} from "./pdf-urls";
+
+/** Server-only PDF bytes (base64) — never sent to client components. */
+type StoredQuote = QuoteRecord & { pdfBase64?: string | null };
+type StoredInvoice = InvoiceRecord & { pdfBase64?: string | null };
 
 type JobsDb = {
   jobs: JobRecord[];
@@ -27,10 +38,42 @@ type JobsDb = {
   measurements: MeasurementRecord[];
   designSpecs: DesignSpecRecord[];
   lineItems: LineItemRecord[];
-  quotes: QuoteRecord[];
-  invoices: InvoiceRecord[];
+  quotes: StoredQuote[];
+  invoices: StoredInvoice[];
   payments: PaymentRecord[];
 };
+
+function publicQuote(q: StoredQuote): QuoteRecord {
+  const { pdfBase64: _b, ...rest } = q;
+  const hasPdf = Boolean(pdfBase64Bytes(q) || q.pdfUrl);
+  return {
+    ...rest,
+    pdfUrl: hasPdf ? quotePdfPath(q.jobId, q.id) : null,
+  };
+}
+
+function publicInvoice(i: StoredInvoice): InvoiceRecord {
+  const { pdfBase64: _b, ...rest } = i;
+  const hasPdf = Boolean(pdfBase64Bytes(i) || i.pdfUrl);
+  return {
+    ...rest,
+    pdfUrl: hasPdf ? invoicePdfPath(i.jobId, i.id) : null,
+  };
+}
+
+function pdfBase64Bytes(
+  row: { pdfBase64?: string | null; pdfUrl?: string | null },
+): Buffer | null {
+  if (row.pdfBase64) {
+    try {
+      return Buffer.from(row.pdfBase64, "base64");
+    } catch {
+      return null;
+    }
+  }
+  if (isDataUrlPdf(row.pdfUrl)) return decodeDataUrlPdf(row.pdfUrl!);
+  return null;
+}
 
 const DATA_PATH = path.join(process.cwd(), "data", "jobs-store.json");
 
@@ -65,7 +108,9 @@ function now() {
 }
 
 function assemble(db: JobsDb, job: JobRecord): JobBundle {
-  const invoices = db.invoices.filter((i) => i.jobId === job.id);
+  const invoices = db.invoices
+    .filter((i) => i.jobId === job.id)
+    .map(publicInvoice);
   const invoiceIds = new Set(invoices.map((i) => i.id));
   return {
     job,
@@ -77,7 +122,8 @@ function assemble(db: JobsDb, job: JobRecord): JobBundle {
       .sort((a, b) => a.sortOrder - b.sortOrder),
     quotes: db.quotes
       .filter((q) => q.jobId === job.id)
-      .sort((a, b) => b.version - a.version),
+      .sort((a, b) => b.version - a.version)
+      .map(publicQuote),
     invoices,
     payments: db.payments.filter((p) => invoiceIds.has(p.invoiceId)),
   };
@@ -354,17 +400,129 @@ export async function updateQuote(
   ownerId: string,
   patch: Partial<
     Pick<QuoteRecord, "pdfUrl" | "status" | "sentAt" | "acceptedAt" | "subtotal" | "tax" | "total">
-  >,
+  > & { pdfBase64?: string | null },
 ): Promise<QuoteRecord | null> {
   const db = await load();
   const quote = db.quotes.find((q) => q.id === quoteId);
   if (!quote) return null;
   const job = db.jobs.find((j) => j.id === quote.jobId && j.ownerId === ownerId);
   if (!job) return null;
-  Object.assign(quote, patch, { updatedAt: now() });
+  const { pdfBase64, ...rest } = patch;
+  Object.assign(quote, rest, { updatedAt: now() });
+  if (pdfBase64 !== undefined) quote.pdfBase64 = pdfBase64;
   job.updatedAt = now();
   await save(db);
-  return quote;
+  return publicQuote(quote);
+}
+
+/** Persist quote PDF bytes in the JSON store and set pdfUrl to the API route. */
+export async function saveQuotePdf(
+  quoteId: string,
+  ownerId: string,
+  bytes: Buffer,
+): Promise<QuoteRecord | null> {
+  const db = await load();
+  const quote = db.quotes.find((q) => q.id === quoteId);
+  if (!quote) return null;
+  const job = db.jobs.find((j) => j.id === quote.jobId && j.ownerId === ownerId);
+  if (!job) return null;
+  quote.pdfBase64 = bytes.toString("base64");
+  quote.pdfUrl = quotePdfPath(quote.jobId, quote.id);
+  quote.updatedAt = now();
+  job.updatedAt = now();
+  await save(db);
+  return publicQuote(quote);
+}
+
+export async function getQuotePdfPayload(
+  jobId: string,
+  quoteId: string,
+  ownerId?: string,
+): Promise<PdfPayload | null> {
+  const db = await load();
+  const quote = db.quotes.find((q) => q.id === quoteId && q.jobId === jobId);
+  if (!quote) return null;
+  const job = db.jobs.find((j) => j.id === jobId);
+  if (!job) return null;
+  if (ownerId && job.ownerId !== ownerId) return null;
+  const bytes = pdfBase64Bytes(quote);
+  if (!bytes) return null;
+  // Lazy-migrate legacy data: URLs into pdfBase64 + route pdfUrl
+  if (!quote.pdfBase64 || isDataUrlPdf(quote.pdfUrl)) {
+    quote.pdfBase64 = bytes.toString("base64");
+    quote.pdfUrl = quotePdfPath(jobId, quoteId);
+    quote.updatedAt = now();
+    await save(db);
+  }
+  return {
+    bytes,
+    fileName: `quote-v${quote.version}.pdf`,
+    version: quote.version,
+  };
+}
+
+export async function getQuotePdfPayloadByToken(
+  token: string,
+): Promise<PdfPayload | null> {
+  const db = await load();
+  const quote = db.quotes.find((q) => q.acceptToken === token);
+  if (!quote) return null;
+  const bytes = pdfBase64Bytes(quote);
+  if (!bytes) return null;
+  if (!quote.pdfBase64 || isDataUrlPdf(quote.pdfUrl)) {
+    quote.pdfBase64 = bytes.toString("base64");
+    quote.pdfUrl = quotePdfPath(quote.jobId, quote.id);
+    quote.updatedAt = now();
+    await save(db);
+  }
+  return {
+    bytes,
+    fileName: `quote-v${quote.version}.pdf`,
+    version: quote.version,
+  };
+}
+
+export async function saveInvoicePdf(
+  invoiceId: string,
+  ownerId: string,
+  bytes: Buffer,
+): Promise<InvoiceRecord | null> {
+  const db = await load();
+  const inv = db.invoices.find((i) => i.id === invoiceId);
+  if (!inv) return null;
+  const job = db.jobs.find((j) => j.id === inv.jobId && j.ownerId === ownerId);
+  if (!job) return null;
+  inv.pdfBase64 = bytes.toString("base64");
+  inv.pdfUrl = invoicePdfPath(inv.jobId, inv.id);
+  inv.updatedAt = now();
+  job.updatedAt = now();
+  await save(db);
+  return publicInvoice(inv);
+}
+
+export async function getInvoicePdfPayload(
+  jobId: string,
+  invoiceId: string,
+  ownerId?: string,
+): Promise<PdfPayload | null> {
+  const db = await load();
+  const inv = db.invoices.find((i) => i.id === invoiceId && i.jobId === jobId);
+  if (!inv) return null;
+  const job = db.jobs.find((j) => j.id === jobId);
+  if (!job) return null;
+  if (ownerId && job.ownerId !== ownerId) return null;
+  const bytes = pdfBase64Bytes(inv);
+  if (!bytes) return null;
+  if (!inv.pdfBase64 || isDataUrlPdf(inv.pdfUrl)) {
+    inv.pdfBase64 = bytes.toString("base64");
+    inv.pdfUrl = invoicePdfPath(jobId, invoiceId);
+    inv.updatedAt = now();
+    await save(db);
+  }
+  return {
+    bytes,
+    fileName: `invoice-${inv.type}.pdf`,
+  };
 }
 
 export async function acceptQuoteByToken(token: string): Promise<JobBundle | null> {
@@ -469,12 +627,17 @@ export async function setInvoiceCheckout(
   const job = db.jobs.find((j) => j.id === inv.jobId && j.ownerId === ownerId);
   if (!job) return null;
   inv.stripeCheckoutSessionId = sessionId;
-  if (pdfUrl !== undefined) inv.pdfUrl = pdfUrl;
+  if (pdfUrl !== undefined) {
+    // Never persist data: URLs — keep route path if PDF bytes already stored
+    inv.pdfUrl = isDataUrlPdf(pdfUrl)
+      ? invoicePdfPath(inv.jobId, inv.id)
+      : pdfUrl;
+  }
   inv.status = inv.status === "draft" ? "open" : inv.status;
   inv.updatedAt = now();
   job.updatedAt = now();
   await save(db);
-  return inv;
+  return publicInvoice(inv);
 }
 
 export async function markInvoicePaidBySession(

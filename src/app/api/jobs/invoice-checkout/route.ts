@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasJobsAccess } from "@/lib/jobs/access";
-import { getJobBundle, setInvoiceCheckout } from "@/lib/jobs/store";
+import {
+  getJobBundle,
+  saveInvoicePdf,
+  setInvoiceCheckout,
+} from "@/lib/jobs/store";
 import { buildInvoicePdf } from "@/lib/jobs/pdf";
-import { storeJobFile } from "@/lib/jobs/storage";
+import { invoicePdfPath, MAX_PDF_RESPONSE_BYTES } from "@/lib/jobs/pdf-urls";
 import { getPaymentProvider } from "@/lib/payments/provider";
 
 export const dynamic = "force-dynamic";
@@ -43,17 +47,13 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
     "http://localhost:3000";
 
-  let pdfUrl = invoice.pdfUrl;
+  let pdfUrl = invoice.pdfUrl ?? invoicePdfPath(bundle.job.id, invoice.id);
   try {
     const pdf = await buildInvoicePdf(bundle, invoice.id);
-    const stored = await storeJobFile({
-      jobId: bundle.job.id,
-      fileName: `invoice-${invoice.type}.pdf`,
-      mimeType: "application/pdf",
-      bytes: pdf,
-      folder: "invoices",
-    });
-    pdfUrl = stored.url;
+    if (pdf.length <= MAX_PDF_RESPONSE_BYTES) {
+      const saved = await saveInvoicePdf(invoice.id, user.id, pdf);
+      if (saved?.pdfUrl) pdfUrl = saved.pdfUrl;
+    }
   } catch {
     // PDF optional if generation fails
   }
