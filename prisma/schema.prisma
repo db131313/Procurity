@@ -414,3 +414,15 @@ model DemoEvent {
   @@index([type])
   @@index([city])
 }
+
+/** Email waitlist for the iPhone LiDAR companion app. */
+model AppWaitlist {
+  id        String   @id @default(cuid())
+  email     String
+  source    String   @default("home")
+  createdAt DateTime @default(now())
+
+  @@unique([email])
+  @@index([createdAt])
+  @@index([source])
+}

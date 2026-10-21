@@ -14,6 +14,7 @@ import {
   setupInvoicesAction,
 } from "@/app/actions/jobs";
 import { JobStepper } from "@/components/jobs/JobStepper";
+import { LidarDownloadCard } from "@/components/jobs/LidarDownloadCard";
 import { ModelViewer } from "@/components/jobs/ModelViewer";
 import { AnnotatedMeasure } from "@/components/jobs/AnnotatedMeasure";
 import { MATERIALS_CATALOG, SIGN_TYPES } from "@/lib/jobs/catalog";
@@ -345,24 +346,10 @@ function StageCapture({
         Upload scans or photos (USDZ / OBJ / GLB / PLY, images, PDFs).
       </p>
 
-      <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-3 py-3 text-sm text-amber-950">
-        <p className="font-bold">TODO — Native LiDAR capture</p>
-        <p className="mt-1 text-xs">
-          A companion iOS app will stream room / facade LiDAR meshes into this
-          job. Do not fake LiDAR data here.
-        </p>
-        <button
-          type="button"
-          disabled
-          className="mt-3 rounded-full border border-amber-400 px-4 py-2 text-xs font-bold opacity-70"
-          title="Coming soon"
-        >
-          Scan with iPhone (coming soon)
-        </button>
-      </div>
+      <LidarDownloadCard />
 
       <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-line bg-offwhite px-4 py-8 text-sm font-semibold text-slate">
-        {uploading ? <WorkingSpinner /> : "Tap to upload files"}
+        {uploading ? <WorkingSpinner /> : "No LiDAR? Measure from a photo — tap to upload"}
         <input
           type="file"
           className="hidden"

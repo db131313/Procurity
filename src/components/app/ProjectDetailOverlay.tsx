@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Navigation } from "lucide-react";
+import { Lock, Navigation, X } from "lucide-react";
 import { StreetViewHeader } from "@/components/app/StreetViewHeader";
 import { ScoreRing } from "@/components/ui/ScoreRing";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -17,14 +17,7 @@ import { searchLink } from "@/lib/projects/leads";
 import type { ProjectPhase, TradeScores } from "@/lib/db/types";
 import { navigateToStopUrl } from "@/lib/route/maps-links";
 import { saveMapRoute, type RouteResult } from "@/lib/route/types";
-
-function pinColorForScore(score: number): string {
-  if (score >= 90) return "#16A34A";
-  if (score >= 80) return "#0D9488";
-  if (score >= 70) return "#2563EB";
-  if (score >= 60) return "#D97706";
-  return "#64748B";
-}
+import { pinColorForScore } from "@/lib/map/pin-filters";
 
 type OverlayProject = {
   id: string;
@@ -74,6 +67,19 @@ type Props = {
   displayScore: number;
   /** Build a single-stop route on the same map (optional — map page). */
   onDirections?: (route: RouteResult) => void;
+  /**
+   * `app` (default) uses /api/projects/:id.
+   * `public` uses /api/teaser/detail, locks contacts, and gates Start job.
+   */
+  mode?: "app" | "public";
+  /** Fired when an anonymous visitor tries Start job / pipeline / contacts. */
+  onRequirePlan?: (reason: "start_job" | "pipeline" | "contacts") => void;
+  /** After a successful public detail load (for free-view counter). */
+  onPublicViewed?: (info: {
+    projectId: string;
+    viewedCount: number;
+    remaining: number;
+  }) => void;
 };
 
 function scoreBand(score: number) {
@@ -90,13 +96,18 @@ export function ProjectDetailOverlay({
   onClose,
   displayScore,
   onDirections,
+  mode = "app",
+  onRequirePlan,
+  onPublicViewed,
 }: Props) {
+  const isPublic = mode === "public";
   const [detail, setDetail] = useState<DetailPayload | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [jobPending, setJobPending] = useState(false);
   const [jobError, setJobError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [paywalled, setPaywalled] = useState(false);
 
   function buildSingleStopRoute(): RouteResult | null {
     if (!project) return null;
@@ -161,6 +172,7 @@ export function ProjectDetailOverlay({
       setAdded(false);
       setJobError(null);
       setJobPending(false);
+      setPaywalled(false);
       return;
     }
     const projectId = project.id;
@@ -170,30 +182,62 @@ export function ProjectDetailOverlay({
     setAdded(false);
     setJobError(null);
     setJobPending(false);
-    void fetch(`/api/projects/${encodeURIComponent(projectId)}`, {
-      credentials: "same-origin",
-    })
+    setPaywalled(false);
+
+    const url = isPublic
+      ? `/api/teaser/detail?id=${encodeURIComponent(projectId)}`
+      : `/api/projects/${encodeURIComponent(projectId)}`;
+
+    void fetch(url, { credentials: "same-origin", cache: "no-store" })
       .then(async (res) => {
+        if (res.status === 402) {
+          if (!cancelled) {
+            setPaywalled(true);
+            onRequirePlan?.("contacts");
+          }
+          throw new Error("free_limit");
+        }
         if (!res.ok) {
           const body = (await res.json().catch(() => null)) as {
             error?: string;
           } | null;
           throw new Error(body?.error || `Failed (${res.status})`);
         }
-        return (await res.json()) as DetailPayload & { ok?: boolean };
+        return (await res.json()) as DetailPayload & {
+          ok?: boolean;
+          viewedCount?: number;
+          remaining?: number;
+          project?: DetailPayload["project"];
+          detail?: DetailPayload["project"];
+        };
       })
       .then((data) => {
-        if (!cancelled) setDetail(data);
+        if (cancelled) return;
+        // Normalize teaser payload into DetailPayload
+        const projectRow = data.project || data.detail;
+        if (projectRow && !data.project) {
+          data.project = projectRow as DetailPayload["project"];
+        }
+        if (!data.sourcing) data.sourcing = [];
+        if (!data.leads) data.leads = [];
+        setDetail(data);
+        if (isPublic && typeof data.viewedCount === "number") {
+          onPublicViewed?.({
+            projectId,
+            viewedCount: data.viewedCount,
+            remaining: data.remaining ?? 0,
+          });
+        }
       })
       .catch((err: unknown) => {
-        if (!cancelled) {
-          setLoadError(err instanceof Error ? err.message : "Load failed");
-        }
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : "Load failed";
+        if (msg !== "free_limit") setLoadError(msg);
       });
     return () => {
       cancelled = true;
     };
-  }, [open, project?.id]);
+  }, [open, project?.id, isPublic, onPublicViewed, onRequirePlan]);
 
   const p = detail?.project;
   const inPipeline = Boolean(detail?.inPipeline || added);
@@ -204,6 +248,10 @@ export function ProjectDetailOverlay({
     Number.isFinite(streetLng) &&
     !(streetLat === 0 && streetLng === 0);
 
+  if (paywalled) {
+    return null;
+  }
+
   return (
     <BottomSheet open={open && Boolean(project)} onClose={onClose} variant="full">
       {project && (
@@ -213,6 +261,7 @@ export function ProjectDetailOverlay({
               lat={streetLat}
               lng={streetLng}
               className="w-full"
+              projectId={isPublic ? project.id : undefined}
             />
           ) : (
             <div className="flex h-56 w-full items-center justify-center bg-ink text-xs font-semibold text-white/70 sm:h-72 md:h-80">
@@ -221,6 +270,19 @@ export function ProjectDetailOverlay({
           )}
 
           <div className="px-4 pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#2563EB]">
+                Project
+              </p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate hover:bg-offwhite focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563EB]"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <div className="flex items-start gap-3">
               <ScoreRing score={displayScore} size={68} stroke={5} />
               <div className="min-w-0 flex-1">
@@ -232,28 +294,42 @@ export function ProjectDetailOverlay({
                   {p ? ` · ${scoreBandLabel(p.score)}` : ""}
                 </p>
                 <p className="mt-0.5 text-lg font-bold leading-snug text-ink">
-                  {project.address}
+                  {p?.address || project.address}
                 </p>
                 <p className="mt-1 text-sm text-slate">
-                  {[project.borough, project.zip].filter(Boolean).join(" · ")}
+                  {[
+                    (p as { projectType?: string } | undefined)?.projectType,
+                    p?.borough ?? project.borough,
+                    p?.zip ?? project.zip,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-ink">
-                  {formatMoneyRange(project.estValueLow, project.estValueHigh)}
+                  {formatMoneyRange(
+                    p?.estValueLow ?? project.estValueLow,
+                    p?.estValueHigh ?? project.estValueHigh,
+                  )}
                   <span className="font-normal text-slate">
                     {" "}
-                    · {project.buyingWindowEstimate}
+                    ·{" "}
+                    {p?.buyingWindowEstimate ||
+                      project.buyingWindowEstimate ||
+                      "Timing varies"}
                   </span>
                 </p>
               </div>
             </div>
 
-            <div className="mt-3">
-              <DataFreshnessBadge
-                iso={detail?.lastSyncAt}
-                label="Permit data"
-                variant="panel"
-              />
-            </div>
+            {!isPublic && (
+              <div className="mt-3">
+                <DataFreshnessBadge
+                  iso={detail?.lastSyncAt}
+                  label="Project data"
+                  variant="panel"
+                />
+              </div>
+            )}
 
             {!detail && !loadError && (
               <div className="mt-6 space-y-3" aria-busy="true" aria-live="polite">
@@ -314,60 +390,75 @@ export function ProjectDetailOverlay({
                   </div>
                 </section>
 
-                <section className="mt-5 space-y-2">
-                  <StatusChip status={p.gcName ? "confirmed" : "missing"}>
-                    GC{p.gcName ? `: ${p.gcName}` : ""}
-                  </StatusChip>
-                  <StatusChip
-                    status={p.architectName ? "confirmed" : "missing"}
-                  >
-                    Architect
-                    {p.architectName ? `: ${p.architectName}` : ""}
-                  </StatusChip>
-                  <StatusChip
-                    status={p.hasSignPermit ? "confirmed" : "pending"}
-                  >
-                    Signage
-                    {p.hasSignPermit
-                      ? " — sign permit filed"
-                      : " — no SG permit yet"}
-                  </StatusChip>
-                </section>
+                {isPublic ? (
+                  <div className="mt-5 flex items-start gap-3 rounded-2xl border border-line bg-offwhite p-3">
+                    <Lock
+                      className="mt-0.5 h-5 w-5 shrink-0 text-[#2563EB]"
+                      aria-hidden
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-ink">
+                        Contact details unlock with a plan
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate">
+                        Owner, GC, architect, and phone stay private until you
+                        subscribe.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <section className="mt-5 space-y-2">
+                    <StatusChip status={p.gcName ? "confirmed" : "missing"}>
+                      GC{p.gcName ? `: ${p.gcName}` : ""}
+                    </StatusChip>
+                    <StatusChip
+                      status={p.architectName ? "confirmed" : "missing"}
+                    >
+                      Architect
+                      {p.architectName ? `: ${p.architectName}` : ""}
+                    </StatusChip>
+                  </section>
+                )}
 
-                <button
-                  type="button"
-                  disabled={inPipeline || pending}
-                  onClick={() => {
-                    startTransition(async () => {
-                      try {
-                        await addProjectToPipeline(project.id);
-                        setAdded(true);
-                      } catch {
-                        // stay on overlay; user can retry / open full page
-                      }
-                    });
-                  }}
-                  className="pc-gradient-bg mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-white disabled:opacity-50"
-                  aria-busy={pending || undefined}
-                >
-                  {pending ? <WorkingSpinner /> : null}
-                  {inPipeline
-                    ? "Already in pipeline"
-                    : pending
-                      ? "Adding…"
-                      : "Add to Pipeline"}
-                </button>
+                {!isPublic && (
+                  <button
+                    type="button"
+                    disabled={inPipeline || pending}
+                    onClick={() => {
+                      startTransition(async () => {
+                        try {
+                          await addProjectToPipeline(project.id);
+                          setAdded(true);
+                        } catch {
+                          // stay on overlay; user can retry / open full page
+                        }
+                      });
+                    }}
+                    className="pc-gradient-bg mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-white disabled:opacity-50"
+                    aria-busy={pending || undefined}
+                  >
+                    {pending ? <WorkingSpinner /> : null}
+                    {inPipeline
+                      ? "Already in pipeline"
+                      : pending
+                        ? "Adding…"
+                        : "Add to Pipeline"}
+                  </button>
+                )}
 
                 <button
                   type="button"
                   disabled={pending || jobPending}
                   onClick={() => {
+                    if (isPublic) {
+                      onRequirePlan?.("start_job");
+                      return;
+                    }
                     setJobError(null);
                     setJobPending(true);
                     startTransition(async () => {
                       try {
                         const result = await startJobFromProject(project.id);
-                        // Success path redirects (never returns). Failure returns.
                         if (result && result.ok === false) {
                           if (result.error === "Unauthorized") {
                             window.location.href = "/login";
@@ -376,7 +467,6 @@ export function ProjectDetailOverlay({
                           setJobError(result.error);
                         }
                       } catch (e) {
-                        // NEXT_REDIRECT throws on success — ignore digest redirects.
                         const digest =
                           e &&
                           typeof e === "object" &&
@@ -393,7 +483,7 @@ export function ProjectDetailOverlay({
                       }
                     });
                   }}
-                  className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-line bg-white text-sm font-bold text-ink disabled:opacity-50"
+                  className={`${isPublic ? "brand-gradient" : "pc-gradient-bg"} mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-white disabled:opacity-50`}
                   aria-busy={jobPending || undefined}
                 >
                   {jobPending ? <WorkingSpinner /> : null}
@@ -440,7 +530,7 @@ export function ProjectDetailOverlay({
                 {detail.sourcing.length > 0 && (
                   <section className="mt-6">
                     <h3 className="text-sm font-bold text-ink">
-                      Likely sourcing
+                      {isPublic ? "Likely needs" : "Likely sourcing"}
                     </h3>
                     <ul className="mt-2 space-y-2">
                       {detail.sourcing.slice(0, 4).map((s) => (
@@ -463,74 +553,76 @@ export function ProjectDetailOverlay({
                   </section>
                 )}
 
-                <section className="mt-6">
-                  <h3 className="text-sm font-bold text-ink">
-                    Procurement Leads
-                  </h3>
-                  {detail.leads.length ? (
-                    <ul className="mt-2 space-y-2">
-                      {detail.leads.map((lead) => {
-                        const display = lead.name || lead.firm;
-                        return (
-                          <li
-                            key={lead.role}
-                            className="rounded-xl border border-line px-3 py-2.5"
-                          >
-                            <p className="text-[10px] font-bold uppercase tracking-wide text-slate">
-                              {lead.role}
-                            </p>
-                            <p className="mt-0.5 text-sm font-bold text-ink">
-                              {display}
-                            </p>
-                            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-purple">
-                              {lead.phone && (
-                                <a
-                                  href={`tel:${lead.phone.replace(/\s+/g, "")}`}
-                                  className="hover:underline"
-                                >
-                                  {lead.phone}
-                                </a>
-                              )}
-                              {lead.email && (
-                                <a
-                                  href={`mailto:${lead.email}`}
-                                  className="hover:underline"
-                                >
-                                  {lead.email}
-                                </a>
-                              )}
-                              {!lead.phone && !lead.email && (
-                                <a
-                                  href={searchLink(lead.findQuery)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="hover:underline"
-                                >
-                                  Find contact
-                                </a>
-                              )}
-                              {lead.extraLinks?.map((l) => (
-                                <a
-                                  key={l.href}
-                                  href={l.href}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="hover:underline"
-                                >
-                                  {l.label}
-                                </a>
-                              ))}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-xs text-slate">
-                      No named owner, GC, architect, engineer, or filer yet.
-                    </p>
-                  )}
-                </section>
+                {!isPublic && (
+                  <section className="mt-6">
+                    <h3 className="text-sm font-bold text-ink">
+                      Procurement Leads
+                    </h3>
+                    {detail.leads.length ? (
+                      <ul className="mt-2 space-y-2">
+                        {detail.leads.map((lead) => {
+                          const display = lead.name || lead.firm;
+                          return (
+                            <li
+                              key={lead.role}
+                              className="rounded-xl border border-line px-3 py-2.5"
+                            >
+                              <p className="text-[10px] font-bold uppercase tracking-wide text-slate">
+                                {lead.role}
+                              </p>
+                              <p className="mt-0.5 text-sm font-bold text-ink">
+                                {display}
+                              </p>
+                              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-purple">
+                                {lead.phone && (
+                                  <a
+                                    href={`tel:${lead.phone.replace(/\s+/g, "")}`}
+                                    className="hover:underline"
+                                  >
+                                    {lead.phone}
+                                  </a>
+                                )}
+                                {lead.email && (
+                                  <a
+                                    href={`mailto:${lead.email}`}
+                                    className="hover:underline"
+                                  >
+                                    {lead.email}
+                                  </a>
+                                )}
+                                {!lead.phone && !lead.email && (
+                                  <a
+                                    href={searchLink(lead.findQuery)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="hover:underline"
+                                  >
+                                    Find contact
+                                  </a>
+                                )}
+                                {lead.extraLinks?.map((l) => (
+                                  <a
+                                    key={l.href}
+                                    href={l.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="hover:underline"
+                                  >
+                                    {l.label}
+                                  </a>
+                                ))}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-xs text-slate">
+                        No named owner, GC, architect, engineer, or filer yet.
+                      </p>
+                    )}
+                  </section>
+                )}
 
                 {p.scoreReasons?.length > 0 && (
                   <section className="mt-6 mb-4">

@@ -4,10 +4,10 @@ type Props = {
   initialCityId: string;
 };
 
-/** Public home: full-viewport real map, then a short pricing strip. */
+/** Public home: real map hero + below-fold (mesh gradient marketing shell). */
 export function HomePage({ initialCityId }: Props) {
   return (
-    <div className="bg-white text-ink">
+    <div className="marketing-mesh text-ink">
       <HomeMapHero initialCityId={initialCityId} />
       <HomeBelowFold />
     </div>

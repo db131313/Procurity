@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Map as MapLibreMap,
@@ -10,23 +10,36 @@ import {
   type MapLayerMouseEvent,
   LngLatBounds,
 } from "maplibre-gl";
-import { Lock, MapPin, MessageSquare, Wallet, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { MapPin, MessageSquare, Wallet } from "lucide-react";
 import {
-  CITY_COOKIE,
-  PICKER_CITIES,
-  type PickerCity,
-} from "@/lib/cities/picker";
+  DEFAULT_MAP_FILTERS,
+  MapFilters,
+  type MapFilterState,
+} from "@/components/app/MapFilters";
+import { MapPinLegend } from "@/components/app/MapPinLegend";
+import { ProjectDetailOverlay } from "@/components/app/ProjectDetailOverlay";
+import type { MapProject } from "@/components/app/MapView";
+import { Logo } from "@/components/brand/Logo";
+import { PricingCards } from "./PricingCards";
+import { PICKER_CITIES, CITY_COOKIE, type PickerCity } from "@/lib/cities/picker";
 import {
   TEASER_FREE_VIEWS,
   TEASER_VIEWS_LOCAL_KEY,
 } from "@/lib/teaser/constants";
-import { PricingCards } from "./PricingCards";
-import { Logo } from "@/components/brand/Logo";
+import {
+  effectivePinScore,
+  filterPins,
+  pinColorForScorePublic,
+  type FilterablePin,
+} from "@/lib/map/pin-filters";
 import { cn } from "@/lib/cn";
+import type { ProjectPhase } from "@/lib/db/types";
+import { IphoneAppSection } from "./IphoneAppSection";
+import { HomeVideoSection } from "./HomeVideoSection";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
-/** Primary + fallback tile styles. Never leave a blank gray map. */
 const STYLE_PRIMARY =
   process.env.NEXT_PUBLIC_MAP_STYLE_URL ||
   "https://tiles.openfreemap.org/styles/liberty";
@@ -35,26 +48,9 @@ const STYLE_LOAD_TIMEOUT_MS = 6000;
 
 const SERVED = PICKER_CITIES.filter((c) => c.served);
 
-type TeaserPin = {
-  id: string;
-  latitude: number;
-  longitude: number;
-  score: number;
-  label?: string;
-  city?: string;
-};
-
-type TeaserDetail = {
-  id: string;
-  address: string;
-  projectType: string;
-  phaseLabel: string;
-  score: number;
-  scoreReasons: string[];
-  valueLow: number;
-  valueHigh: number;
-  likelyNeeds: { trade: string; score: number }[];
-};
+function cityById(id: string): PickerCity {
+  return SERVED.find((c) => c.id === id) ?? SERVED[0]!;
+}
 
 function readLocalViews(): string[] {
   try {
@@ -87,157 +83,9 @@ function setCityCookie(cityId: string) {
   }
 }
 
-function cityById(id: string): PickerCity {
-  return SERVED.find((c) => c.id === id) ?? SERVED[0]!;
-}
-
-function pinsToGeoJSON(pins: TeaserPin[]) {
-  return {
-    type: "FeatureCollection" as const,
-    features: pins.map((p, i) => ({
-      type: "Feature" as const,
-      id: i + 1,
-      properties: {
-        projectId: p.id,
-        score: p.score,
-        label: p.label || "",
-        city: p.city || "",
-      },
-      geometry: {
-        type: "Point" as const,
-        coordinates: [p.longitude, p.latitude] as [number, number],
-      },
-    })),
-  };
-}
-
-function fitCityPins(map: MapLibreMap, pins: TeaserPin[], city: PickerCity) {
-  const cityPins = pins.filter((p) => p.city === city.id);
-  const use = cityPins.length > 0 ? cityPins : pins;
-  if (use.length === 0) {
-    map.flyTo({
-      center: city.center,
-      zoom: city.zoom,
-      duration: 600,
-      essential: true,
-    });
-    return;
-  }
-  const bounds = new LngLatBounds();
-  for (const p of use) bounds.extend([p.longitude, p.latitude]);
-  map.fitBounds(bounds, {
-    padding: 56,
-    maxZoom: 12,
-    duration: 700,
-    essential: true,
-  });
-}
-
-function addPinLayers(map: MapLibreMap) {
-  if (map.getSource("teaser-pins")) return;
-
-  map.addSource("teaser-pins", {
-    type: "geojson",
-    data: { type: "FeatureCollection", features: [] },
-    cluster: true,
-    clusterMaxZoom: 11,
-    clusterRadius: 52,
-  });
-
-  map.addLayer({
-    id: "teaser-clusters",
-    type: "circle",
-    source: "teaser-pins",
-    filter: ["has", "point_count"],
-    paint: {
-      "circle-color": "#2563EB",
-      "circle-radius": [
-        "step",
-        ["get", "point_count"],
-        16,
-        25,
-        20,
-        100,
-        26,
-      ],
-      "circle-opacity": 0.9,
-      "circle-stroke-width": 2,
-      "circle-stroke-color": "#ffffff",
-    },
-  });
-
-  map.addLayer({
-    id: "teaser-cluster-count",
-    type: "symbol",
-    source: "teaser-pins",
-    filter: ["has", "point_count"],
-    layout: {
-      "text-field": ["get", "point_count_abbreviated"],
-      "text-size": 12,
-    },
-    paint: {
-      "text-color": "#ffffff",
-    },
-  });
-
-  // Blue ramp: light = lower score, dark = higher
-  map.addLayer({
-    id: "teaser-pins-halo",
-    type: "circle",
-    source: "teaser-pins",
-    filter: ["!", ["has", "point_count"]],
-    paint: {
-      "circle-radius": 12,
-      "circle-color": [
-        "interpolate",
-        ["linear"],
-        ["get", "score"],
-        40,
-        "#93C5FD",
-        70,
-        "#3B82F6",
-        100,
-        "#1E3A8A",
-      ],
-      "circle-opacity": 0.28,
-    },
-  });
-
-  map.addLayer({
-    id: "teaser-pins",
-    type: "circle",
-    source: "teaser-pins",
-    filter: ["!", ["has", "point_count"]],
-    paint: {
-      "circle-radius": [
-        "interpolate",
-        ["linear"],
-        ["get", "score"],
-        40,
-        6,
-        100,
-        9,
-      ],
-      "circle-color": [
-        "interpolate",
-        ["linear"],
-        ["get", "score"],
-        40,
-        "#93C5FD",
-        55,
-        "#60A5FA",
-        70,
-        "#2563EB",
-        85,
-        "#1D4ED8",
-        100,
-        "#1E3A8A",
-      ],
-      "circle-stroke-width": 2,
-      "circle-stroke-color": "#ffffff",
-    },
-  });
-}
+type TeaserPin = FilterablePin & {
+  projectType?: string;
+};
 
 type Props = {
   initialCityId: string;
@@ -252,17 +100,21 @@ export function HomeMapHero({ initialCityId }: Props) {
   const styleIndexRef = useRef(0);
   const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fittedRef = useRef(false);
+  const paywallRef = useRef(false);
 
   const [ready, setReady] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
   const [mapKey, setMapKey] = useState(0);
   const [pins, setPins] = useState<TeaserPin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pinsError, setPinsError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<MapFilterState>(DEFAULT_MAP_FILTERS);
   const [viewedIds, setViewedIds] = useState<string[]>([]);
-  const [detail, setDetail] = useState<TeaserDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [selected, setSelected] = useState<MapProject | null>(null);
+  const [overlayOpen, setOverlayOpen] = useState(false);
   const [paywall, setPaywall] = useState(false);
+  const [paywallMessage, setPaywallMessage] = useState(
+    "You've explored 3 projects. Pick a plan to keep going.",
+  );
 
   const city = cityRef.current;
   const remaining = Math.max(0, TEASER_FREE_VIEWS - viewedIds.length);
@@ -273,31 +125,35 @@ export function HomeMapHero({ initialCityId }: Props) {
     setCityCookie(initialCityId);
   }, [initialCityId]);
 
+  useEffect(() => {
+    paywallRef.current = paywall;
+  }, [paywall]);
+
+  const filtered = useMemo(() => {
+    return filterPins(pins, filters).map((p) => ({
+      ...p,
+      color: pinColorForScorePublic(p.displayScore),
+    }));
+  }, [pins, filters]);
+
+  const selectedScore = selected
+    ? effectivePinScore(selected, filters.scoreMode)
+    : 0;
+
   const loadPins = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
-    setPinsError(null);
     try {
       const res = await fetch("/api/teaser/pins/all", {
         signal,
         cache: "default",
       });
-      if (!res.ok) {
-        setPinsError("We couldn't load projects. Try again.");
-        return;
-      }
-      const data = (await res.json()) as {
-        ok?: boolean;
-        pins?: TeaserPin[];
-      };
+      if (!res.ok) return;
+      const data = (await res.json()) as { pins?: TeaserPin[] };
       const next = Array.isArray(data.pins) ? data.pins : [];
       pinsRef.current = next;
       setPins(next);
-      if (!next.length) {
-        setPinsError("No projects to show yet. Try again shortly.");
-      }
     } catch (e) {
       if ((e as { name?: string })?.name === "AbortError") return;
-      setPinsError("We couldn't load projects. Try again.");
     } finally {
       setLoading(false);
     }
@@ -309,107 +165,201 @@ export function HomeMapHero({ initialCityId }: Props) {
     return () => ac.abort();
   }, [loadPins]);
 
-  const paintPins = useCallback((map: MapLibreMap, next: TeaserPin[]) => {
-    const source = map.getSource("teaser-pins") as GeoJSONSource | undefined;
-    if (!source) return;
-    source.setData(pinsToGeoJSON(next));
-  }, []);
-
-  const attachStyleHandlers = useCallback(
-    (map: MapLibreMap, cancelled: () => boolean) => {
-      const clearTimer = () => {
-        if (loadTimerRef.current) {
-          clearTimeout(loadTimerRef.current);
-          loadTimerRef.current = null;
-        }
-      };
-
-      const tryFallbackOrFail = () => {
-        if (cancelled()) return;
-        clearTimer();
-        if (styleIndexRef.current === 0) {
-          styleIndexRef.current = 1;
-          try {
-            map.setStyle(STYLE_FALLBACK, { diff: false });
-            armTimer();
-          } catch {
-            setMapFailed(true);
-          }
-          return;
-        }
-        setMapFailed(true);
-      };
-
-      const armTimer = () => {
-        clearTimer();
-        loadTimerRef.current = setTimeout(() => {
-          if (cancelled() || map.loaded()) return;
-          tryFallbackOrFail();
-        }, STYLE_LOAD_TIMEOUT_MS);
-      };
-
-      const onLoad = () => {
-        if (cancelled()) return;
-        clearTimer();
-        setMapFailed(false);
-        try {
-          // setStyle wipes sources — always (re)add after every load
-          if (!map.getSource("teaser-pins")) addPinLayers(map);
-          paintPins(map, pinsRef.current);
-          if (!fittedRef.current) {
-            fitCityPins(map, pinsRef.current, cityRef.current);
-            fittedRef.current = true;
-          }
-          map.resize();
-          setReady(true);
-        } catch (err) {
-          console.error("[HomeMapHero] pin layers failed", err);
-          tryFallbackOrFail();
-        }
-      };
-
-      map.on("load", onLoad);
-      map.on("error", (e) => {
-        const err = (e as unknown as { error?: { message?: string } }).error;
-        const msg = String(err?.message || e);
-        // Ignore routine tile 404s; react to style failures
-        if (/style|Failed to fetch|AJAXError|network/i.test(msg)) {
-          tryFallbackOrFail();
-        }
+  const paintPins = useCallback(
+    (map: MapLibreMap, rows: typeof filtered) => {
+      const source = map.getSource("projects") as GeoJSONSource | undefined;
+      if (!source) return;
+      source.setData({
+        type: "FeatureCollection",
+        features: rows.map((p, i) => ({
+          type: "Feature",
+          id: i + 1,
+          properties: {
+            id: p.id,
+            score: p.displayScore,
+            color: p.color,
+            phase: p.phase,
+            city: p.city || "",
+            projectType: p.projectType || "",
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [p.longitude, p.latitude],
+          },
+        })),
       });
-      armTimer();
-
-      return () => {
-        clearTimer();
-        map.off("load", onLoad);
-      };
     },
-    [paintPins],
+    [],
   );
 
-  // Init map. Wrapper keeps size; map container uses h-full so MapLibre's
-  // `.maplibregl-map { position: relative }` cannot collapse height to 0.
+  const addLayers = useCallback((map: MapLibreMap) => {
+    if (map.getSource("projects")) return;
+    map.addSource("projects", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+      cluster: true,
+      clusterMaxZoom: 11,
+      clusterRadius: 52,
+    });
+    map.addLayer({
+      id: "project-clusters",
+      type: "circle",
+      source: "projects",
+      filter: ["has", "point_count"],
+      paint: {
+        "circle-color": "#2563EB",
+        "circle-radius": ["step", ["get", "point_count"], 16, 25, 22, 100, 28],
+        "circle-opacity": 0.92,
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+    map.addLayer({
+      id: "project-cluster-count",
+      type: "symbol",
+      source: "projects",
+      filter: ["has", "point_count"],
+      layout: {
+        "text-field": ["get", "point_count_abbreviated"],
+        "text-size": 12,
+      },
+      paint: { "text-color": "#ffffff" },
+    });
+    // Same pin styling language as MapView (halo + fill + score label)
+    map.addLayer({
+      id: "project-pins-halo",
+      type: "circle",
+      source: "projects",
+      filter: ["!", ["has", "point_count"]],
+      paint: {
+        "circle-radius": 12,
+        "circle-color": ["get", "color"],
+        "circle-opacity": 0.22,
+      },
+    });
+    map.addLayer({
+      id: "project-pins",
+      type: "circle",
+      source: "projects",
+      filter: ["!", ["has", "point_count"]],
+      paint: {
+        "circle-radius": 8,
+        "circle-color": ["get", "color"],
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+    map.addLayer({
+      id: "project-scores",
+      type: "symbol",
+      source: "projects",
+      filter: ["!", ["has", "point_count"]],
+      minzoom: 12,
+      layout: {
+        "text-field": ["to-string", ["get", "score"]],
+        "text-size": 10,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": "#ffffff",
+        "text-halo-color": "rgba(0,0,0,0.25)",
+        "text-halo-width": 0.5,
+      },
+    });
+  }, []);
+
+  const fitCity = useCallback((map: MapLibreMap, all: TeaserPin[]) => {
+    const cityPins = all.filter((p) => p.city === cityRef.current.id);
+    const use = cityPins.length ? cityPins : all;
+    if (!use.length) {
+      map.flyTo({
+        center: cityRef.current.center,
+        zoom: cityRef.current.zoom,
+        duration: 600,
+      });
+      return;
+    }
+    const bounds = new LngLatBounds();
+    for (const p of use) bounds.extend([p.longitude, p.latitude]);
+    map.fitBounds(bounds, {
+      padding: 64,
+      maxZoom: 12,
+      duration: 700,
+      essential: true,
+    });
+  }, []);
+
+  // Map init — wrapper sizing avoids MapLibre position:relative height collapse
   useEffect(() => {
-    const el = containerRef.current;
     const wrap = wrapperRef.current;
-    if (!el || !wrap) return;
+    const el = containerRef.current;
+    if (!wrap || !el) return;
 
     let cancelled = false;
     let map: MapLibreMap | null = null;
-    let detachStyle: (() => void) | undefined;
     let ro: ResizeObserver | null = null;
     let raf = 0;
 
-    const isCancelled = () => cancelled;
+    const clearTimer = () => {
+      if (loadTimerRef.current) {
+        clearTimeout(loadTimerRef.current);
+        loadTimerRef.current = null;
+      }
+    };
+
+    const tryFallback = () => {
+      if (cancelled || !map) return;
+      clearTimer();
+      if (styleIndexRef.current === 0) {
+        styleIndexRef.current = 1;
+        try {
+          map.setStyle(STYLE_FALLBACK, { diff: false });
+          armTimer();
+        } catch {
+          setMapFailed(true);
+        }
+        return;
+      }
+      setMapFailed(true);
+    };
+
+    const armTimer = () => {
+      clearTimer();
+      loadTimerRef.current = setTimeout(() => {
+        if (cancelled || map?.loaded()) return;
+        tryFallback();
+      }, STYLE_LOAD_TIMEOUT_MS);
+    };
+
+    const onLoad = () => {
+      if (cancelled || !map) return;
+      clearTimer();
+      setMapFailed(false);
+      try {
+        if (!map.getSource("projects")) addLayers(map);
+        paintPins(map, filterPins(pinsRef.current, filters).map((p) => ({
+          ...p,
+          color: pinColorForScorePublic(p.displayScore),
+        })));
+        if (!fittedRef.current) {
+          fitCity(map, pinsRef.current);
+          fittedRef.current = true;
+        }
+        map.resize();
+        setReady(true);
+      } catch {
+        tryFallback();
+      }
+    };
 
     const init = () => {
-      if (cancelled || !containerRef.current || !wrapperRef.current) return;
+      if (cancelled || !wrapperRef.current || !containerRef.current) return;
       const { width, height } = wrapperRef.current.getBoundingClientRect();
       if (width < 2 || height < 2) {
         raf = requestAnimationFrame(init);
         return;
       }
-
       styleIndexRef.current = 0;
       fittedRef.current = false;
       setReady(false);
@@ -428,36 +378,26 @@ export function HomeMapHero({ initialCityId }: Props) {
         "bottom-right",
       );
       mapRef.current = map;
-      // E2E / debug handle — cleared on unmount
       (window as unknown as { __pcHomeMap?: MapLibreMap }).__pcHomeMap = map;
-      detachStyle = attachStyleHandlers(map, isCancelled);
 
-      map.on("mouseenter", "teaser-pins", () => {
-        map!.getCanvas().style.cursor = "pointer";
+      map.on("load", onLoad);
+      map.on("error", (e) => {
+        const msg = String(
+          (e as unknown as { error?: { message?: string } }).error?.message || e,
+        );
+        if (/style|Failed to fetch|AJAXError|network/i.test(msg)) tryFallback();
       });
-      map.on("mouseleave", "teaser-pins", () => {
-        map!.getCanvas().style.cursor = "";
-      });
-      map.on("mouseenter", "teaser-clusters", () => {
-        map!.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "teaser-clusters", () => {
-        map!.getCanvas().style.cursor = "";
-      });
+      armTimer();
 
-      ro = new ResizeObserver(() => {
-        map?.resize();
-      });
+      ro = new ResizeObserver(() => map?.resize());
       ro.observe(wrapperRef.current);
     };
 
     raf = requestAnimationFrame(init);
-
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
-      detachStyle?.();
-      if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+      clearTimer();
       ro?.disconnect();
       map?.remove();
       mapRef.current = null;
@@ -468,74 +408,77 @@ export function HomeMapHero({ initialCityId }: Props) {
       }
       setReady(false);
     };
-  }, [attachStyleHandlers, mapKey]);
+    // filters captured via pinsRef paint on load; don't re-init on filter change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addLayers, fitCity, mapKey, paintPins]);
 
-  // Push pins as soon as both map + data are ready (<2s target after load)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    paintPins(map, pins);
+    paintPins(map, filtered);
     if (!fittedRef.current && pins.length > 0) {
-      fitCityPins(map, pins, cityRef.current);
+      fitCity(map, pins);
       fittedRef.current = true;
     }
-  }, [pins, ready, paintPins]);
+  }, [filtered, ready, paintPins, fitCity, pins]);
 
-  const openDetail = useCallback(
-    async (projectId: string) => {
-      if (paywall) return;
-      setDetailLoading(true);
-      try {
-        const res = await fetch(
-          `/api/teaser/detail?id=${encodeURIComponent(projectId)}`,
-          { cache: "no-store" },
-        );
-        if (res.status === 402) {
-          setPaywall(true);
-          setDetail(null);
-          return;
-        }
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          ok?: boolean;
-          detail?: TeaserDetail;
-        };
-        if (!data.ok || !data.detail) return;
-
-        const nextIds = [...new Set([...readLocalViews(), projectId])].slice(
-          0,
-          TEASER_FREE_VIEWS,
-        );
-        writeLocalViews(nextIds);
-        setViewedIds(nextIds);
-        setDetail(data.detail);
-      } finally {
-        setDetailLoading(false);
+  const openProject = useCallback(
+    (id: string, lat: number, lng: number, score: number, label: string) => {
+      if (paywallRef.current) {
+        setPaywall(true);
+        return;
       }
+      const found = pinsRef.current.find((p) => p.id === id);
+      setSelected({
+        id,
+        latitude: lat,
+        longitude: lng,
+        score: found?.score ?? score,
+        tradeScores: found?.tradeScores ?? undefined,
+        address: label || "Project",
+        estValueLow: 0,
+        estValueHigh: 0,
+        buyingWindowEstimate: "",
+        phase: (found?.phase as ProjectPhase) || "pre_construction",
+        city: found?.city,
+        updatedAt: found?.updatedAt ?? undefined,
+      });
+      setOverlayOpen(true);
     },
-    [paywall],
+    [],
   );
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
 
-    const onPinClick = (e: MapLayerMouseEvent) => {
-      if (paywall) return;
-      const id = e.features?.[0]?.properties?.projectId as string | undefined;
+    const onPin = (e: MapLayerMouseEvent) => {
+      const f = e.features?.[0];
+      if (!f) return;
+      const id = f.properties?.id as string | undefined;
       if (!id) return;
-      void openDetail(id);
+      const coords =
+        f.geometry.type === "Point"
+          ? (f.geometry.coordinates as [number, number])
+          : [0, 0];
+      openProject(
+        id,
+        coords[1],
+        coords[0],
+        Number(f.properties?.score) || 0,
+        String(f.properties?.projectType || "Project"),
+      );
     };
 
-    const onClusterClick = async (e: MapLayerMouseEvent) => {
-      const feature = e.features?.[0];
-      if (!feature) return;
-      const clusterId = feature.properties?.cluster_id as number | undefined;
+    const onCluster = async (e: MapLayerMouseEvent) => {
+      const f = e.features?.[0];
+      if (!f) return;
+      const clusterId = f.properties?.cluster_id as number | undefined;
       if (clusterId == null) return;
-      const source = map.getSource("teaser-pins") as GeoJSONSource;
+      const source = map.getSource("projects") as GeoJSONSource;
       try {
         const zoom = await source.getClusterExpansionZoom(clusterId);
-        const geom = feature.geometry as {
+        const geom = f.geometry as unknown as {
           type: string;
           coordinates: [number, number];
         };
@@ -545,30 +488,49 @@ export function HomeMapHero({ initialCityId }: Props) {
       }
     };
 
-    map.on("click", "teaser-pins", onPinClick);
-    map.on("click", "teaser-clusters", onClusterClick);
-    return () => {
-      map.off("click", "teaser-pins", onPinClick);
-      map.off("click", "teaser-clusters", onClusterClick);
-    };
-  }, [ready, openDetail, paywall]);
+    map.on("click", "project-pins", onPin);
+    map.on("click", "project-scores", onPin);
+    map.on("click", "project-clusters", onCluster);
+    map.on("mouseenter", "project-pins", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "project-pins", () => {
+      map.getCanvas().style.cursor = "";
+    });
+    map.on("mouseenter", "project-clusters", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "project-clusters", () => {
+      map.getCanvas().style.cursor = "";
+    });
 
-  function retryMap() {
-    fittedRef.current = false;
-    styleIndexRef.current = 0;
-    setMapFailed(false);
-    setMapKey((k) => k + 1);
+    return () => {
+      map.off("click", "project-pins", onPin);
+      map.off("click", "project-scores", onPin);
+      map.off("click", "project-clusters", onCluster);
+    };
+  }, [ready, openProject]);
+
+  function showPaywall(message?: string) {
+    if (message) setPaywallMessage(message);
+    setOverlayOpen(false);
+    setSelected(null);
+    setPaywall(true);
+  }
+
+  function handleOverlayClose() {
+    const nextRemaining = Math.max(0, TEASER_FREE_VIEWS - viewedIds.length);
+    setOverlayOpen(false);
+    setSelected(null);
+    // After the 3rd card is closed, slide up pricing
+    if (nextRemaining === 0 && viewedIds.length >= TEASER_FREE_VIEWS) {
+      showPaywall();
+    }
   }
 
   return (
     <>
       <section className="relative h-[100dvh] w-full overflow-hidden bg-[#dfe7ef]">
-        {/*
-          CRITICAL: MapLibre adds `.maplibregl-map { position: relative }` to the
-          container element, which overrides Tailwind `absolute` and collapses
-          height to 0 (blank gray hero). Keep sizing on an outer wrapper;
-          give the MapLibre container `h-full w-full` only.
-        */}
         <div
           ref={wrapperRef}
           className={cn(
@@ -580,11 +542,11 @@ export function HomeMapHero({ initialCityId }: Props) {
             ref={containerRef}
             className="h-full w-full"
             role="application"
-            aria-label="Map of new construction projects across served cities"
+            aria-label="Map of new construction projects"
           />
         </div>
 
-        {/* Top bar + one-line pill — nothing else on the map */}
+        {/* Top: wordmark · pill · auth links */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:px-6">
           <div className="flex items-center justify-between gap-2">
             <Link
@@ -597,25 +559,44 @@ export function HomeMapHero({ initialCityId }: Props) {
             <nav className="pointer-events-auto flex shrink-0 items-center">
               <Link
                 href="/pricing"
-                className="inline-flex h-11 items-center px-2.5 text-sm font-semibold text-ink underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB] sm:px-3"
+                className="inline-flex h-11 items-center px-2.5 text-sm font-semibold text-ink underline-offset-4 hover:underline sm:px-3"
               >
                 Pricing
               </Link>
               <Link
                 href="/login"
-                className="inline-flex h-11 items-center px-2.5 text-sm font-semibold text-ink underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB] sm:px-3"
+                className="inline-flex h-11 items-center px-2.5 text-sm font-semibold text-ink underline-offset-4 hover:underline sm:px-3"
               >
                 Log in
               </Link>
             </nav>
           </div>
           <div className="mt-2 flex justify-center">
-            <p className="rounded-full border border-line bg-white/95 px-3 py-2 text-center text-[11px] font-semibold leading-snug text-ink shadow-sm backdrop-blur sm:text-xs">
+            <p className="brand-gradient rounded-full px-3 py-2 text-center text-[11px] font-semibold leading-snug text-white shadow-sm sm:text-xs">
               See which new construction projects are ready to buy ·{" "}
               {remaining} free view{remaining === 1 ? "" : "s"} left
             </p>
           </div>
         </div>
+
+        {/* Real map filters — same component & placement language as /app/map */}
+        <div className="pointer-events-none absolute inset-x-0 top-[5.5rem] z-20 flex justify-center px-3 md:top-24 md:justify-start md:px-5">
+          <div className="pointer-events-auto max-w-full">
+            <MapFilters value={filters} onChange={setFilters} />
+          </div>
+        </div>
+
+        <div className="pointer-events-none absolute bottom-3 left-3 z-20 md:bottom-6 md:left-5">
+          <MapPinLegend scoreMode={filters.scoreMode} publicRamp />
+        </div>
+
+        {loading && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center">
+            <span className="rounded-full border border-line bg-white/95 px-4 py-2 text-xs font-bold text-ink shadow-sm">
+              Loading projects…
+            </span>
+          </div>
+        )}
 
         {mapFailed && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#dfe7ef] px-4">
@@ -625,8 +606,13 @@ export function HomeMapHero({ initialCityId }: Props) {
               </p>
               <button
                 type="button"
-                onClick={retryMap}
-                className="inline-flex h-11 min-w-[120px] items-center justify-center rounded-full bg-[#2563EB] px-4 text-sm font-bold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
+                onClick={() => {
+                  fittedRef.current = false;
+                  styleIndexRef.current = 0;
+                  setMapFailed(false);
+                  setMapKey((k) => k + 1);
+                }}
+                className="brand-gradient inline-flex h-11 min-w-[120px] items-center justify-center rounded-full px-4 text-sm font-bold text-white"
               >
                 Retry
               </button>
@@ -634,162 +620,97 @@ export function HomeMapHero({ initialCityId }: Props) {
           </div>
         )}
 
-        {loading && !mapFailed && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center md:bottom-8">
-            <span className="rounded-full border border-line bg-white/95 px-4 py-2 text-xs font-bold text-ink shadow-sm">
-              Loading projects…
-            </span>
-          </div>
-        )}
+        <ProjectDetailOverlay
+          mode="public"
+          project={selected}
+          open={overlayOpen && Boolean(selected) && !paywall}
+          onClose={handleOverlayClose}
+          displayScore={selectedScore}
+          onDirections={(route) => {
+            if (route.fullRouteUrl) {
+              window.open(route.fullRouteUrl, "_blank", "noopener,noreferrer");
+            }
+          }}
+          onRequirePlan={(reason) => {
+            showPaywall(
+              reason === "start_job"
+                ? "Start a job with a plan"
+                : "You've explored 3 projects. Pick a plan to keep going.",
+            );
+          }}
+          onPublicViewed={({ projectId, viewedCount }) => {
+            const next = [...new Set([...readLocalViews(), projectId])].slice(
+              0,
+              TEASER_FREE_VIEWS,
+            );
+            writeLocalViews(next);
+            setViewedIds(next);
+            if (viewedCount >= TEASER_FREE_VIEWS) {
+              // paywall after close — handled in handleOverlayClose
+            }
+          }}
+        />
 
-        {!loading && pinsError && !mapFailed && (
-          <div className="absolute inset-x-0 bottom-24 z-10 flex justify-center px-4 md:bottom-8">
-            <div className="flex max-w-sm flex-col items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-center shadow-sm">
-              <p className="text-sm text-ink">{pinsError}</p>
-              <button
+        {/* Pricing slide-up (not full-screen) */}
+        <AnimatePresence>
+          {paywall && (
+            <>
+              <motion.button
                 type="button"
-                onClick={() => void loadPins()}
-                className="inline-flex h-11 min-w-[120px] items-center justify-center rounded-full bg-[#2563EB] px-4 text-sm font-bold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
+                aria-label="Dismiss"
+                className="absolute inset-0 z-40 bg-ink/45"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setPaywall(false)}
+              />
+              <motion.div
+                role="dialog"
+                aria-modal
+                className="absolute inset-x-0 bottom-0 z-50 mx-auto max-h-[min(85dvh,720px)] w-full max-w-4xl overflow-y-auto rounded-t-3xl border border-line bg-white p-5 shadow-2xl sm:p-8"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{
+                  type: "spring",
+                  stiffness: 380,
+                  damping: 36,
+                  mass: 0.9,
+                }}
               >
-                Retry
-              </button>
-            </div>
-          </div>
-        )}
-
-        {(detail || detailLoading) && !paywall && (
-          <>
-            <button
-              type="button"
-              aria-label="Close project details"
-              className="fixed inset-0 z-30 bg-ink/30 md:bg-transparent"
-              onClick={() => setDetail(null)}
-            />
-            <aside
-              role="dialog"
-              aria-modal
-              aria-label="Project details"
-              className={cn(
-                "fixed z-40 flex flex-col bg-white shadow-lg",
-                "inset-x-0 bottom-0 max-h-[min(70dvh,560px)] rounded-t-3xl",
-                "md:inset-y-0 md:right-0 md:left-auto md:w-[380px] md:max-h-none md:rounded-none md:border-l md:border-line",
-              )}
-            >
-              <div className="flex items-center justify-between border-b border-line px-4 py-3">
-                <p className="text-xs font-bold uppercase tracking-wide text-[#2563EB]">
-                  Project
+                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line" />
+                <h2 className="text-center text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                  {paywallMessage.includes("Start a job") ? (
+                    <>
+                      Start a job with a{" "}
+                      <span className="brand-gradient-text">plan</span>
+                    </>
+                  ) : (
+                    <>
+                      You&apos;ve explored 3 projects. Pick a plan to{" "}
+                      <span className="brand-gradient-text">keep going</span>.
+                    </>
+                  )}
+                </h2>
+                <p className="mx-auto mt-2 max-w-md text-center text-sm text-slate">
+                  Your city ({city.shortLabel}) carries into signup and checkout.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setDetail(null)}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full text-slate hover:bg-offwhite focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2563EB]"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                {detailLoading && !detail && (
-                  <p className="text-sm font-semibold text-slate">Loading…</p>
-                )}
-                {detail && (
-                  <>
-                    <h2 className="text-lg font-bold leading-snug text-ink">
-                      {detail.address}
-                    </h2>
-                    <p className="mt-1 text-sm text-slate">
-                      {detail.projectType} · {detail.phaseLabel}
-                    </p>
-                    <div className="mt-4 flex items-center gap-3">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#2563EB] text-lg font-bold text-white">
-                        {detail.score}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-ink">Buy Score</p>
-                        {(detail.valueLow > 0 || detail.valueHigh > 0) && (
-                          <p className="text-sm text-slate">
-                            Est. ${detail.valueLow.toLocaleString()}–$
-                            {detail.valueHigh.toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <ul className="mt-4 space-y-1.5">
-                      {detail.scoreReasons.map((r) => (
-                        <li key={r} className="text-sm leading-snug text-slate">
-                          · {r}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-5">
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate">
-                        Likely needs
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {detail.likelyNeeds.map((t) => (
-                          <span
-                            key={t.trade}
-                            className="rounded-full border border-line bg-offwhite px-2.5 py-1 text-xs font-bold text-ink"
-                          >
-                            {t.trade}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mt-5 flex items-start gap-3 rounded-2xl border border-line bg-offwhite p-3">
-                      <Lock
-                        className="mt-0.5 h-5 w-5 shrink-0 text-[#2563EB]"
-                        aria-hidden
-                      />
-                      <div>
-                        <p className="text-sm font-bold text-ink">
-                          Contact details unlock with a plan
-                        </p>
-                        <p className="mt-0.5 text-xs text-slate">
-                          Owner, GC, architect, and phone stay private until you
-                          subscribe.
-                        </p>
-                        <Link
-                          href={signupHref}
-                          className="mt-3 inline-flex h-11 items-center justify-center rounded-full bg-[#2563EB] px-4 text-sm font-bold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
-                        >
-                          Unlock contacts
-                        </Link>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </aside>
-          </>
-        )}
-
-        {paywall && (
-          <div className="absolute inset-0 z-50 flex items-end justify-center overflow-y-auto bg-ink/50 px-4 py-8 sm:items-center">
-            <div className="w-full max-w-4xl rounded-3xl border border-line bg-white p-5 shadow-lg sm:p-8">
-              <h2 className="text-center text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                You&apos;ve seen 3 projects. Pick a plan to keep going.
-              </h2>
-              <p className="mx-auto mt-2 max-w-md text-center text-sm text-slate">
-                Your city ({city.shortLabel}) carries into signup and checkout.
-              </p>
-              <div className="mt-8">
-                <PricingCards
-                  ctaHref={`/signup?city=${encodeURIComponent(city.id)}`}
-                />
-              </div>
-              <p className="mt-6 text-center text-sm">
-                Already have an account?{" "}
-                <Link
-                  href="/login"
-                  className="font-bold text-[#2563EB] underline-offset-2 hover:underline"
-                >
-                  Log in
-                </Link>
-              </p>
-            </div>
-          </div>
-        )}
+                <div className="mt-6">
+                  <PricingCards ctaHref={signupHref.replace("&checkout=1&tier=growth", "")} />
+                </div>
+                <p className="mt-6 text-center text-sm">
+                  Already have an account?{" "}
+                  <Link
+                    href="/login"
+                    className="font-bold text-[#2563EB] underline-offset-2 hover:underline"
+                  >
+                    Log in
+                  </Link>
+                </p>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </section>
     </>
   );
@@ -815,12 +736,15 @@ const STEPS = [
 
 export function HomeBelowFold() {
   return (
-    <div className="bg-white">
-      <section className="border-t border-line px-5 py-14 md:px-10 md:py-16">
+    <div className="relative bg-transparent">
+      <IphoneAppSection />
+      <HomeVideoSection />
+
+      <section className="border-t border-white/40 px-5 py-14 md:px-10 md:py-16">
         <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-3 md:gap-8">
           {STEPS.map((s) => (
             <div key={s.title} className="text-center md:text-left">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2563EB]/10 text-[#2563EB] md:mx-0">
+              <div className="brand-gradient mx-auto flex h-12 w-12 items-center justify-center rounded-full text-white md:mx-0">
                 <s.Icon className="h-6 w-6" aria-hidden />
               </div>
               <h2 className="mt-4 text-lg font-bold text-ink">{s.title}</h2>
@@ -832,9 +756,9 @@ export function HomeBelowFold() {
 
       <section
         id="pricing"
-        className="border-t border-line bg-offwhite px-5 py-14 md:px-10 md:py-16"
+        className="border-t border-white/40 px-5 py-14 md:px-10 md:py-16"
       >
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-6xl rounded-3xl border border-white/60 bg-white/90 p-6 shadow-sm backdrop-blur md:p-10">
           <h2 className="text-center text-2xl font-bold text-ink md:text-3xl">
             Simple pricing
           </h2>
@@ -847,7 +771,7 @@ export function HomeBelowFold() {
         </div>
       </section>
 
-      <footer className="border-t border-line px-5 py-8 md:px-10">
+      <footer className="border-t border-white/40 px-5 py-8 md:px-10">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Logo variant="dark" size={28} />
           <div className="flex flex-wrap gap-4 text-sm font-semibold text-slate">
