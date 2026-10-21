@@ -19,6 +19,8 @@
   --foreground: #0b0f19;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --font-satoshi: "Satoshi", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-geist-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-instrument: var(--font-instrument), ui-serif, Georgia, serif;
 }
 
 @theme inline {
@@ -33,7 +35,8 @@
   --color-hot: var(--pc-hot);
   --color-success: var(--pc-success);
   --color-warning: var(--pc-warning);
-  --font-sans: var(--font-satoshi);
+  --font-sans: var(--font-geist-sans), var(--font-satoshi);
+  --font-display: var(--font-instrument);
 }
 
 * {
@@ -80,56 +83,55 @@ a {
   background: var(--pc-gradient);
 }
 
-/* Public marketing: whimsical mesh gradient (respect reduced motion) */
-.marketing-mesh {
-  --brand-gradient: linear-gradient(
-    125deg,
-    #6366f1 0%,
-    #8b5cf6 28%,
-    #06b6d4 62%,
-    #fb7185 88%,
-    #fdba74 100%
+/*
+ * Sunrise marketing theme — paper / ink / heat.
+ * No mesh, glass, blur, or gradient text on public pages.
+ */
+.marketing-sunrise {
+  --mkt-paper: #fbf7f0;
+  --mkt-ink: #14213d;
+  --mkt-muted: #5b6475;
+  --mkt-rule: #e7dfd0;
+  --mkt-blue: #2563eb;
+  --mkt-heat-cool: #9fb4cc;
+  --mkt-heat-mid: #f2b544;
+  --mkt-heat-hot: #f26b3a;
+  --color-ink: var(--mkt-ink);
+  --color-slate: var(--mkt-muted);
+  --color-line: var(--mkt-rule);
+  --color-offwhite: var(--mkt-paper);
+  color: var(--mkt-ink);
+  background-color: var(--mkt-paper);
+  background-image: linear-gradient(
+    180deg,
+    #fbf7f0 0%,
+    #fbf7f0 55%,
+    #f8ebe0 100%
   );
-  background-color: #f5f3ff;
-  background-image:
-    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(99, 102, 241, 0.35), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 90% 10%, rgba(139, 92, 246, 0.28), transparent 50%),
-    radial-gradient(ellipse 60% 45% at 50% 100%, rgba(6, 182, 212, 0.22), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(251, 113, 133, 0.18), transparent 50%);
-  background-size: 140% 140%;
-  animation: mesh-drift 48s ease-in-out infinite alternate;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-@keyframes mesh-drift {
-  from {
-    background-position: 0% 20%, 100% 0%, 50% 100%, 0% 80%;
-  }
-  to {
-    background-position: 20% 0%, 80% 30%, 40% 80%, 30% 100%;
-  }
+.marketing-sunrise .font-display {
+  font-family: var(--font-instrument), ui-serif, Georgia, serif;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .marketing-mesh {
-    animation: none;
-  }
+.mkt-btn-primary {
+  background: #2563eb;
+  color: #fbf7f0;
 }
 
-.brand-gradient {
-  background-image: var(
-    --brand-gradient,
-    linear-gradient(125deg, #6366f1, #8b5cf6, #06b6d4, #fb7185)
-  );
+.mkt-btn-primary:hover {
+  background: #1d4ed8;
 }
 
-.brand-gradient-text {
-  background-image: var(
-    --brand-gradient,
-    linear-gradient(125deg, #6366f1, #8b5cf6, #06b6d4, #fb7185)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.mkt-btn-ghost {
+  background: transparent;
+  color: #14213d;
+}
+
+.mkt-surface {
+  background: #fbf7f0;
+  border: 1px solid #e7dfd0;
 }
 
 .pc-card {

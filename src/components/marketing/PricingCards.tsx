@@ -34,10 +34,20 @@ const FEATURES = {
   ],
 } as const;
 
-export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
+type Props = {
+  ctaHref?: string;
+  /** Clean table layout for sunrise marketing pages */
+  variant?: "default" | "marketing";
+};
+
+export function PricingCards({
+  ctaHref = "/signup",
+  variant = "default",
+}: Props) {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const tiers = ["starter", "growth", "pro"] as const;
+  const isMarketing = variant === "marketing";
 
   function readPromoCode(): string {
     try {
@@ -103,31 +113,38 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
 
   return (
     <div>
-      <div className="mb-8 flex flex-col items-center gap-2">
-        <div className="flex items-center justify-center gap-3">
-          <span className="text-sm font-semibold text-ink">Monthly</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={false}
-            aria-disabled="true"
-            disabled
-            title="Annual billing coming soon — checkout is monthly for now"
-            className="relative h-8 w-14 cursor-not-allowed rounded-full bg-line opacity-60"
-          >
-            <span className="absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow" />
-          </button>
-          <span className="text-sm font-semibold text-slate">
-            Annual <span className="text-slate/80">· soon</span>
-          </span>
+      {!isMarketing && (
+        <div className="mb-8 flex flex-col items-center gap-2">
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-sm font-semibold text-ink">Monthly</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={false}
+              aria-disabled="true"
+              disabled
+              title="Annual billing coming soon — checkout is monthly for now"
+              className="relative h-8 w-14 cursor-not-allowed rounded-full bg-line opacity-60"
+            >
+              <span className="absolute top-1 left-1 h-6 w-6 rounded-full bg-white shadow" />
+            </button>
+            <span className="text-sm font-semibold text-slate">
+              Annual <span className="text-slate/80">· soon</span>
+            </span>
+          </div>
+          <p className="text-xs text-slate">
+            Checkout is monthly today. Annual plans are on the way.
+          </p>
         </div>
-        <p className="text-xs text-slate">
-          Checkout is monthly today. Annual plans are on the way.
-        </p>
-      </div>
+      )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {tiers.map((tier) => {
+      <div
+        className={cn(
+          "grid gap-4 md:grid-cols-3",
+          isMarketing && "gap-0 overflow-hidden rounded-xl border border-[#E7DFD0] md:gap-0",
+        )}
+      >
+        {tiers.map((tier, idx) => {
           const plan = PLAN_PRICING[tier];
           const price = plan.monthly;
           const featured = tier === "growth";
@@ -136,26 +153,85 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
             <article
               key={tier}
               className={cn(
-                "rounded-[22px] border p-6 transition",
-                featured
-                  ? "border-[#2563EB] bg-[#2563EB] text-white shadow-sm"
-                  : "border-line bg-white text-ink",
+                isMarketing
+                  ? cn(
+                      "border-[#E7DFD0] bg-[#FBF7F0] p-6 text-[#14213D]",
+                      idx > 0 && "border-t md:border-t-0 md:border-l",
+                      featured && "bg-[#F8F1E6]",
+                    )
+                  : cn(
+                      "rounded-[22px] border p-6 transition",
+                      featured
+                        ? "border-[#2563EB] bg-[#2563EB] text-white shadow-sm"
+                        : "border-line bg-white text-ink",
+                    ),
               )}
             >
-              <p className={cn("text-sm font-bold uppercase tracking-wider", featured ? "text-white/80" : "text-slate")}>
-                {plan.name}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    isMarketing
+                      ? "text-[#5B6475]"
+                      : featured
+                        ? "font-bold uppercase tracking-wider text-white/80"
+                        : "font-bold uppercase tracking-wider text-slate",
+                  )}
+                >
+                  {plan.name}
+                </p>
+                {isMarketing && featured && (
+                  <span className="text-[11px] font-medium text-[#2563EB]">
+                    Recommended
+                  </span>
+                )}
+              </div>
               <p className="mt-2 flex items-baseline gap-1">
-                <span className="text-4xl font-bold tabular-nums">${price}</span>
-                <span className={featured ? "text-white/75" : "text-slate"}>/mo</span>
+                <span
+                  className={cn(
+                    "text-4xl tabular-nums",
+                    isMarketing ? "font-semibold text-[#14213D]" : "font-bold",
+                  )}
+                >
+                  ${price}
+                </span>
+                <span
+                  className={
+                    isMarketing
+                      ? "text-[#5B6475]"
+                      : featured
+                        ? "text-white/75"
+                        : "text-slate"
+                  }
+                >
+                  /mo
+                </span>
               </p>
-              <p className={cn("mt-1 text-sm", featured ? "text-white/80" : "text-slate")}>
+              <p
+                className={cn(
+                  "mt-1 text-sm",
+                  isMarketing
+                    ? "text-[#5B6475]"
+                    : featured
+                      ? "text-white/80"
+                      : "text-slate",
+                )}
+              >
                 {tier === "pro" ? "Full US access" : zipLabel}
               </p>
               <ul className="mt-5 space-y-2.5">
                 {FEATURES[tier].map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className={cn("mt-0.5 h-4 w-4 shrink-0", featured ? "text-white" : "text-[#2563EB]")} />
+                    <Check
+                      className={cn(
+                        "mt-0.5 h-4 w-4 shrink-0",
+                        isMarketing
+                          ? "text-[#2563EB]"
+                          : featured
+                            ? "text-white"
+                            : "text-[#2563EB]",
+                      )}
+                    />
                     <span>{f}</span>
                   </li>
                 ))}
@@ -165,10 +241,17 @@ export function PricingCards({ ctaHref = "/signup" }: { ctaHref?: string }) {
                 disabled={loading !== null}
                 onClick={() => startTrial(tier)}
                 className={cn(
-                  "mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition active:scale-[0.98] disabled:opacity-60",
-                  featured
-                    ? "bg-white text-ink"
-                    : "bg-[#2563EB] text-white",
+                  "mt-6 flex h-12 w-full items-center justify-center gap-2 text-sm transition active:scale-[0.98] disabled:opacity-60",
+                  isMarketing
+                    ? featured
+                      ? "rounded-lg bg-[#2563EB] font-medium text-[#FBF7F0] hover:bg-[#1d4ed8]"
+                      : "rounded-lg border border-[#E7DFD0] bg-transparent font-medium text-[#14213D] hover:bg-[#F8F1E6]"
+                    : cn(
+                        "rounded-full font-bold",
+                        featured
+                          ? "bg-white text-ink"
+                          : "bg-[#2563EB] text-white",
+                      ),
                 )}
                 aria-busy={loading === tier || undefined}
               >

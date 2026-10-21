@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Smartphone } from "lucide-react";
 import { AppWaitlistForm } from "./AppWaitlistForm";
+import { cn } from "@/lib/cn";
 
 const IOS_URL = process.env.NEXT_PUBLIC_IOS_APP_URL?.trim() || "";
 
@@ -17,7 +17,12 @@ const FEATURES = [
   "Automatic upload into the matching Procurity job",
 ];
 
-export function IphoneAppSection() {
+type Props = {
+  /** When true, omit outer section chrome (used inside asymmetric home layout) */
+  embedded?: boolean;
+};
+
+export function IphoneAppSection({ embedded = false }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,7 +33,7 @@ export function IphoneAppSection() {
         QR.toDataURL(IOS_URL, {
           width: 160,
           margin: 1,
-          color: { dark: "#0B0F19", light: "#FFFFFF" },
+          color: { dark: "#14213D", light: "#FBF7F0" },
         }),
       )
       .then((url) => {
@@ -42,71 +47,76 @@ export function IphoneAppSection() {
     };
   }, []);
 
-  return (
-    <section className="border-t border-white/40 px-5 py-14 md:px-10 md:py-16">
-      <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-2">
-        <div className="relative mx-auto w-[220px]">
-          <div className="brand-gradient absolute -inset-6 rounded-[2.5rem] opacity-40 blur-2xl" />
-          <div className="relative overflow-hidden rounded-[2rem] border-[6px] border-ink bg-ink shadow-xl">
-            <div className="flex h-[420px] flex-col bg-gradient-to-b from-[#1e293b] to-[#0B0F19] p-4 text-white">
-              <div className="mx-auto h-1.5 w-16 rounded-full bg-white/20" />
-              <div className="mt-8 flex flex-1 flex-col items-center justify-center gap-3 text-center">
-                <Smartphone className="h-10 w-10 text-white/80" aria-hidden />
-                <p className="text-sm font-bold">LiDAR measure</p>
-                <p className="text-xs text-white/60">12′ 4″ · wall to wall</p>
-                <div className="mt-4 h-24 w-full rounded-xl border border-dashed border-white/20 bg-white/5" />
-              </div>
+  const body = (
+    <div
+      className={cn(
+        embedded
+          ? "flex flex-col gap-8"
+          : "mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-2",
+      )}
+    >
+      <div className={cn("relative mx-auto w-[200px]", !embedded && "md:mx-0")}>
+        <div className="relative overflow-hidden rounded-[2rem] border-[5px] border-[#14213D] bg-[#14213D]">
+          <div className="flex h-[400px] flex-col bg-[#1a2744] p-4 text-[#FBF7F0]">
+            <div className="mx-auto h-1.5 w-16 rounded-full bg-[#FBF7F0]/20" />
+            <div className="mt-8 flex flex-1 flex-col items-center justify-center gap-3 text-center">
+              <p className="text-sm font-medium">LiDAR measure</p>
+              <p className="text-xs text-[#FBF7F0]/60">12′ 4″ · wall to wall</p>
+              <div className="mt-4 h-24 w-full rounded-xl border border-dashed border-[#E7DFD0]/30 bg-[#FBF7F0]/5" />
             </div>
           </div>
         </div>
-
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-ink md:text-3xl">
-            Measure on site with{" "}
-            <span className="brand-gradient-text">LiDAR</span>
-          </h2>
-          <ul className="mt-5 space-y-2.5">
-            {FEATURES.map((f) => (
-              <li key={f} className="flex gap-2 text-sm text-slate">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#2563EB]" />
-                {f}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-xs text-slate">
-            Needs an iPhone 12 Pro or newer, or an iPad Pro.
-          </p>
-
-          {IOS_URL ? (
-            <div className="mt-6 flex flex-wrap items-center gap-4">
-              <a
-                href={IOS_URL}
-                className="brand-gradient inline-flex h-12 items-center justify-center rounded-full px-5 text-sm font-bold text-white"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download for iPhone
-              </a>
-              {qrDataUrl && (
-                <div className="hidden rounded-xl border border-line bg-white p-2 shadow-sm md:block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={qrDataUrl} alt="QR code to download the iPhone app" width={96} height={96} />
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="mt-6 rounded-2xl border border-line bg-white/90 p-4 shadow-sm">
-              <p className="text-sm font-bold text-ink">Coming soon</p>
-              <p className="mt-1 text-xs text-slate">
-                Leave your email and we&apos;ll tell you when the app is ready.
-              </p>
-              <div className="mt-3">
-                <AppWaitlistForm source="home" />
-              </div>
-            </div>
-          )}
-        </div>
       </div>
+
+      <div>
+        <h2 className="font-display text-2xl tracking-tight text-[#14213D] md:text-3xl">
+          Measure on site with LiDAR
+        </h2>
+        <ul className="mt-5 space-y-2.5">
+          {FEATURES.map((f) => (
+            <li key={f} className="flex gap-2 text-sm text-[#5B6475]">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#2563EB]" />
+              {f}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 text-xs text-[#5B6475]">
+          Needs an iPhone 12 Pro or newer, or an iPad Pro.
+        </p>
+
+        {IOS_URL ? (
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <a
+              href={IOS_URL}
+              className="mkt-btn-primary inline-flex h-11 items-center rounded-lg px-4 text-sm font-medium"
+            >
+              Get the iPhone app
+            </a>
+            {qrDataUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={qrDataUrl}
+                alt="QR code for the iPhone app"
+                width={72}
+                height={72}
+                className="rounded-lg border border-[#E7DFD0]"
+              />
+            )}
+          </div>
+        ) : (
+          <div className="mt-6">
+            <AppWaitlistForm />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <section className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-16">
+      {body}
     </section>
   );
 }

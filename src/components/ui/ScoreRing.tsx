@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { cn } from "@/lib/cn";
+import { pinColorForScorePublic } from "@/lib/map/pin-filters";
 
 type ScoreRingProps = {
   score: number;
@@ -9,6 +10,8 @@ type ScoreRingProps = {
   stroke?: number;
   className?: string;
   label?: string;
+  /** Construction heat stroke instead of brand gradient */
+  heat?: boolean;
 };
 
 export function ScoreRing({
@@ -17,11 +20,14 @@ export function ScoreRing({
   stroke = 6,
   className,
   label,
+  heat = false,
 }: ScoreRingProps) {
+  const gradId = useId();
   const [value, setValue] = useState(0);
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
+  const heatStroke = pinColorForScorePublic(score);
 
   useEffect(() => {
     const reduced =
@@ -51,7 +57,7 @@ export function ScoreRing({
     <div
       className={cn(
         "relative inline-flex items-center justify-center",
-        hot && "pc-hot-glow",
+        hot && !heat && "pc-hot-glow",
         className,
       )}
       style={{ width: size, height: size }}
@@ -63,7 +69,7 @@ export function ScoreRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--pc-line)"
+          stroke={heat ? "#E7DFD0" : "var(--pc-line)"}
           strokeWidth={stroke}
         />
         <circle
@@ -71,20 +77,33 @@ export function ScoreRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="url(#scoreGrad)"
+          stroke={heat ? heatStroke : `url(#${gradId})`}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
+          style={
+            heat && hot
+              ? { filter: "drop-shadow(0 0 6px rgba(242, 107, 58, 0.45))" }
+              : undefined
+          }
         />
-        <defs>
-          <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#7C6CF6" />
-            <stop offset="100%" stopColor="#38D9C9" />
-          </linearGradient>
-        </defs>
+        {!heat && (
+          <defs>
+            <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#7C6CF6" />
+              <stop offset="100%" stopColor="#38D9C9" />
+            </linearGradient>
+          </defs>
+        )}
       </svg>
-      <span className="absolute font-bold tabular-nums text-ink" style={{ fontSize: size * 0.28 }}>
+      <span
+        className={cn(
+          "absolute font-semibold tabular-nums",
+          heat ? "text-[#14213D]" : "font-bold text-ink",
+        )}
+        style={{ fontSize: size * 0.28 }}
+      >
         {value}
       </span>
     </div>

@@ -1,6 +1,15 @@
 import type { Metadata, Viewport } from "next";
+import { Instrument_Serif } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import { SiteProviders } from "@/components/SiteProviders";
 import "./globals.css";
+
+const instrument = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-instrument",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Procurity — Find your next job before anyone else does",
@@ -40,25 +49,28 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#0B0F19",
+  themeColor: "#FBF7F0",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html
+      lang="en"
+      className={`h-full antialiased ${GeistSans.variable} ${instrument.variable}`}
+    >
       <head>
-        <link
-          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap"
-          rel="stylesheet"
-        />
         <link rel="preconnect" href="https://tiles.openfreemap.org" />
         <link rel="dns-prefetch" href="https://tiles.openfreemap.org" />
       </head>
       <body
-        className="min-h-full font-sans"
-        style={{ ["--font-satoshi" as string]: "'Satoshi', ui-sans-serif, system-ui, sans-serif" }}
+        className={`${GeistSans.className} min-h-full`}
+        style={
+          {
+            ["--font-geist-sans" as string]: "var(--font-geist-sans)",
+          } as React.CSSProperties
+        }
       >
         <SiteProviders>{children}</SiteProviders>
       </body>
