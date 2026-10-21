@@ -46,9 +46,18 @@ export function JobWorkflow({ bundle: initial, projectLabel }: Props) {
   }
 
   function goStage(status: JobStatus) {
+    setError(null);
     startTransition(async () => {
-      await setJobStageAction(job.id, status);
-      setBundle((b) => ({ ...b, job: { ...b.job, status } }));
+      try {
+        const res = await setJobStageAction(job.id, status);
+        if (!res.ok) {
+          setError(res.error);
+          return;
+        }
+        setBundle((b) => ({ ...b, job: { ...b.job, status } }));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not change stage");
+      }
     });
   }
 
@@ -95,7 +104,14 @@ export function JobWorkflow({ bundle: initial, projectLabel }: Props) {
             setError(null);
             startTransition(async () => {
               try {
-                await saveJobStartAction(job.id, { ...data, advance });
+                const res = await saveJobStartAction(job.id, {
+                  ...data,
+                  advance,
+                });
+                if (!res.ok) {
+                  setError(res.error);
+                  return;
+                }
                 setMessage(advance ? "Moved to Site capture" : "Saved");
                 refreshFromServer();
               } catch (e) {
@@ -425,17 +441,28 @@ function StageCapture({
           disabled={pending || !label}
           className="rounded-full bg-ink px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
           onClick={() => {
+            setError(null);
             void addMeasurementAction(bundle.job.id, {
               label,
               width: width ? Number(width) : null,
               height: height ? Number(height) : null,
               unit,
-            }).then(() => {
-              setLabel("");
-              setWidth("");
-              setHeight("");
-              onReload();
-            });
+            })
+              .then((res) => {
+                if (!res.ok) {
+                  setError(res.error);
+                  return;
+                }
+                setLabel("");
+                setWidth("");
+                setHeight("");
+                onReload();
+              })
+              .catch((e) =>
+                setError(
+                  e instanceof Error ? e.message : "Could not add measurement",
+                ),
+              );
           }}
         >
           Add row
@@ -455,11 +482,22 @@ function StageCapture({
               <button
                 type="button"
                 className="text-xs font-bold text-slate underline"
-                onClick={() =>
-                  void deleteMeasurementAction(bundle.job.id, m.id).then(
-                    onReload,
-                  )
-                }
+                onClick={() => {
+                  setError(null);
+                  void deleteMeasurementAction(bundle.job.id, m.id)
+                    .then((res) => {
+                      if (!res.ok) {
+                        setError(res.error);
+                        return;
+                      }
+                      onReload();
+                    })
+                    .catch((e) =>
+                      setError(
+                        e instanceof Error ? e.message : "Could not remove",
+                      ),
+                    );
+                }}
               >
                 Remove
               </button>
@@ -474,13 +512,18 @@ function StageCapture({
           imageUrl={photos[0].fileUrl}
           unit={unit}
           onSave={async ({ label: l, annotation }) => {
-            await addMeasurementAction(bundle.job.id, {
+            setError(null);
+            const res = await addMeasurementAction(bundle.job.id, {
               label: l,
               unit,
               width: annotation.realLength,
               height: null,
               annotation,
             });
+            if (!res.ok) {
+              setError(res.error);
+              return;
+            }
             onReload();
           }}
         />
@@ -631,10 +674,20 @@ function StageDesign({
                       catalogKey: m.key,
                     },
                   ];
-                  void saveLineItemsAction(bundle.job.id, next).then(() => {
-                    setMessage(`Added ${m.label}`);
-                    onReload();
-                  });
+                  void saveLineItemsAction(bundle.job.id, next)
+                    .then((res) => {
+                      if (!res.ok) {
+                        setError(res.error);
+                        return;
+                      }
+                      setMessage(`Added ${m.label}`);
+                      onReload();
+                    })
+                    .catch((e) =>
+                      setError(
+                        e instanceof Error ? e.message : "Could not add item",
+                      ),
+                    );
                 }}
               >
                 Add
@@ -649,15 +702,24 @@ function StageDesign({
         disabled={pending}
         className="pc-gradient-bg w-full rounded-full py-3 text-sm font-bold text-white"
         onClick={() => {
+          setError(null);
           void saveDesignAction(bundle.job.id, {
             signType,
             description,
             notes,
             advance: true,
-          }).then(() => {
-            setMessage("Design saved");
-            onReload();
-          });
+          })
+            .then((res) => {
+              if (!res.ok) {
+                setError(res.error);
+                return;
+              }
+              setMessage("Design saved");
+              onReload();
+            })
+            .catch((e) =>
+              setError(e instanceof Error ? e.message : "Save failed"),
+            );
         }}
       >
         Continue to estimate
@@ -800,6 +862,7 @@ function StageEstimate({
           disabled={pending}
           className="rounded-full border border-line px-4 py-2 text-sm font-bold"
           onClick={() => {
+            setError(null);
             void saveLineItemsAction(
               bundle.job.id,
               items.map((i) => ({
@@ -812,10 +875,18 @@ function StageEstimate({
                 catalogKey: i.catalogKey,
               })),
               taxRatePct,
-            ).then(() => {
-              setMessage("Line items saved");
-              onReload();
-            });
+            )
+              .then((res) => {
+                if (!res.ok) {
+                  setError(res.error);
+                  return;
+                }
+                setMessage("Line items saved");
+                onReload();
+              })
+              .catch((e) =>
+                setError(e instanceof Error ? e.message : "Save failed"),
+              );
           }}
         >
           Save line items
@@ -826,8 +897,9 @@ function StageEstimate({
           className="rounded-full bg-ink px-4 py-2 text-sm font-bold text-white"
           onClick={() => {
             void (async () => {
+              setError(null);
               try {
-                await saveLineItemsAction(
+                const saved = await saveLineItemsAction(
                   bundle.job.id,
                   items.map((i) => ({
                     id: i.id,
@@ -840,8 +912,16 @@ function StageEstimate({
                   })),
                   taxRatePct,
                 );
-                const quote = await generateQuotePdfAction(bundle.job.id);
-                setMessage(`Quote v${quote?.version} PDF ready`);
+                if (!saved.ok) {
+                  setError(saved.error);
+                  return;
+                }
+                const res = await generateQuotePdfAction(bundle.job.id);
+                if (!res.ok) {
+                  setError(res.error);
+                  return;
+                }
+                setMessage(`Quote v${res.quote.version} PDF ready`);
                 onReload();
               } catch (e) {
                 setError(e instanceof Error ? e.message : "PDF failed");
@@ -866,8 +946,13 @@ function StageEstimate({
             type="button"
             className="pc-gradient-bg rounded-full px-4 py-2 text-sm font-bold text-white"
             onClick={() => {
+              setError(null);
               void sendQuoteAction(bundle.job.id, latestQuote.id)
                 .then((res) => {
+                  if (!res.ok) {
+                    setError(res.error);
+                    return;
+                  }
                   setMessage(
                     res.stub
                       ? `Quote email stubbed (set RESEND_API_KEY). Accept: ${res.acceptUrl}`
@@ -886,7 +971,10 @@ function StageEstimate({
         <button
           type="button"
           className="rounded-full border border-line px-4 py-2 text-sm font-bold"
-          onClick={onAdvanceInvoice}
+          onClick={() => {
+            setError(null);
+            onAdvanceInvoice();
+          }}
         >
           Go to invoicing
         </button>
@@ -937,8 +1025,13 @@ function StageInvoice({
           disabled={pending || !accepted}
           className="rounded-full bg-ink px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
           onClick={() => {
+            setError(null);
             void setupInvoicesAction(bundle.job.id, "full")
-              .then(() => {
+              .then((res) => {
+                if (!res.ok) {
+                  setError(res.error);
+                  return;
+                }
                 setMessage("Created 100% upfront invoice");
                 onReload();
               })
@@ -954,8 +1047,13 @@ function StageInvoice({
           disabled={pending || !accepted}
           className="rounded-full border border-line px-4 py-2 text-sm font-bold disabled:opacity-50"
           onClick={() => {
+            setError(null);
             void setupInvoicesAction(bundle.job.id, "deposit_balance")
-              .then(() => {
+              .then((res) => {
+                if (!res.ok) {
+                  setError(res.error);
+                  return;
+                }
                 setMessage("Created 50% deposit + 50% balance");
                 onReload();
               })

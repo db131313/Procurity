@@ -27,17 +27,46 @@ import type {
   LineItemCategory,
   MeasureUnit,
   MeasurementAnnotation,
+  QuoteRecord,
+  InvoiceRecord,
 } from "@/lib/jobs/types";
 
 export type StartJobResult =
   | { ok: true }
   | { ok: false; error: string };
 
-async function requireJobsUser() {
+export type ActionResult<T extends object = object> =
+  | ({ ok: true } & T)
+  | { ok: false; error: string };
+
+function errorMessage(e: unknown): string {
+  if (e instanceof Error && e.message) return e.message;
+  return "Something went wrong";
+}
+
+/** Log the real error + React digest so Netlify logs identify the action. */
+function logActionError(action: string, e: unknown) {
+  const digest =
+    e && typeof e === "object" && "digest" in e
+      ? String((e as { digest?: unknown }).digest)
+      : undefined;
+  console.error(`[jobs/action:${action}]`, {
+    message: errorMessage(e),
+    digest,
+    stack: e instanceof Error ? e.stack : undefined,
+  });
+}
+
+async function requireJobsUser(): Promise<
+  | { ok: true; user: Awaited<ReturnType<typeof getCurrentUser>> & object }
+  | { ok: false; error: string }
+> {
   const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
-  if (!hasJobsAccess(user)) throw new Error("Jobs requires a paid plan");
-  return user;
+  if (!user) return { ok: false, error: "Unauthorized" };
+  if (!hasJobsAccess(user)) {
+    return { ok: false, error: "Jobs requires a paid plan" };
+  }
+  return { ok: true, user };
 }
 
 function revalidateJob(jobId: string) {
@@ -75,9 +104,10 @@ export async function startJobFromProject(
     jobId = job.id;
     revalidateJob(job.id);
   } catch (e) {
+    logActionError("startJobFromProject", e);
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "Could not create job",
+      error: errorMessage(e) || "Could not create job",
     };
   }
   redirect(`/app/jobs/${jobId}`);
@@ -99,9 +129,10 @@ export async function startBlankJob(): Promise<StartJobResult> {
     jobId = job.id;
     revalidateJob(job.id);
   } catch (e) {
+    logActionError("startBlankJob", e);
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "Could not create job",
+      error: errorMessage(e) || "Could not create job",
     };
   }
   redirect(`/app/jobs/${jobId}`);
@@ -117,26 +148,41 @@ export async function saveJobStartAction(
     projectId?: string | null;
     advance?: boolean;
   },
-) {
-  const user = await requireJobsUser();
-  const job = await updateJob(jobId, user.id, {
-    customerName: data.customerName,
-    customerEmail: data.customerEmail,
-    customerPhone: data.customerPhone,
-    siteAddress: data.siteAddress,
-    projectId: data.projectId ?? null,
-    ...(data.advance ? { status: "site_capture" as JobStatus } : {}),
-  });
-  if (!job) throw new Error("Job not found");
-  revalidateJob(jobId);
-  return { ok: true };
+): Promise<ActionResult> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    const job = await updateJob(jobId, auth.user.id, {
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      customerPhone: data.customerPhone,
+      siteAddress: data.siteAddress,
+      projectId: data.projectId ?? null,
+      ...(data.advance ? { status: "site_capture" as JobStatus } : {}),
+    });
+    if (!job) return { ok: false, error: "Job not found" };
+    revalidateJob(jobId);
+    return { ok: true };
+  } catch (e) {
+    logActionError("saveJobStartAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
 
-export async function setJobStageAction(jobId: string, status: JobStatus) {
-  const user = await requireJobsUser();
-  await advanceJobStatus(jobId, user.id, status);
-  revalidateJob(jobId);
-  return { ok: true };
+export async function setJobStageAction(
+  jobId: string,
+  status: JobStatus,
+): Promise<ActionResult> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    await advanceJobStatus(jobId, auth.user.id, status);
+    revalidateJob(jobId);
+    return { ok: true };
+  } catch (e) {
+    logActionError("setJobStageAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
 
 export async function addMeasurementAction(
@@ -148,22 +194,34 @@ export async function addMeasurementAction(
     unit?: MeasureUnit;
     annotation?: MeasurementAnnotation | null;
   },
-) {
-  const user = await requireJobsUser();
-  const row = await addMeasurement(jobId, user.id, data);
-  if (!row) throw new Error("Could not add measurement");
-  revalidateJob(jobId);
-  return row;
+): Promise<ActionResult<{ measurementId: string }>> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    const row = await addMeasurement(jobId, auth.user.id, data);
+    if (!row) return { ok: false, error: "Could not add measurement" };
+    revalidateJob(jobId);
+    return { ok: true, measurementId: row.id };
+  } catch (e) {
+    logActionError("addMeasurementAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
 
 export async function deleteMeasurementAction(
   jobId: string,
   measurementId: string,
-) {
-  const user = await requireJobsUser();
-  await deleteMeasurement(measurementId, user.id);
-  revalidateJob(jobId);
-  return { ok: true };
+): Promise<ActionResult> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    await deleteMeasurement(measurementId, auth.user.id);
+    revalidateJob(jobId);
+    return { ok: true };
+  } catch (e) {
+    logActionError("deleteMeasurementAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
 
 export async function saveDesignAction(
@@ -174,12 +232,18 @@ export async function saveDesignAction(
     notes: string;
     advance?: boolean;
   },
-) {
-  const user = await requireJobsUser();
-  await upsertDesignSpec(jobId, user.id, data);
-  if (data.advance) await advanceJobStatus(jobId, user.id, "estimate");
-  revalidateJob(jobId);
-  return { ok: true };
+): Promise<ActionResult> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    await upsertDesignSpec(jobId, auth.user.id, data);
+    if (data.advance) await advanceJobStatus(jobId, auth.user.id, "estimate");
+    revalidateJob(jobId);
+    return { ok: true };
+  } catch (e) {
+    logActionError("saveDesignAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
 
 export async function saveLineItemsAction(
@@ -194,79 +258,120 @@ export async function saveLineItemsAction(
     catalogKey?: string | null;
   }>,
   taxRatePct?: number,
-) {
-  const user = await requireJobsUser();
-  if (taxRatePct != null) {
-    await updateJob(jobId, user.id, { taxRatePct });
+): Promise<ActionResult> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    if (taxRatePct != null) {
+      await updateJob(jobId, auth.user.id, { taxRatePct });
+    }
+    const rows = await replaceLineItems(jobId, auth.user.id, items);
+    if (!rows) return { ok: false, error: "Could not save line items" };
+    revalidateJob(jobId);
+    return { ok: true };
+  } catch (e) {
+    logActionError("saveLineItemsAction", e);
+    return { ok: false, error: errorMessage(e) };
   }
-  const rows = await replaceLineItems(jobId, user.id, items);
-  if (!rows) throw new Error("Could not save line items");
-  revalidateJob(jobId);
-  return { ok: true };
 }
 
-export async function generateQuotePdfAction(jobId: string) {
-  const user = await requireJobsUser();
-  let quote = await createQuoteDraft(jobId, user.id);
-  if (!quote) throw new Error("Could not create quote");
-  const bundle = await getJobBundle(jobId, user.id);
-  if (!bundle) throw new Error("Job not found");
-  const pdf = await buildQuotePdf(bundle, quote.id);
-  const stored = await storeJobFile({
-    jobId,
-    fileName: `quote-v${quote.version}.pdf`,
-    mimeType: "application/pdf",
-    bytes: pdf,
-    folder: "quotes",
-  });
-  quote = await updateQuote(quote.id, user.id, { pdfUrl: stored.url });
-  revalidateJob(jobId);
-  return quote;
+export async function generateQuotePdfAction(
+  jobId: string,
+): Promise<ActionResult<{ quote: QuoteRecord }>> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    let quote = await createQuoteDraft(jobId, auth.user.id);
+    if (!quote) return { ok: false, error: "Could not create quote" };
+    const bundle = await getJobBundle(jobId, auth.user.id);
+    if (!bundle) return { ok: false, error: "Job not found" };
+    const pdf = await buildQuotePdf(bundle, quote.id);
+    const stored = await storeJobFile({
+      jobId,
+      fileName: `quote-v${quote.version}.pdf`,
+      mimeType: "application/pdf",
+      bytes: pdf,
+      folder: "quotes",
+    });
+    quote = await updateQuote(quote.id, auth.user.id, { pdfUrl: stored.url });
+    if (!quote) return { ok: false, error: "Could not update quote PDF URL" };
+    revalidateJob(jobId);
+    return { ok: true, quote };
+  } catch (e) {
+    logActionError("generateQuotePdfAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
 
-export async function sendQuoteAction(jobId: string, quoteId: string) {
-  const user = await requireJobsUser();
-  const bundle = await getJobBundle(jobId, user.id);
-  if (!bundle) throw new Error("Job not found");
-  const quote = bundle.quotes.find((q) => q.id === quoteId);
-  if (!quote) throw new Error("Quote not found");
-  if (!bundle.job.customerEmail) throw new Error("Customer email required");
+export async function sendQuoteAction(
+  jobId: string,
+  quoteId: string,
+): Promise<ActionResult<{ stub?: boolean; acceptUrl: string }>> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    const bundle = await getJobBundle(jobId, auth.user.id);
+    if (!bundle) return { ok: false, error: "Job not found" };
+    const quote = bundle.quotes.find((q) => q.id === quoteId);
+    if (!quote) return { ok: false, error: "Quote not found" };
+    if (!bundle.job.customerEmail) {
+      return { ok: false, error: "Customer email required" };
+    }
 
-  const base =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "http://localhost:3000";
-  const acceptUrl = `${base}/quote/${quote.acceptToken}`;
-  const sent = await sendQuoteEmail({
-    to: bundle.job.customerEmail,
-    customerName: bundle.job.customerName,
-    companyName: bundle.job.companyName,
-    acceptUrl,
-    totalLabel: `$${quote.total.toFixed(2)}`,
-  });
-  if (!sent.ok) throw new Error(sent.error || "Email failed");
-  await updateQuote(quoteId, user.id, {
-    status: "sent",
-    sentAt: new Date().toISOString(),
-  });
-  revalidateJob(jobId);
-  return { ok: true, stub: sent.stub, acceptUrl };
+    const base =
+      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+      "http://localhost:3000";
+    const acceptUrl = `${base}/quote/${quote.acceptToken}`;
+    const sent = await sendQuoteEmail({
+      to: bundle.job.customerEmail,
+      customerName: bundle.job.customerName,
+      companyName: bundle.job.companyName,
+      acceptUrl,
+      totalLabel: `$${quote.total.toFixed(2)}`,
+    });
+    if (!sent.ok) {
+      return { ok: false, error: sent.error || "Email failed" };
+    }
+    await updateQuote(quoteId, auth.user.id, {
+      status: "sent",
+      sentAt: new Date().toISOString(),
+    });
+    revalidateJob(jobId);
+    return { ok: true, stub: sent.stub, acceptUrl };
+  } catch (e) {
+    logActionError("sendQuoteAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
 
-export async function acceptQuotePublicAction(token: string) {
-  const bundle = await acceptQuoteByToken(token);
-  if (!bundle) throw new Error("Quote not found");
-  revalidatePath(`/quote/${token}`);
-  revalidateJob(bundle.job.id);
-  return { ok: true, jobId: bundle.job.id };
+export async function acceptQuotePublicAction(
+  token: string,
+): Promise<ActionResult<{ jobId: string }>> {
+  try {
+    const bundle = await acceptQuoteByToken(token);
+    if (!bundle) return { ok: false, error: "Quote not found" };
+    revalidatePath(`/quote/${token}`);
+    revalidateJob(bundle.job.id);
+    return { ok: true, jobId: bundle.job.id };
+  } catch (e) {
+    logActionError("acceptQuotePublicAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
 
 export async function setupInvoicesAction(
   jobId: string,
   mode: "full" | "deposit_balance",
-) {
-  const user = await requireJobsUser();
-  const invoices = await createInvoicesForJob(jobId, user.id, mode);
-  if (!invoices) throw new Error("Could not create invoices");
-  revalidateJob(jobId);
-  return invoices;
+): Promise<ActionResult<{ invoices: InvoiceRecord[] }>> {
+  try {
+    const auth = await requireJobsUser();
+    if (!auth.ok) return auth;
+    const invoices = await createInvoicesForJob(jobId, auth.user.id, mode);
+    if (!invoices) return { ok: false, error: "Could not create invoices" };
+    revalidateJob(jobId);
+    return { ok: true, invoices };
+  } catch (e) {
+    logActionError("setupInvoicesAction", e);
+    return { ok: false, error: errorMessage(e) };
+  }
 }
