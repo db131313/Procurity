@@ -3,10 +3,23 @@ import { SiteProviders } from "@/components/SiteProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Procurity.Pro — Find the next job before they need you",
+  title: "Procurity — Find your next sign job before anyone else does",
   description:
-    "Construction project intelligence for signage sales. Live permit activity scored into Buy Scores, maps, and pipeline — mobile-first.",
+    "Procurity shows sign makers and trade salespeople which new construction projects are ready to buy right now, who to contact, and helps them measure, quote, and get paid in one place.",
   applicationName: "Procurity",
+  openGraph: {
+    title: "Procurity — Find your next sign job before anyone else does",
+    description:
+      "See which projects are ready to buy, who to call, and go from lead to paid deposit in one place.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Procurity — Find your next sign job before anyone else does",
+    description:
+      "See which projects are ready to buy, who to call, and go from lead to paid deposit in one place.",
+  },
+
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [

@@ -3,6 +3,8 @@ import {
   getPickerCity,
   TEASER_PIN_LIMIT,
 } from "@/lib/cities/picker";
+import { isValidTeaserCoord } from "@/lib/cities/teaser-bounds";
+import { projectTeaserLabel } from "@/lib/cities/teaser-label";
 import { listProjects } from "@/lib/db/store";
 import { ensureMapDataFresh } from "@/lib/map/ensure-fresh";
 
@@ -10,7 +12,11 @@ export const dynamic = "force-dynamic";
 
 /**
  * Public teaser pin feed for the marketing home map.
- * Returns a capped set of rough locations — no scores, contacts, or values.
+ * Capped locations only — no scores, contacts, or values.
+ *
+ * IMPORTANT: Netlify must vary cache by `city` query (Netlify-Vary).
+ * Without it, one city's response is reused for every city.
+ * Prefer `/api/teaser/pins/[city]` from clients for a unique URL per city.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -23,33 +29,32 @@ export async function GET(request: Request) {
     );
   }
 
-  // Best-effort freshness — don't block forever on sync.
-  try {
-    await Promise.race([
-      ensureMapDataFresh(),
-      new Promise((r) => setTimeout(r, 2500)),
-    ]);
-  } catch {
-    // continue with whatever is in the store
-  }
+  // Non-blocking freshness — never delay the teaser on sync.
+  void ensureMapDataFresh().catch(() => {});
 
   const projects = await listProjects({ city: city.cityCode });
-  const pins = projects.slice(0, TEASER_PIN_LIMIT).map((p) => ({
+  const valid = projects.filter((p) =>
+    isValidTeaserCoord(p.latitude, p.longitude, city),
+  );
+  const pins = valid.slice(0, TEASER_PIN_LIMIT).map((p) => ({
     id: p.id,
     latitude: p.latitude,
     longitude: p.longitude,
+    label: projectTeaserLabel(p.jobType, p.occupancy, p.buildingType),
   }));
 
   return NextResponse.json(
     {
       ok: true,
       city: city.id,
-      totalCount: projects.length,
+      totalCount: valid.length,
       pins,
     },
     {
       headers: {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Netlify-Vary": "query=city",
+        Vary: "Accept-Encoding",
       },
     },
   );

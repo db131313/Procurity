@@ -134,6 +134,24 @@ export default async function SettingsPage({
             <span className="text-slate">→</span>
           </Link>
         )}
+        {showAdmin && (
+          <Link
+            href="/admin/demo"
+            className="pc-card flex items-center justify-between p-4 font-semibold text-ink"
+          >
+            Admin · Demo notes & leads
+            <span className="text-slate">→</span>
+          </Link>
+        )}
+        {showAdmin && (
+          <Link
+            href="/demo/share"
+            className="pc-card flex items-center justify-between p-4 font-semibold text-ink"
+          >
+            Admin · Demo share links
+            <span className="text-slate">→</span>
+          </Link>
+        )}
       </div>
 
       <form action={signOutAction} className="mt-8">

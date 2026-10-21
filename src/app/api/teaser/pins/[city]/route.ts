@@ -1,0 +1,56 @@
+import { NextResponse } from "next/server";
+import {
+  getPickerCity,
+  TEASER_PIN_LIMIT,
+} from "@/lib/cities/picker";
+import { isValidTeaserCoord } from "@/lib/cities/teaser-bounds";
+import { projectTeaserLabel } from "@/lib/cities/teaser-label";
+import { listProjects } from "@/lib/db/store";
+import { ensureMapDataFresh } from "@/lib/map/ensure-fresh";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * Path-based teaser pins — unique URL per city so CDNs cannot mix responses.
+ * Prefer this from the home map client.
+ */
+export async function GET(
+  _request: Request,
+  ctx: { params: Promise<{ city: string }> },
+) {
+  const { city: cityParam } = await ctx.params;
+  const city = getPickerCity(cityParam);
+  if (!city?.served || !city.cityCode) {
+    return NextResponse.json(
+      { ok: false, error: "City not available" },
+      { status: 404 },
+    );
+  }
+
+  void ensureMapDataFresh().catch(() => {});
+
+  const projects = await listProjects({ city: city.cityCode });
+  const valid = projects.filter((p) =>
+    isValidTeaserCoord(p.latitude, p.longitude, city),
+  );
+  const pins = valid.slice(0, TEASER_PIN_LIMIT).map((p) => ({
+    id: p.id,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    label: projectTeaserLabel(p.jobType, p.occupancy, p.buildingType),
+  }));
+
+  return NextResponse.json(
+    {
+      ok: true,
+      city: city.id,
+      totalCount: valid.length,
+      pins,
+    },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    },
+  );
+}

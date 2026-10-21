@@ -383,3 +383,34 @@ model Payment {
 
   @@index([invoiceId])
 }
+
+/** Public demo walkthrough lead (book a 15-minute call). */
+model DemoLead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String   @default("")
+  shopName  String   @default("")
+  city      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+}
+
+/**
+ * Lightweight demo analytics — no personal data until a lead is submitted.
+ * Events: demo_started | step_completed | demo_finished | cta_clicked | lead_submitted
+ */
+model DemoEvent {
+  id        String   @id @default(cuid())
+  type      String
+  city      String   @default("")
+  step      String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([type])
+  @@index([city])
+}

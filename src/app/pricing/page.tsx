@@ -5,24 +5,16 @@ import { Logo } from "@/components/brand/Logo";
 
 export default function PricingPage() {
   return (
-    <div className="bg-offwhite">
-      <section className="relative overflow-hidden bg-ink pb-16 pt-28 text-white">
-        <div
-          className="absolute inset-0"
-          aria-hidden
-          style={{
-            background:
-              "radial-gradient(ellipse at 70% 0%, rgba(124,108,246,0.35), transparent 50%), linear-gradient(180deg,#0B0F19,#121826)",
-          }}
-        />
-        <MarketingNav />
-        <div className="relative z-10 mx-auto max-w-6xl px-5 md:px-8">
-          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-            Pricing that scales with your territory
+    <div className="bg-white">
+      <section className="relative border-b border-line bg-offwhite pb-16 pt-28">
+        <MarketingNav variant="light" />
+        <div className="relative z-10 mx-auto max-w-3xl px-5 text-center md:px-8">
+          <h1 className="text-4xl font-bold tracking-tight text-ink md:text-5xl">
+            Simple pricing
           </h1>
-          <p className="mt-4 max-w-xl text-white/70">
+          <p className="mx-auto mt-4 max-w-xl text-slate">
             Start free for 7 days. Have an access code? Enter it on signup — or
-            on Stripe Checkout — and it applies before you pay.
+            on checkout — and it applies before you pay.
           </p>
         </div>
       </section>

@@ -30,8 +30,8 @@ export default async function WaitlistPage({ searchParams }: Props) {
             {zip ? ` — ${zip}` : ""}
           </h1>
           <p className="mt-4 text-base text-white/75">
-            We don&apos;t score permits in that zip yet. You&apos;re on the
-            waitlist — we&apos;ll email you when your metro goes live.
+            We don&apos;t cover that zip yet. You&apos;re on the waitlist —
+            we&apos;ll email you when your metro goes live.
           </p>
           <p className="mt-3 text-sm text-white/55">
             Live now: NYC, Chicago, LA, Boston, SF, Seattle, Fort Worth,
