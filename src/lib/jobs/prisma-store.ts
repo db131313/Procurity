@@ -25,6 +25,7 @@ import {
   quotePdfPath,
   type PdfPayload,
 } from "./pdf-urls";
+import { scanFilePath } from "./scan-urls";
 
 /** Prisma Bytes expects Uint8Array backed by ArrayBuffer (not SharedArrayBuffer). */
 function toPrismaBytes(bytes: Buffer): Uint8Array<ArrayBuffer> {
@@ -91,15 +92,20 @@ async function loadBundle(jobId: string): Promise<JobBundle | null> {
   );
   return {
     job: mapJob(job),
-    scans: job.scans.map((s) => ({
-      id: s.id,
-      jobId: s.jobId,
-      fileUrl: s.fileUrl,
-      fileName: s.fileName,
-      mimeType: s.mimeType,
-      type: s.type,
-      createdAt: s.createdAt.toISOString(),
-    })),
+    scans: job.scans.map((s) => {
+      const hasBytes = Boolean(s.fileData?.length);
+      const isData = typeof s.fileUrl === "string" && s.fileUrl.startsWith("data:");
+      return {
+        id: s.id,
+        jobId: s.jobId,
+        fileUrl:
+          hasBytes || isData ? scanFilePath(s.jobId, s.id) : s.fileUrl,
+        fileName: s.fileName,
+        mimeType: s.mimeType,
+        type: s.type,
+        createdAt: s.createdAt.toISOString(),
+      };
+    }),
     measurements: job.measurements.map((m) => ({
       id: m.id,
       jobId: m.jobId,
@@ -242,22 +248,89 @@ export async function updateJob(
 export async function addScan(
   jobId: string,
   ownerId: string,
-  data: { fileUrl: string; fileName: string; mimeType: string; type: ScanType },
+  data: {
+    fileUrl: string;
+    fileName: string;
+    mimeType: string;
+    type: ScanType;
+    fileBytes?: Buffer | null;
+  },
 ) {
   const prisma = getPrisma();
   const job = await prisma.job.findFirst({ where: { id: jobId, ownerId } });
   if (!job) return null;
-  const s = await prisma.scan.create({ data: { jobId, ...data } });
-  await prisma.job.update({ where: { id: jobId }, data: { updatedAt: new Date() } });
+  const s = await prisma.scan.create({
+    data: {
+      jobId,
+      fileUrl: data.fileUrl,
+      fileName: data.fileName,
+      mimeType: data.mimeType,
+      type: data.type,
+      ...(data.fileBytes
+        ? { fileData: toPrismaBytes(data.fileBytes) }
+        : {}),
+    },
+  });
+  const path = data.fileBytes ? scanFilePath(jobId, s.id) : data.fileUrl;
+  const updated =
+    path !== s.fileUrl
+      ? await prisma.scan.update({
+          where: { id: s.id },
+          data: { fileUrl: path },
+        })
+      : s;
+  await prisma.job.update({
+    where: { id: jobId },
+    data: { updatedAt: new Date() },
+  });
   return {
-    id: s.id,
-    jobId: s.jobId,
-    fileUrl: s.fileUrl,
-    fileName: s.fileName,
-    mimeType: s.mimeType,
-    type: s.type,
-    createdAt: s.createdAt.toISOString(),
+    id: updated.id,
+    jobId: updated.jobId,
+    fileUrl: updated.fileUrl,
+    fileName: updated.fileName,
+    mimeType: updated.mimeType,
+    type: updated.type,
+    createdAt: updated.createdAt.toISOString(),
   } satisfies ScanRecord;
+}
+
+export async function getScanFilePayload(
+  jobId: string,
+  scanId: string,
+  ownerId?: string,
+): Promise<{ bytes: Buffer; fileName: string; mimeType: string } | null> {
+  const prisma = getPrisma();
+  const scan = await prisma.scan.findFirst({
+    where: { id: scanId, jobId },
+  });
+  if (!scan) return null;
+  if (ownerId) {
+    const job = await prisma.job.findFirst({ where: { id: jobId, ownerId } });
+    if (!job) return null;
+  }
+  if (scan.fileData?.length) {
+    return {
+      bytes: Buffer.from(scan.fileData),
+      fileName: scan.fileName,
+      mimeType: scan.mimeType || "application/octet-stream",
+    };
+  }
+  if (scan.fileUrl.startsWith("data:")) {
+    const m = /^data:([^;]+);base64,(.+)$/i.exec(scan.fileUrl);
+    if (!m) return null;
+    const bytes = Buffer.from(m[2], "base64");
+    const mimeType = m[1] || scan.mimeType || "application/octet-stream";
+    await prisma.scan.update({
+      where: { id: scanId },
+      data: {
+        fileData: toPrismaBytes(bytes),
+        fileUrl: scanFilePath(jobId, scanId),
+        mimeType,
+      },
+    });
+    return { bytes, fileName: scan.fileName, mimeType };
+  }
+  return null;
 }
 
 export async function addMeasurement(

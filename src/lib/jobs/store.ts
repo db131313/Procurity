@@ -41,6 +41,12 @@ export async function addScan(
   return (await backend()).addScan(...args);
 }
 
+export async function getScanFilePayload(
+  ...args: Parameters<(typeof fileStore)["getScanFilePayload"]>
+) {
+  return (await backend()).getScanFilePayload(...args);
+}
+
 export async function addMeasurement(
   ...args: Parameters<(typeof fileStore)["addMeasurement"]>
 ) {
