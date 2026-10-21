@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["bcryptjs", "pdfkit"],
   // Allow phone/browser previews via localtunnel / Cloudflare quick tunnels
   allowedDevOrigins: ["*.loca.lt", "*.trycloudflare.com", "*.ngrok-free.app"],
+  async redirects() {
+    return [
+      { source: "/demo", destination: "/", permanent: false },
+      { source: "/demo/:path*", destination: "/", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;
