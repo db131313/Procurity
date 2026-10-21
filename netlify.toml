@@ -3,7 +3,9 @@
 # Domain: https://procurity.pro
 
 [build]
-  command = "npm run build"
+  # Apply Prisma migrations to Neon before generating client / building Next.
+  # `npm run build` also runs scripts/migrate-if-configured.js (no-op if already applied).
+  command = "npx prisma migrate deploy && npm run build"
   publish = ".next"
 
 # Firebase web API keys are intentionally public (NEXT_PUBLIC_*).
