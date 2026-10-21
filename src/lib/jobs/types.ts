@@ -14,13 +14,20 @@ export type InvoiceType = "deposit" | "balance" | "full";
 export type InvoiceStatus = "draft" | "open" | "paid" | "void";
 export type PaymentStatus = "pending" | "succeeded" | "failed" | "refunded";
 
+export type Vec3 = { x: number; y: number; z: number };
+
 export type MeasurementAnnotation = {
   scanId: string;
+  /** Normalized image coords (0–1) for photo annotations; 0 for LiDAR-only. */
   x1: number;
   y1: number;
   x2: number;
   y2: number;
   realLength: number;
+  /** Optional ARKit world-space endpoints (meters). */
+  start3d?: Vec3;
+  end3d?: Vec3;
+  source?: "photo" | "lidar" | "roomplan";
 };
 
 export type ReferenceImage = {

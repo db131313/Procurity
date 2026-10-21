@@ -272,10 +272,13 @@ model Scan {
   id        String   @id @default(cuid())
   jobId     String
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  /// Authenticated route path (e.g. /api/jobs/.../scans/.../file). Never a data: URL.
   fileUrl   String
   fileName  String   @default("")
   mimeType  String   @default("")
   type      ScanType @default(photo)
+  /// Raw file bytes when not using Firebase Storage (Netlify-safe).
+  fileData  Bytes?
   createdAt DateTime @default(now())
 
   @@index([jobId])
@@ -289,7 +292,7 @@ model Measurement {
   width       Float?
   height      Float?
   unit        MeasureUnit @default(in)
-  /// Annotated-photo metadata: { scanId, x1, y1, x2, y2, realLength }
+  /// Photo or LiDAR metadata: { scanId, x1,y1,x2,y2, realLength, start3d?, end3d?, source? }
   annotation  Json?
   createdAt   DateTime    @default(now())
 

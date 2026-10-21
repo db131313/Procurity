@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  1. Open Firebase Console → project "procurity"
+  2. Add an iOS app with bundle id com.procurity.ios (or your signing id)
+  3. Download GoogleService-Info.plist
+  4. Copy it to ios/Procurity/GoogleService-Info.plist (same folder as ProcurityApp.swift)
+  5. Ensure it is included in the Procurity target (Xcode → Target → Build Phases → Copy Bundle Resources)
+  Do NOT commit real secrets if your org policy forbids it; this example is a placeholder.
+-->
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>REPLACE_ME.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.REPLACE_ME</string>
+	<key>API_KEY</key>
+	<string>REPLACE_ME</string>
+	<key>GCM_SENDER_ID</key>
+	<string>REPLACE_ME</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.procurity.ios</string>
+	<key>PROJECT_ID</key>
+	<string>procurity</string>
+	<key>STORAGE_BUCKET</key>
+	<string>procurity.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:REPLACE_ME:ios:REPLACE_ME</string>
+</dict>
+</plist>

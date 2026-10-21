@@ -27,14 +27,16 @@ import {
   quotePdfPath,
   type PdfPayload,
 } from "./pdf-urls";
+import { scanFilePath } from "./scan-urls";
 
 /** Server-only PDF bytes (base64) — never sent to client components. */
 type StoredQuote = QuoteRecord & { pdfBase64?: string | null };
 type StoredInvoice = InvoiceRecord & { pdfBase64?: string | null };
+type StoredScan = ScanRecord & { fileBase64?: string | null };
 
 type JobsDb = {
   jobs: JobRecord[];
-  scans: ScanRecord[];
+  scans: StoredScan[];
   measurements: MeasurementRecord[];
   designSpecs: DesignSpecRecord[];
   lineItems: LineItemRecord[];
@@ -114,7 +116,21 @@ function assemble(db: JobsDb, job: JobRecord): JobBundle {
   const invoiceIds = new Set(invoices.map((i) => i.id));
   return {
     job,
-    scans: db.scans.filter((s) => s.jobId === job.id),
+    scans: db.scans
+      .filter((s) => s.jobId === job.id)
+      .map((s) => {
+        const { fileBase64: _b, ...rest } = s;
+        const hasBytes = Boolean(s.fileBase64);
+        return {
+          ...rest,
+          fileUrl:
+            hasBytes || !s.fileUrl.startsWith("data:")
+              ? hasBytes
+                ? scanFilePath(s.jobId, s.id)
+                : s.fileUrl
+              : scanFilePath(s.jobId, s.id),
+        };
+      }),
     measurements: db.measurements.filter((m) => m.jobId === job.id),
     designSpec: db.designSpecs.find((d) => d.jobId === job.id) ?? null,
     lineItems: db.lineItems
@@ -221,21 +237,63 @@ export async function addScan(
     fileName: string;
     mimeType: string;
     type: ScanType;
+    /** Durable bytes (Netlify-safe). Prefer over ephemeral URLs. */
+    fileBytes?: Buffer | null;
   },
 ): Promise<ScanRecord | null> {
   const db = await load();
   const job = db.jobs.find((j) => j.id === jobId && j.ownerId === ownerId);
   if (!job) return null;
-  const scan: ScanRecord = {
-    id: newId("scan"),
+  const id = newId("scan");
+  const fileBase64 = data.fileBytes
+    ? data.fileBytes.toString("base64")
+    : null;
+  const scan: StoredScan = {
+    id,
     jobId,
-    ...data,
+    fileUrl: fileBase64 ? scanFilePath(jobId, id) : data.fileUrl,
+    fileName: data.fileName,
+    mimeType: data.mimeType,
+    type: data.type,
+    fileBase64,
     createdAt: now(),
   };
   db.scans.push(scan);
   job.updatedAt = now();
   await save(db);
-  return scan;
+  const { fileBase64: _b, ...publicScan } = scan;
+  return publicScan;
+}
+
+export async function getScanFilePayload(
+  jobId: string,
+  scanId: string,
+  ownerId?: string,
+): Promise<{ bytes: Buffer; fileName: string; mimeType: string } | null> {
+  const db = await load();
+  const scan = db.scans.find((s) => s.id === scanId && s.jobId === jobId);
+  if (!scan) return null;
+  const job = db.jobs.find((j) => j.id === jobId);
+  if (!job) return null;
+  if (ownerId && job.ownerId !== ownerId) return null;
+  if (scan.fileBase64) {
+    return {
+      bytes: Buffer.from(scan.fileBase64, "base64"),
+      fileName: scan.fileName,
+      mimeType: scan.mimeType || "application/octet-stream",
+    };
+  }
+  if (scan.fileUrl.startsWith("data:")) {
+    const m = /^data:([^;]+);base64,(.+)$/i.exec(scan.fileUrl);
+    if (!m) return null;
+    const bytes = Buffer.from(m[2], "base64");
+    scan.fileBase64 = m[2];
+    scan.fileUrl = scanFilePath(jobId, scanId);
+    scan.mimeType = m[1] || scan.mimeType;
+    await save(db);
+    return { bytes, fileName: scan.fileName, mimeType: scan.mimeType };
+  }
+  return null;
 }
 
 export async function addMeasurement(

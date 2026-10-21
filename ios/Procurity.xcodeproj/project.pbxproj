@@ -1,0 +1,393 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		888E9C27204640D6B2A0C6A3 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3668384662154CA7BF65A3C4 /* AppConfig.swift */; };
+		0866DC68D15E4FF9A20E60F5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812F24887D8B4D9AB9ECFBBE /* ContentView.swift */; };
+		5C93C8AC785B4F818E91F88B /* ProcurityApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0829FBBDF755482DA83481EA /* ProcurityApp.swift */; };
+		D95F029B1E594CCBA49EED9D /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A205ADB105F24D56BAE48DBA /* AuthView.swift */; };
+		5FAA4B9A68E340FB85CFC5B2 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0530522240A54E219E6956B1 /* AuthViewModel.swift */; };
+		CDA3ED3DA5BA40CABF792F80 /* CaptureExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F127AE508A844F194A3E31F /* CaptureExporter.swift */; };
+		51B28293D4BE4E5DAB05A013 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EA6269DE544B3492CA2A0D /* APIClient.swift */; };
+		3110B0BA588647AFA1E68E3B /* JobDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517B1BD694AA4E6DB615A0F3 /* JobDetailView.swift */; };
+		82A80523291D47938D8BC1A9 /* JobsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31DBB2CA0A9B4A539C53E092 /* JobsListView.swift */; };
+		418771570C3A4A1EA60113DC /* ARMeasureSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = F084FB25CDA4435CB1280A08 /* ARMeasureSession.swift */; };
+		B10F130EA544424EB38B8AD6 /* LiDARMeasureFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB4D514D78144301A6B03D92 /* LiDARMeasureFlow.swift */; };
+		F8611DD1C5634968BDD1DA2C /* LoupeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61492A1323AF4677A8E0FA31 /* LoupeView.swift */; };
+		DD35BD18FDB14BF68EEF1572 /* MeasureOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FBB9313D54542A9A1645CCC /* MeasureOverlayView.swift */; };
+		447BBF6C3FEA43F8B684CC7D /* MeasurementModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1EC517407341E88AAEF3BE /* MeasurementModels.swift */; };
+		5DF6BE358F644C32A4C01427 /* RoomScanFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE339DE97C44B3E8BB14D83 /* RoomScanFlow.swift */; };
+		30E992D83C7740FE9BA53A01 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 295D872F07C34E8A91D4FF1E /* Theme.swift */; };
+		99BDF3FD17E94E72BF30E5B2 /* UploadQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07F2C3ABB98454C8666D8F1 /* UploadQueue.swift */; };
+		BB30CF54796742AC9CB2E771 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E500B6220D4646CEB124A928 /* Assets.xcassets */; };
+		68C1AB719FE642568DFD1BA3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 0412BBF4E8F64D2E9290DF04 /* FirebaseAuth */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		3668384662154CA7BF65A3C4 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		812F24887D8B4D9AB9ECFBBE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		0829FBBDF755482DA83481EA /* ProcurityApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcurityApp.swift; sourceTree = "<group>"; };
+		A205ADB105F24D56BAE48DBA /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		0530522240A54E219E6956B1 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		5F127AE508A844F194A3E31F /* CaptureExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureExporter.swift; sourceTree = "<group>"; };
+		C2EA6269DE544B3492CA2A0D /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		517B1BD694AA4E6DB615A0F3 /* JobDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobDetailView.swift; sourceTree = "<group>"; };
+		31DBB2CA0A9B4A539C53E092 /* JobsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobsListView.swift; sourceTree = "<group>"; };
+		F084FB25CDA4435CB1280A08 /* ARMeasureSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARMeasureSession.swift; sourceTree = "<group>"; };
+		DB4D514D78144301A6B03D92 /* LiDARMeasureFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARMeasureFlow.swift; sourceTree = "<group>"; };
+		61492A1323AF4677A8E0FA31 /* LoupeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoupeView.swift; sourceTree = "<group>"; };
+		6FBB9313D54542A9A1645CCC /* MeasureOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureOverlayView.swift; sourceTree = "<group>"; };
+		9E1EC517407341E88AAEF3BE /* MeasurementModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasurementModels.swift; sourceTree = "<group>"; };
+		CDE339DE97C44B3E8BB14D83 /* RoomScanFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomScanFlow.swift; sourceTree = "<group>"; };
+		295D872F07C34E8A91D4FF1E /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		C07F2C3ABB98454C8666D8F1 /* UploadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadQueue.swift; sourceTree = "<group>"; };
+		E500B6220D4646CEB124A928 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7E4D03F78BE549B2AA365A74 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		07946F5CB18D4847B8EFF5D4 /* Procurity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Procurity.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D849CFC4AC4D489983692658 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68C1AB719FE642568DFD1BA3 /* FirebaseAuth in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		456421CD8ABC4C0EBB37AC0E = {
+			isa = PBXGroup;
+			children = (
+				49445F9811F54A07A61AC67E /* Procurity */,
+				65B4B8CC6F22460DBA51C728 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		65B4B8CC6F22460DBA51C728 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				07946F5CB18D4847B8EFF5D4 /* Procurity.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		49445F9811F54A07A61AC67E /* Procurity */ = {
+			isa = PBXGroup;
+			children = (
+				5BA7BAA2E975412881BB90E1 /* App */,
+				EB02C796519B49E28C8383CB /* Auth */,
+				88894DA6C90749FEB6060F3F /* Capture */,
+				06897FF9254A4033BFCC521F /* Jobs */,
+				E7A3991FFD4C4AC193ABFA5F /* Measure */,
+				428E275C78FF474D81FC55CB /* RoomPlan */,
+				8DD4966074044AC59845DA4D /* Theme */,
+				08C0BE5BC6284E18802C4FC3 /* Upload */,
+				E500B6220D4646CEB124A928 /* Assets.xcassets */,
+				7E4D03F78BE549B2AA365A74 /* Info.plist */,
+			);
+			path = Procurity;
+			sourceTree = "<group>";
+		};
+		5BA7BAA2E975412881BB90E1 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				3668384662154CA7BF65A3C4 /* AppConfig.swift */,
+				812F24887D8B4D9AB9ECFBBE /* ContentView.swift */,
+				0829FBBDF755482DA83481EA /* ProcurityApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		EB02C796519B49E28C8383CB /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				A205ADB105F24D56BAE48DBA /* AuthView.swift */,
+				0530522240A54E219E6956B1 /* AuthViewModel.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		88894DA6C90749FEB6060F3F /* Capture */ = {
+			isa = PBXGroup;
+			children = (
+				5F127AE508A844F194A3E31F /* CaptureExporter.swift */,
+			);
+			path = Capture;
+			sourceTree = "<group>";
+		};
+		06897FF9254A4033BFCC521F /* Jobs */ = {
+			isa = PBXGroup;
+			children = (
+				C2EA6269DE544B3492CA2A0D /* APIClient.swift */,
+				517B1BD694AA4E6DB615A0F3 /* JobDetailView.swift */,
+				31DBB2CA0A9B4A539C53E092 /* JobsListView.swift */,
+			);
+			path = Jobs;
+			sourceTree = "<group>";
+		};
+		E7A3991FFD4C4AC193ABFA5F /* Measure */ = {
+			isa = PBXGroup;
+			children = (
+				F084FB25CDA4435CB1280A08 /* ARMeasureSession.swift */,
+				DB4D514D78144301A6B03D92 /* LiDARMeasureFlow.swift */,
+				61492A1323AF4677A8E0FA31 /* LoupeView.swift */,
+				6FBB9313D54542A9A1645CCC /* MeasureOverlayView.swift */,
+				9E1EC517407341E88AAEF3BE /* MeasurementModels.swift */,
+			);
+			path = Measure;
+			sourceTree = "<group>";
+		};
+		428E275C78FF474D81FC55CB /* RoomPlan */ = {
+			isa = PBXGroup;
+			children = (
+				CDE339DE97C44B3E8BB14D83 /* RoomScanFlow.swift */,
+			);
+			path = RoomPlan;
+			sourceTree = "<group>";
+		};
+		8DD4966074044AC59845DA4D /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				295D872F07C34E8A91D4FF1E /* Theme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		08C0BE5BC6284E18802C4FC3 /* Upload */ = {
+			isa = PBXGroup;
+			children = (
+				C07F2C3ABB98454C8666D8F1 /* UploadQueue.swift */,
+			);
+			path = Upload;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B648721A815B4771A1314587 /* Procurity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6C31CFD3D0AC46D9920C8AE1 /* Build configuration list for PBXNativeTarget "Procurity" */;
+			buildPhases = (
+				F7B6502FE6EF430DA16ADFB9 /* Sources */,
+				D849CFC4AC4D489983692658 /* Frameworks */,
+				529F36BA05EB4587B65622D0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Procurity;
+			packageProductDependencies = (
+				0412BBF4E8F64D2E9290DF04 /* FirebaseAuth */,
+			);
+			productName = Procurity;
+			productReference = 07946F5CB18D4847B8EFF5D4 /* Procurity.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0438C4CB59074898A35A7848 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = CEC4ECD3739C4BB2BC58F026 /* Build configuration list for PBXProject "Procurity" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 456421CD8ABC4C0EBB37AC0E;
+			packageReferences = (
+				09476F449A6E4FD79B06715F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
+			productRefGroup = 65B4B8CC6F22460DBA51C728 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B648721A815B4771A1314587 /* Procurity */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		529F36BA05EB4587B65622D0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB30CF54796742AC9CB2E771 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F7B6502FE6EF430DA16ADFB9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				888E9C27204640D6B2A0C6A3 /* AppConfig.swift in Sources */,
+				0866DC68D15E4FF9A20E60F5 /* ContentView.swift in Sources */,
+				5C93C8AC785B4F818E91F88B /* ProcurityApp.swift in Sources */,
+				D95F029B1E594CCBA49EED9D /* AuthView.swift in Sources */,
+				5FAA4B9A68E340FB85CFC5B2 /* AuthViewModel.swift in Sources */,
+				CDA3ED3DA5BA40CABF792F80 /* CaptureExporter.swift in Sources */,
+				51B28293D4BE4E5DAB05A013 /* APIClient.swift in Sources */,
+				3110B0BA588647AFA1E68E3B /* JobDetailView.swift in Sources */,
+				82A80523291D47938D8BC1A9 /* JobsListView.swift in Sources */,
+				418771570C3A4A1EA60113DC /* ARMeasureSession.swift in Sources */,
+				B10F130EA544424EB38B8AD6 /* LiDARMeasureFlow.swift in Sources */,
+				F8611DD1C5634968BDD1DA2C /* LoupeView.swift in Sources */,
+				DD35BD18FDB14BF68EEF1572 /* MeasureOverlayView.swift in Sources */,
+				447BBF6C3FEA43F8B684CC7D /* MeasurementModels.swift in Sources */,
+				5DF6BE358F644C32A4C01427 /* RoomScanFlow.swift in Sources */,
+				30E992D83C7740FE9BA53A01 /* Theme.swift in Sources */,
+				99BDF3FD17E94E72BF30E5B2 /* UploadQueue.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F3EC0C5A3BDE4F259A4838C8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		F0904CDB6BC24C358B5D34C5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D9CFBDE845A9443C856F4DA8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Procurity/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.procurity.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Debug;
+		};
+		966D4CCCC72747818EB634E8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Procurity/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.procurity.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CEC4ECD3739C4BB2BC58F026 /* Build configuration list for PBXProject "Procurity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F3EC0C5A3BDE4F259A4838C8 /* Debug */,
+				F0904CDB6BC24C358B5D34C5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6C31CFD3D0AC46D9920C8AE1 /* Build configuration list for PBXNativeTarget "Procurity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9CFBDE845A9443C856F4DA8 /* Debug */,
+				966D4CCCC72747818EB634E8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		09476F449A6E4FD79B06715F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0412BBF4E8F64D2E9290DF04 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 09476F449A6E4FD79B06715F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 0438C4CB59074898A35A7848 /* Project object */;
+}
