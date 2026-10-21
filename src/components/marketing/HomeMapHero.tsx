@@ -198,6 +198,12 @@ export function HomeMapHero({ initialCityId }: Props) {
       const next = Array.isArray(data.pins) ? data.pins : [];
       pinsRef.current = next;
       setPins(next);
+      try {
+        (window as unknown as { __pcHomePinCount?: number }).__pcHomePinCount =
+          next.length;
+      } catch {
+        // ignore
+      }
     } catch (e) {
       if ((e as { name?: string })?.name === "AbortError") return;
     } finally {
@@ -550,6 +556,18 @@ export function HomeMapHero({ initialCityId }: Props) {
         setPaywall(true);
         return;
       }
+      // Optimistic local view count so closing before detail returns still gates
+      const already = readLocalViews();
+      if (!already.includes(id) && already.length >= TEASER_FREE_VIEWS) {
+        setPaywall(true);
+        return;
+      }
+      if (!already.includes(id)) {
+        // Append (don't drop newer ids if somehow over limit)
+        const next = [...already, id];
+        writeLocalViews(next.slice(-TEASER_FREE_VIEWS));
+        setViewedIds(next.slice(-TEASER_FREE_VIEWS));
+      }
       const found = pinsRef.current.find((p) => p.id === id);
       setSelected({
         id,
@@ -569,6 +587,20 @@ export function HomeMapHero({ initialCityId }: Props) {
     },
     [],
   );
+
+  // Test/helper hook — open a pin by id without relying on canvas hit-testing
+  useEffect(() => {
+    (window as unknown as { __pcOpenHomeProject?: typeof openProject }).__pcOpenHomeProject =
+      openProject;
+    return () => {
+      try {
+        delete (window as unknown as { __pcOpenHomeProject?: unknown })
+          .__pcOpenHomeProject;
+      } catch {
+        // ignore
+      }
+    };
+  }, [openProject]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -646,10 +678,12 @@ export function HomeMapHero({ initialCityId }: Props) {
   }
 
   function handleOverlayClose() {
-    const nextRemaining = Math.max(0, TEASER_FREE_VIEWS - viewedIds.length);
+    // Prefer localStorage — React state can lag behind onPublicViewed
+    const ids = readLocalViews();
     setOverlayOpen(false);
     setSelected(null);
-    if (nextRemaining === 0 && viewedIds.length >= TEASER_FREE_VIEWS) {
+    setViewedIds(ids);
+    if (ids.length >= TEASER_FREE_VIEWS) {
       showPaywall();
     }
   }
@@ -774,13 +808,19 @@ export function HomeMapHero({ initialCityId }: Props) {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top,0px)+11.5rem)] z-20 flex justify-center px-3 sm:top-[calc(4rem+env(safe-area-inset-top,0px)+10rem)] md:top-auto md:bottom-28 md:left-5 md:right-auto md:justify-start md:px-0">
+        <div className="pointer-events-none absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top,0px)+11.5rem)] z-20 flex justify-center px-3 sm:top-[calc(4rem+env(safe-area-inset-top,0px)+10rem)] md:top-auto md:bottom-24 md:left-5 md:right-auto md:justify-start md:px-0">
           <div className="pointer-events-auto max-w-full">
-            <MapFilters value={filters} onChange={setFilters} />
+            <MapFilters
+              value={filters}
+              onChange={(next) => {
+                setAskTypeKeywords(null);
+                setFilters(next);
+              }}
+            />
           </div>
         </div>
 
-        <div className="pointer-events-none absolute bottom-3 left-3 z-20 md:bottom-6 md:left-5">
+        <div className="pointer-events-none absolute bottom-3 left-3 z-20 md:bottom-6 md:left-auto md:right-16">
           <MapPinLegend scoreMode={filters.scoreMode} publicRamp />
         </div>
 
@@ -833,16 +873,12 @@ export function HomeMapHero({ initialCityId }: Props) {
                 : "You've explored 3 projects. Pick a plan to keep going.",
             );
           }}
-          onPublicViewed={({ projectId, viewedCount }) => {
+          onPublicViewed={({ projectId }) => {
             const next = [...new Set([...readLocalViews(), projectId])].slice(
-              0,
-              TEASER_FREE_VIEWS,
+              -TEASER_FREE_VIEWS,
             );
             writeLocalViews(next);
             setViewedIds(next);
-            if (viewedCount >= TEASER_FREE_VIEWS) {
-              // paywall after close — handled in handleOverlayClose
-            }
           }}
         />
 
@@ -862,6 +898,7 @@ export function HomeMapHero({ initialCityId }: Props) {
               <motion.div
                 role="dialog"
                 aria-modal
+                data-pc-sheet="pricing"
                 className="absolute inset-x-0 bottom-0 z-50 mx-auto max-h-[min(85dvh,720px)] w-full max-w-4xl overflow-y-auto rounded-t-2xl border border-[#E7DFD0] bg-[#FBF7F0] p-5 sm:p-8"
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}

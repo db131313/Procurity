@@ -36,7 +36,7 @@ export const ASK_SUGGESTIONS: AskIntent[] = [
   {
     id: "hot-chicago",
     label: "Hot projects in Chicago",
-    filters: { ...DEFAULT_MAP_FILTERS, quick: "hot", scorePreset: "90+" },
+    filters: { ...DEFAULT_MAP_FILTERS, quick: "hot", scorePreset: "all" },
     cityId: "chicago",
   },
   {

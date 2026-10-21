@@ -116,6 +116,7 @@ export function BottomSheet({
           <motion.div
             role="dialog"
             aria-modal
+            data-pc-sheet={isPaper ? "project-public" : "project"}
             className={cn(
               "fixed inset-x-0 z-50 mx-auto flex flex-col overflow-hidden",
               isPaper
