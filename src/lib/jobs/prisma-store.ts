@@ -18,6 +18,20 @@ import type {
   ScanType,
 } from "./types";
 import { computeTotals } from "./types";
+import {
+  decodeDataUrlPdf,
+  invoicePdfPath,
+  isDataUrlPdf,
+  quotePdfPath,
+  type PdfPayload,
+} from "./pdf-urls";
+
+/** Prisma Bytes expects Uint8Array backed by ArrayBuffer (not SharedArrayBuffer). */
+function toPrismaBytes(bytes: Buffer): Uint8Array<ArrayBuffer> {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy;
+}
 
 function mapJob(j: {
   id: string;
@@ -119,34 +133,41 @@ async function loadBundle(jobId: string): Promise<JobBundle | null> {
       sortOrder: l.sortOrder,
       createdAt: l.createdAt.toISOString(),
     })),
-    quotes: job.quotes.map((q) => ({
-      id: q.id,
-      jobId: q.jobId,
-      version: q.version,
-      subtotal: q.subtotal,
-      tax: q.tax,
-      total: q.total,
-      pdfUrl: q.pdfUrl,
-      status: q.status,
-      acceptToken: q.acceptToken,
-      validUntil: q.validUntil?.toISOString() ?? null,
-      sentAt: q.sentAt?.toISOString() ?? null,
-      acceptedAt: q.acceptedAt?.toISOString() ?? null,
-      createdAt: q.createdAt.toISOString(),
-      updatedAt: q.updatedAt.toISOString(),
-    })),
-    invoices: job.invoices.map((i) => ({
-      id: i.id,
-      jobId: i.jobId,
-      type: i.type,
-      amount: i.amount,
-      status: i.status,
-      stripeCheckoutSessionId: i.stripeCheckoutSessionId,
-      pdfUrl: i.pdfUrl,
-      unlockAfterId: i.unlockAfterId,
-      createdAt: i.createdAt.toISOString(),
-      updatedAt: i.updatedAt.toISOString(),
-    })),
+    quotes: job.quotes.map((q) => {
+      const hasPdf = Boolean(q.pdfData?.length || q.pdfUrl);
+      return {
+        id: q.id,
+        jobId: q.jobId,
+        version: q.version,
+        subtotal: q.subtotal,
+        tax: q.tax,
+        total: q.total,
+        // Never expose data: URLs to the client — always the API route path.
+        pdfUrl: hasPdf ? quotePdfPath(q.jobId, q.id) : null,
+        status: q.status,
+        acceptToken: q.acceptToken,
+        validUntil: q.validUntil?.toISOString() ?? null,
+        sentAt: q.sentAt?.toISOString() ?? null,
+        acceptedAt: q.acceptedAt?.toISOString() ?? null,
+        createdAt: q.createdAt.toISOString(),
+        updatedAt: q.updatedAt.toISOString(),
+      };
+    }),
+    invoices: job.invoices.map((i) => {
+      const hasPdf = Boolean(i.pdfData?.length || i.pdfUrl);
+      return {
+        id: i.id,
+        jobId: i.jobId,
+        type: i.type,
+        amount: i.amount,
+        status: i.status,
+        stripeCheckoutSessionId: i.stripeCheckoutSessionId,
+        pdfUrl: hasPdf ? invoicePdfPath(i.jobId, i.id) : null,
+        unlockAfterId: i.unlockAfterId,
+        createdAt: i.createdAt.toISOString(),
+        updatedAt: i.updatedAt.toISOString(),
+      };
+    }),
     payments,
   };
 }
@@ -436,10 +457,14 @@ export async function updateQuote(
     where: { id: quote.jobId, ownerId },
   });
   if (!job) return null;
+  const safePdfUrl =
+    patch.pdfUrl !== undefined && isDataUrlPdf(patch.pdfUrl)
+      ? quotePdfPath(quote.jobId, quoteId)
+      : patch.pdfUrl;
   const q = await prisma.quote.update({
     where: { id: quoteId },
     data: {
-      ...(patch.pdfUrl !== undefined ? { pdfUrl: patch.pdfUrl } : {}),
+      ...(safePdfUrl !== undefined ? { pdfUrl: safePdfUrl } : {}),
       ...(patch.status !== undefined ? { status: patch.status } : {}),
       ...(patch.sentAt !== undefined
         ? { sentAt: patch.sentAt ? new Date(patch.sentAt) : null }
@@ -452,6 +477,7 @@ export async function updateQuote(
       ...(patch.total !== undefined ? { total: patch.total } : {}),
     },
   });
+  const hasPdf = Boolean(q.pdfData?.length || q.pdfUrl);
   return {
     id: q.id,
     jobId: q.jobId,
@@ -459,7 +485,7 @@ export async function updateQuote(
     subtotal: q.subtotal,
     tax: q.tax,
     total: q.total,
-    pdfUrl: q.pdfUrl,
+    pdfUrl: hasPdf ? quotePdfPath(q.jobId, q.id) : null,
     status: q.status,
     acceptToken: q.acceptToken,
     validUntil: q.validUntil?.toISOString() ?? null,
@@ -468,6 +494,173 @@ export async function updateQuote(
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
   } satisfies QuoteRecord;
+}
+
+export async function saveQuotePdf(
+  quoteId: string,
+  ownerId: string,
+  bytes: Buffer,
+): Promise<QuoteRecord | null> {
+  const prisma = getPrisma();
+  const quote = await prisma.quote.findUnique({ where: { id: quoteId } });
+  if (!quote) return null;
+  const job = await prisma.job.findFirst({
+    where: { id: quote.jobId, ownerId },
+  });
+  if (!job) return null;
+  const path = quotePdfPath(quote.jobId, quoteId);
+  const q = await prisma.quote.update({
+    where: { id: quoteId },
+    data: { pdfData: toPrismaBytes(bytes), pdfUrl: path },
+  });
+  return {
+    id: q.id,
+    jobId: q.jobId,
+    version: q.version,
+    subtotal: q.subtotal,
+    tax: q.tax,
+    total: q.total,
+    pdfUrl: path,
+    status: q.status,
+    acceptToken: q.acceptToken,
+    validUntil: q.validUntil?.toISOString() ?? null,
+    sentAt: q.sentAt?.toISOString() ?? null,
+    acceptedAt: q.acceptedAt?.toISOString() ?? null,
+    createdAt: q.createdAt.toISOString(),
+    updatedAt: q.updatedAt.toISOString(),
+  } satisfies QuoteRecord;
+}
+
+function bytesFromQuoteRow(q: {
+  pdfData: Uint8Array | Buffer | null;
+  pdfUrl: string | null;
+}): Buffer | null {
+  if (q.pdfData && q.pdfData.length) return Buffer.from(q.pdfData);
+  if (isDataUrlPdf(q.pdfUrl)) return decodeDataUrlPdf(q.pdfUrl!);
+  return null;
+}
+
+export async function getQuotePdfPayload(
+  jobId: string,
+  quoteId: string,
+  ownerId?: string,
+): Promise<PdfPayload | null> {
+  const prisma = getPrisma();
+  const quote = await prisma.quote.findFirst({
+    where: { id: quoteId, jobId },
+  });
+  if (!quote) return null;
+  if (ownerId) {
+    const job = await prisma.job.findFirst({ where: { id: jobId, ownerId } });
+    if (!job) return null;
+  }
+  const bytes = bytesFromQuoteRow(quote);
+  if (!bytes) return null;
+  // Lazy-migrate legacy data: URLs into pdfData + route pdfUrl
+  if (!quote.pdfData?.length || isDataUrlPdf(quote.pdfUrl)) {
+    await prisma.quote.update({
+      where: { id: quoteId },
+      data: {
+        pdfData: toPrismaBytes(bytes),
+        pdfUrl: quotePdfPath(jobId, quoteId),
+      },
+    });
+  }
+  return {
+    bytes,
+    fileName: `quote-v${quote.version}.pdf`,
+    version: quote.version,
+  };
+}
+
+export async function getQuotePdfPayloadByToken(
+  token: string,
+): Promise<PdfPayload | null> {
+  const prisma = getPrisma();
+  const quote = await prisma.quote.findUnique({ where: { acceptToken: token } });
+  if (!quote) return null;
+  const bytes = bytesFromQuoteRow(quote);
+  if (!bytes) return null;
+  if (!quote.pdfData?.length || isDataUrlPdf(quote.pdfUrl)) {
+    await prisma.quote.update({
+      where: { id: quote.id },
+      data: {
+        pdfData: toPrismaBytes(bytes),
+        pdfUrl: quotePdfPath(quote.jobId, quote.id),
+      },
+    });
+  }
+  return {
+    bytes,
+    fileName: `quote-v${quote.version}.pdf`,
+    version: quote.version,
+  };
+}
+
+export async function saveInvoicePdf(
+  invoiceId: string,
+  ownerId: string,
+  bytes: Buffer,
+): Promise<InvoiceRecord | null> {
+  const prisma = getPrisma();
+  const inv = await prisma.invoice.findUnique({ where: { id: invoiceId } });
+  if (!inv) return null;
+  const job = await prisma.job.findFirst({
+    where: { id: inv.jobId, ownerId },
+  });
+  if (!job) return null;
+  const path = invoicePdfPath(inv.jobId, invoiceId);
+  const updated = await prisma.invoice.update({
+    where: { id: invoiceId },
+    data: { pdfData: toPrismaBytes(bytes), pdfUrl: path },
+  });
+  return {
+    id: updated.id,
+    jobId: updated.jobId,
+    type: updated.type,
+    amount: updated.amount,
+    status: updated.status,
+    stripeCheckoutSessionId: updated.stripeCheckoutSessionId,
+    pdfUrl: path,
+    unlockAfterId: updated.unlockAfterId,
+    createdAt: updated.createdAt.toISOString(),
+    updatedAt: updated.updatedAt.toISOString(),
+  } satisfies InvoiceRecord;
+}
+
+export async function getInvoicePdfPayload(
+  jobId: string,
+  invoiceId: string,
+  ownerId?: string,
+): Promise<PdfPayload | null> {
+  const prisma = getPrisma();
+  const inv = await prisma.invoice.findFirst({
+    where: { id: invoiceId, jobId },
+  });
+  if (!inv) return null;
+  if (ownerId) {
+    const job = await prisma.job.findFirst({ where: { id: jobId, ownerId } });
+    if (!job) return null;
+  }
+  const bytes = inv.pdfData?.length
+    ? Buffer.from(inv.pdfData)
+    : isDataUrlPdf(inv.pdfUrl)
+      ? decodeDataUrlPdf(inv.pdfUrl!)
+      : null;
+  if (!bytes) return null;
+  if (!inv.pdfData?.length || isDataUrlPdf(inv.pdfUrl)) {
+    await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        pdfData: toPrismaBytes(bytes),
+        pdfUrl: invoicePdfPath(jobId, invoiceId),
+      },
+    });
+  }
+  return {
+    bytes,
+    fileName: `invoice-${inv.type}.pdf`,
+  };
 }
 
 export async function acceptQuoteByToken(token: string) {
@@ -575,14 +768,19 @@ export async function setInvoiceCheckout(
     where: { id: inv.jobId, ownerId },
   });
   if (!job) return null;
+  const safePdfUrl =
+    pdfUrl !== undefined && isDataUrlPdf(pdfUrl)
+      ? invoicePdfPath(inv.jobId, invoiceId)
+      : pdfUrl;
   const updated = await prisma.invoice.update({
     where: { id: invoiceId },
     data: {
       stripeCheckoutSessionId: sessionId,
-      ...(pdfUrl !== undefined ? { pdfUrl } : {}),
+      ...(safePdfUrl !== undefined ? { pdfUrl: safePdfUrl } : {}),
       status: inv.status === "draft" ? "open" : inv.status,
     },
   });
+  const hasPdf = Boolean(updated.pdfData?.length || updated.pdfUrl);
   return {
     id: updated.id,
     jobId: updated.jobId,
@@ -590,7 +788,7 @@ export async function setInvoiceCheckout(
     amount: updated.amount,
     status: updated.status,
     stripeCheckoutSessionId: updated.stripeCheckoutSessionId,
-    pdfUrl: updated.pdfUrl,
+    pdfUrl: hasPdf ? invoicePdfPath(updated.jobId, updated.id) : null,
     unlockAfterId: updated.unlockAfterId,
     createdAt: updated.createdAt.toISOString(),
     updatedAt: updated.updatedAt.toISOString(),

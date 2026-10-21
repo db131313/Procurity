@@ -38,14 +38,22 @@ export default async function PublicQuotePage({
           </p>
         ) : null}
         {quote.pdfUrl ? (
-          <a
-            href={quote.pdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-block text-sm font-bold text-purple underline"
-          >
-            Download PDF
-          </a>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href={`/quote/${token}/pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-bold text-purple underline"
+            >
+              Open PDF
+            </a>
+            <a
+              href={`/quote/${token}/pdf?download=1`}
+              className="text-sm font-bold text-ink underline"
+            >
+              Download PDF
+            </a>
+          </div>
         ) : null}
         <p className="mt-4 text-xs text-slate">{job.terms}</p>
       </div>

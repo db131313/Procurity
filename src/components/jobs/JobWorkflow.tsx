@@ -932,14 +932,22 @@ function StageEstimate({
           Generate quote PDF
         </button>
         {latestQuote?.pdfUrl ? (
-          <a
-            href={latestQuote.pdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full border border-line px-4 py-2 text-sm font-bold text-purple"
-          >
-            Open PDF
-          </a>
+          <>
+            <a
+              href={latestQuote.pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-line px-4 py-2 text-sm font-bold text-purple"
+            >
+              Open PDF
+            </a>
+            <a
+              href={`${latestQuote.pdfUrl}?download=1`}
+              className="rounded-full border border-line px-4 py-2 text-sm font-bold text-ink"
+            >
+              Download PDF
+            </a>
+          </>
         ) : null}
         {latestQuote ? (
           <button
@@ -1081,14 +1089,22 @@ function StageInvoice({
               </div>
               <div className="flex flex-wrap gap-2">
                 {inv.pdfUrl ? (
-                  <a
-                    href={inv.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-bold"
-                  >
-                    Invoice PDF
-                  </a>
+                  <>
+                    <a
+                      href={inv.pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-bold"
+                    >
+                      Open PDF
+                    </a>
+                    <a
+                      href={`${inv.pdfUrl}?download=1`}
+                      className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-bold"
+                    >
+                      Download PDF
+                    </a>
+                  </>
                 ) : null}
                 {inv.status === "open" ? (
                   <button

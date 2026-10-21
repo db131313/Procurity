@@ -1,7 +1,9 @@
 /**
- * File storage for job scans / PDFs.
- * Local disk when writable; on Netlify/serverless (read-only FS) persist as a
- * data URL so Neon/JSON stores hold the bytes instead of `/data/uploads`.
+ * File storage for job scans / reference uploads.
+ * Quote and invoice PDFs are stored in the DB via saveQuotePdf / saveInvoicePdf
+ * and served from /api/jobs/.../pdf — never as data: URLs.
+ *
+ * Local disk when writable; on Netlify prefer Firebase, else /tmp (ephemeral).
  * Optional Firebase Storage upload when FIREBASE_SERVICE_ACCOUNT_JSON is set.
  */
 
@@ -11,8 +13,8 @@ import { newId } from "./id";
 
 const LOCAL_DIR = path.join(process.cwd(), "data", "uploads");
 const TMP_DIR = path.join("/tmp", "procurity-uploads");
-/** Soft cap so data URLs stay within Neon TEXT + response size limits. */
-const DATA_URL_MAX_BYTES = 3.5 * 1024 * 1024;
+/** Soft cap for ephemeral /tmp-backed scan files on serverless. */
+const SERVERLESS_MAX_BYTES = 3.5 * 1024 * 1024;
 
 export function isFirebaseStorageConfigured() {
   return Boolean(
@@ -36,7 +38,7 @@ export type StoredFile = {
   url: string;
   fileName: string;
   mimeType: string;
-  storage: "firebase" | "local" | "data-url" | "tmp";
+  storage: "firebase" | "local" | "tmp";
 };
 
 async function tryFirebaseUpload(input: {
@@ -143,20 +145,6 @@ async function importGoogleAuthShim(sa: {
   };
 }
 
-function asDataUrl(mimeType: string, bytes: Buffer): StoredFile {
-  if (bytes.length > DATA_URL_MAX_BYTES) {
-    throw new Error(
-      `File is too large to store without Firebase Storage (${Math.round(bytes.length / 1024)}KB). Set FIREBASE_SERVICE_ACCOUNT_JSON or use a smaller file.`,
-    );
-  }
-  return {
-    url: `data:${mimeType};base64,${bytes.toString("base64")}`,
-    fileName: "stored",
-    mimeType,
-    storage: "data-url",
-  };
-}
-
 async function writeLocal(
   root: string,
   key: string,
@@ -168,8 +156,8 @@ async function writeLocal(
 }
 
 /**
- * Server-side store for PDF/scan buffers.
- * Order: Firebase (if SA configured) → local data/uploads → /tmp → Neon data URL.
+ * Server-side store for scan/reference buffers (not quote/invoice PDFs).
+ * Order: Firebase (if SA configured) → local data/uploads → /tmp.
  */
 export async function storeJobFile(input: {
   jobId: string;
@@ -212,17 +200,15 @@ export async function storeJobFile(input: {
     }
   }
 
-  // Serverless: /tmp is writable but ephemeral — still useful within the same instance.
+  if (input.bytes.length > SERVERLESS_MAX_BYTES) {
+    throw new Error(
+      `File is too large for serverless storage (${Math.round(input.bytes.length / 1024)}KB). Set FIREBASE_SERVICE_ACCOUNT_JSON.`,
+    );
+  }
+
+  // Serverless: /tmp is writable but ephemeral across cold starts.
   try {
     await writeLocal(TMP_DIR, key, input.bytes);
-    // Prefer durable data URL for PDFs so Open PDF works across cold starts.
-    if (
-      input.mimeType === "application/pdf" ||
-      input.bytes.length <= DATA_URL_MAX_BYTES
-    ) {
-      const data = asDataUrl(input.mimeType, input.bytes);
-      return { ...data, fileName: input.fileName };
-    }
     return {
       url: `${base}/api/jobs/files/${key}`,
       fileName: input.fileName,
@@ -230,14 +216,12 @@ export async function storeJobFile(input: {
       storage: "tmp",
     };
   } catch (e) {
-    console.warn(
-      "[jobs/storage] /tmp write failed, using data URL",
-      e instanceof Error ? e.message : e,
+    throw new Error(
+      `Could not store upload on serverless host: ${
+        e instanceof Error ? e.message : String(e)
+      }. Configure FIREBASE_SERVICE_ACCOUNT_JSON.`,
     );
   }
-
-  const data = asDataUrl(input.mimeType, input.bytes);
-  return { ...data, fileName: input.fileName };
 }
 
 export function localUploadPath(relativeKey: string) {

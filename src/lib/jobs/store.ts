@@ -77,6 +77,36 @@ export async function updateQuote(
   return (await backend()).updateQuote(...args);
 }
 
+export async function saveQuotePdf(
+  ...args: Parameters<(typeof fileStore)["saveQuotePdf"]>
+) {
+  return (await backend()).saveQuotePdf(...args);
+}
+
+export async function getQuotePdfPayload(
+  ...args: Parameters<(typeof fileStore)["getQuotePdfPayload"]>
+) {
+  return (await backend()).getQuotePdfPayload(...args);
+}
+
+export async function getQuotePdfPayloadByToken(
+  ...args: Parameters<(typeof fileStore)["getQuotePdfPayloadByToken"]>
+) {
+  return (await backend()).getQuotePdfPayloadByToken(...args);
+}
+
+export async function saveInvoicePdf(
+  ...args: Parameters<(typeof fileStore)["saveInvoicePdf"]>
+) {
+  return (await backend()).saveInvoicePdf(...args);
+}
+
+export async function getInvoicePdfPayload(
+  ...args: Parameters<(typeof fileStore)["getInvoicePdfPayload"]>
+) {
+  return (await backend()).getInvoicePdfPayload(...args);
+}
+
 export async function acceptQuoteByToken(token: string) {
   return (await backend()).acceptQuoteByToken(token);
 }
