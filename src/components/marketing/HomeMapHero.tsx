@@ -42,6 +42,7 @@ import { cn } from "@/lib/cn";
 import type { ProjectPhase } from "@/lib/db/types";
 import { IphoneAppSection } from "./IphoneAppSection";
 import {
+  HOME_FIELD_VIDEOS,
   HOME_SHOTS,
   type HomeMediaAvailability,
 } from "@/lib/marketing/home-media-shared";
@@ -1012,7 +1013,9 @@ const WHAT_YOU_GET = [
 
 export function HomeBelowFold({ media }: { media: HomeMediaAvailability }) {
   const shots = HOME_SHOTS.filter((s) => media[s.key]);
-  const hasVideo = media.fieldVideoMp4 || media.fieldVideoWebm;
+  const fieldVideos = HOME_FIELD_VIDEOS.filter(
+    (v) => media[v.mp4Key] || media[v.webmKey],
+  );
 
   return (
     <div className="relative">
@@ -1095,31 +1098,54 @@ export function HomeBelowFold({ media }: { media: HomeMediaAvailability }) {
         </section>
       )}
 
-      {hasVideo && (
-        <section className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-20">
-          <div className="mx-auto max-w-4xl">
+      {fieldVideos.length > 0 && (
+        <section
+          className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-20"
+          data-testid="home-field-videos"
+        >
+          <div className="mx-auto max-w-5xl">
             <h2 className="font-display text-2xl tracking-tight text-[#14213D] md:text-3xl">
               See it in use
             </h2>
-            <div className="mt-6 overflow-hidden rounded-xl border border-[#E7DFD0] bg-[#FBF7F0]">
-              <video
-                className="aspect-video w-full bg-[#14213D]"
-                poster={
-                  media.fieldPoster ? "/home/field-poster.jpg" : undefined
-                }
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                controls
-              >
-                {media.fieldVideoWebm && (
-                  <source src="/home/field-video.webm" type="video/webm" />
-                )}
-                {media.fieldVideoMp4 && (
-                  <source src="/home/field-video.mp4" type="video/mp4" />
-                )}
-              </video>
+            <p className="mt-2 max-w-lg text-[#5B6475]">
+              From the sidewalk to the handshake — find the job, show up ready.
+            </p>
+            <div
+              className={cn(
+                "mt-8 grid gap-6",
+                fieldVideos.length > 1
+                  ? "mx-auto max-w-3xl grid-cols-1 sm:grid-cols-2"
+                  : "mx-auto max-w-sm",
+              )}
+            >
+              {fieldVideos.map((clip) => (
+                <figure key={clip.id} className="min-w-0">
+                  <div className="overflow-hidden rounded-xl border border-[#E7DFD0] bg-[#14213D]">
+                    <video
+                      className="aspect-[416/752] w-full object-cover"
+                      poster={
+                        media[clip.posterKey] ? clip.posterSrc : undefined
+                      }
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      controls
+                      aria-label={clip.label}
+                    >
+                      {media[clip.webmKey] && (
+                        <source src={clip.webmSrc} type="video/webm" />
+                      )}
+                      {media[clip.mp4Key] && (
+                        <source src={clip.mp4Src} type="video/mp4" />
+                      )}
+                    </video>
+                  </div>
+                  <figcaption className="mt-3 text-sm text-[#5B6475]">
+                    {clip.label}
+                  </figcaption>
+                </figure>
+              ))}
             </div>
           </div>
         </section>

@@ -20,11 +20,14 @@ Suggested max dimensions: ~780×1688 px (2× of 390×844). PNG, sRGB.
 | File | Format | Suggested size | Used for |
 | --- | --- | --- | --- |
 | `hero-photo.jpg` | JPEG | ≥1600×900, <500 KB | Optional photo band below “What you get” |
-| `field-video.mp4` | H.264 MP4 | ≤1080p, <15 MB | Field video slot |
+| `field-video.mp4` | H.264 MP4 | Portrait ≤1080p, <15 MB | Field clip 1 (“On the job site”) |
 | `field-video.webm` | VP9/AV1 WebM | Same as MP4 | Progressive enhancement |
-| `field-poster.jpg` | JPEG | Matching video frame | Video poster frame |
+| `field-poster.jpg` | JPEG | Matching video frame | Clip 1 poster |
+| `field-video-2.mp4` | H.264 MP4 | Portrait ≤1080p, <15 MB | Field clip 2 (“Close the deal”) |
+| `field-video-2.webm` | VP9/AV1 WebM | Same as MP4 | Progressive enhancement |
+| `field-poster-2.jpg` | JPEG | Matching video frame | Clip 2 poster |
 
-Video slot renders only when `field-video.mp4` and/or `field-video.webm` exist. Poster is optional.
+Each clip renders only when its `.mp4` and/or `.webm` exists. Posters are optional. Portrait (9:16) is preferred; the home layout stacks on mobile and pairs side-by-side from `sm` up.
 
 ## iPhone app section
 
