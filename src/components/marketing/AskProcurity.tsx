@@ -13,9 +13,11 @@ import { cn } from "@/lib/cn";
 type Props = {
   onApply: (intent: AskIntent) => { resultLine: string };
   className?: string;
+  /** Smaller chips / input for the value-prop panel */
+  compact?: boolean;
 };
 
-export function AskProcurity({ onApply, className }: Props) {
+export function AskProcurity({ onApply, className, compact = false }: Props) {
   const [query, setQuery] = useState("");
   const [looking, setLooking] = useState(false);
   const [lookText, setLookText] = useState("");
@@ -97,16 +99,22 @@ export function AskProcurity({ onApply, className }: Props) {
   }
 
   return (
-    <div className={cn("w-full max-w-xl", className)}>
+    <div className={cn("w-full", className)}>
       <form
-        className="mkt-surface flex items-center gap-2 rounded-xl px-3 py-2 shadow-none"
+        className={cn(
+          "mkt-surface flex items-center gap-2 shadow-none",
+          compact ? "rounded-lg px-2.5 py-1.5" : "rounded-xl px-3 py-2",
+        )}
         onSubmit={(e) => {
           e.preventDefault();
           submit(query);
         }}
       >
         <Sparkles
-          className="h-4 w-4 shrink-0 text-[#2563EB]"
+          className={cn(
+            "shrink-0 text-[#2563EB]",
+            compact ? "h-3.5 w-3.5" : "h-4 w-4",
+          )}
           aria-hidden
           strokeWidth={1.75}
         />
@@ -119,31 +127,50 @@ export function AskProcurity({ onApply, className }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask Procurity…"
-          className="min-w-0 flex-1 bg-transparent text-sm text-[#14213D] outline-none placeholder:text-[#5B6475]"
+          className={cn(
+            "min-w-0 flex-1 bg-transparent text-[#14213D] outline-none placeholder:text-[#5B6475]",
+            compact ? "text-xs" : "text-sm",
+          )}
           autoComplete="off"
         />
         <button
           type="submit"
-          className="mkt-btn-primary shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium"
+          className={cn(
+            "mkt-btn-primary shrink-0 font-medium",
+            compact
+              ? "rounded-md px-2 py-1 text-[11px]"
+              : "rounded-lg px-3 py-1.5 text-xs",
+          )}
         >
           Ask
         </button>
       </form>
 
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className={cn("flex flex-wrap gap-1", compact ? "mt-1.5" : "mt-2 gap-1.5")}>
         {ASK_SUGGESTIONS.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() => pickSuggestion(s)}
-            className="rounded-lg border border-[#E7DFD0] bg-[#FBF7F0]/95 px-2.5 py-1 text-left text-[11px] font-medium text-[#14213D] transition-opacity hover:opacity-80 sm:text-xs"
+            className={cn(
+              "rounded-md border border-[#E7DFD0] bg-transparent text-left font-medium text-[#5B6475] transition-opacity hover:text-[#14213D] hover:opacity-90",
+              compact
+                ? "px-1.5 py-0.5 text-[10px] leading-snug"
+                : "px-2.5 py-1 text-[11px] sm:text-xs",
+            )}
           >
             {s.label}
           </button>
         ))}
       </div>
 
-      <div className="mt-2 min-h-[1.25rem] text-xs text-[#5B6475]" aria-live="polite">
+      <div
+        className={cn(
+          "min-h-[1rem] text-[#5B6475]",
+          compact ? "mt-1 text-[10px]" : "mt-2 text-xs",
+        )}
+        aria-live="polite"
+      >
         {looking && <span className="font-medium text-[#14213D]">{lookText}</span>}
         {!looking && hint && <span>{hint}</span>}
         {!looking && resultLine && !hint && (
