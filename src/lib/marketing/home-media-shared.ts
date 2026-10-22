@@ -3,6 +3,9 @@ export type HomeMediaAvailability = {
   fieldVideoMp4: boolean;
   fieldVideoWebm: boolean;
   fieldPoster: boolean;
+  fieldVideo2Mp4: boolean;
+  fieldVideo2Webm: boolean;
+  fieldPoster2: boolean;
   shotMap: boolean;
   shotCard: boolean;
   shotMeasure: boolean;
@@ -10,6 +13,30 @@ export type HomeMediaAvailability = {
   /** When false, the entire iPhone LiDAR marketing block stays hidden */
   showIphoneApp: boolean;
 };
+
+/** Optional portrait field clips under public/home/. Slot omitted if neither mp4 nor webm exists. */
+export const HOME_FIELD_VIDEOS = [
+  {
+    id: "field-1" as const,
+    mp4Key: "fieldVideoMp4" as const,
+    webmKey: "fieldVideoWebm" as const,
+    posterKey: "fieldPoster" as const,
+    mp4Src: "/home/field-video.mp4",
+    webmSrc: "/home/field-video.webm",
+    posterSrc: "/home/field-poster.jpg",
+    label: "On the job site",
+  },
+  {
+    id: "field-2" as const,
+    mp4Key: "fieldVideo2Mp4" as const,
+    webmKey: "fieldVideo2Webm" as const,
+    posterKey: "fieldPoster2" as const,
+    mp4Src: "/home/field-video-2.mp4",
+    webmSrc: "/home/field-video-2.webm",
+    posterSrc: "/home/field-poster-2.jpg",
+    label: "Close the deal",
+  },
+];
 
 export const HOME_SHOTS = [
   {
