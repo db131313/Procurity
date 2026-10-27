@@ -72,12 +72,14 @@
     opacity 0.5s,
     transform 0.5s;
   pointer-events: none;
+  z-index: 0;
 }
 
 .cpOn {
   opacity: 1;
   transform: none;
   pointer-events: auto;
+  z-index: 1;
 }
 
 .cp b {
