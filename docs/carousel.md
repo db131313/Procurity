@@ -1,37 +1,37 @@
 # Feature carousel
 
-The homepage walkthrough under the swarm hero is `FeatureCarousel`.
+The homepage **hero** is `FeatureCarousel` (full `100svh`). An intro blob overlay covers first paint; after reveal, the carousel auto-advances.
 
 ## Swap a video, copy, or screen
 
 Edit **only** [`src/content/carousel.ts`](../src/content/carousel.ts).
 
-Each slide has:
-
 | Field | Meaning |
 | --- | --- |
 | `label` | Tab label + pill text |
-| `title` / `body` | Left-side copy |
-| `screen` | Which phone UI: `discover` \| `measure` \| `design` \| `quote` \| `invoice` |
-| `video` | `{ webm, mp4, poster, webm640?, mp4640? }` full-bleed background |
-| `screenshot` | Optional image path — when set, replaces the drawn phone screen |
-| `cta` | Optional `{ label, href }` under the copy (Invoice uses `/signup`) |
+| `title` / `body` | Keep short (3–4 word title, one short body line) |
+| `screen` | Phone UI: `discover` \| `measure` \| `design` \| `quote` \| `invoice` |
+| `video` | `{ webm, mp4, poster, webm640?, mp4640? }` — slides that share the same `mp4` reuse **one** `<video>` |
+| `screenshot` | Optional image; replaces the drawn phone screen |
+| `cta` | Optional `{ label, href }` (Invoice → `/signup`) |
 
-Phone UIs live in `src/components/marketing/phone-screens/` (one file each). To replace a drawn screen with a real capture, set `screenshot: "/home/your.png"` on that slide.
+Phone UIs: `src/components/marketing/phone-screens/`.
 
 ## Media
 
-Files under `public/home/`:
+Versioned under `public/home/` (`field-3-v2.*`) so immutable CDN caches bust after re-encode.
 
-- `field-3.mp4` / `field-3.webm` — desktop sources (H.264 + VP9, muted, ~1.5MB)
-- `field-3-640.mp4` / `field-3-640.webm` — `media="(max-width:820px)"` pair
-- `field-3.webp` — poster (preload on first paint)
+- Desktop: `field-3-v2.mp4` / `.webm` (≤ ~1.5MB)
+- Mobile: `field-3-v2-640.*` via `media="(max-width:820px)"`
+- Poster: `field-3-v2.webp` (preloaded on first paint)
 
-Netlify serves `/home/*` with `Cache-Control: public, max-age=31536000, immutable`.
+Netlify: `/home/*` → `Cache-Control: public, max-age=31536000, immutable`.
 
-## Behavior notes
+## Behavior
 
-- Auto-advance every 7s; pause when under 35% visible
-- Videos mount only when the carousel is within ~one viewport (`rootMargin: 100%`)
-- `prefers-reduced-motion`: posters only, no auto-advance / progress fill
-- App Store line: “coming soon” unless `NEXT_PUBLIC_IOS_APP_URL` is set
+- Intro: blob grows ≥3s, waits up to +2s for first video, CSS `introOut` at 7s as fallback
+- Auto-advance every 7s **starts only after** intro reveal (`ready`)
+- Prefetch next slide’s video (`preload="auto"`)
+- `pointerdown` retries `play()` (iOS Low Power Mode)
+- Phone: right side desktop (scale .8); **centered** on mobile (scale .46)
+- `prefers-reduced-motion`: short intro (~300ms), posters only, no auto-advance

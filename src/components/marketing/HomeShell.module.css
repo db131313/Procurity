@@ -1,0 +1,311 @@
+/* Fixed header, mobile menu, intro blob — ported from reference */
+
+.sh {
+  position: fixed;
+  z-index: 80;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 68px;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition:
+    background 0.3s,
+    backdrop-filter 0.3s;
+}
+
+.shSolid {
+  background: rgba(11, 13, 14, 0.78);
+  backdrop-filter: blur(14px);
+}
+
+.logo {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+  z-index: 1;
+}
+
+.dl {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  font-size: 15px;
+  color: #c9cccf;
+  opacity: 0;
+  transition: opacity 0.8s 0.1s;
+}
+
+.dl a:hover {
+  color: #fff;
+}
+
+.ready .dl {
+  opacity: 1;
+}
+
+.burger {
+  display: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #fff;
+  cursor: pointer;
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  transition: transform 0.12s;
+}
+
+.burger:active {
+  transform: scale(0.92);
+}
+
+.burger i {
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  transition:
+    transform 0.45s cubic-bezier(0.7, 0, 0.2, 1),
+    top 0.45s cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+.burger i:nth-child(1) {
+  top: 18px;
+}
+
+.burger i:nth-child(2) {
+  top: 25px;
+}
+
+.burgerOpen i:nth-child(1) {
+  top: 21.5px;
+  transform: rotate(45deg);
+}
+
+.burgerOpen i:nth-child(2) {
+  top: 21.5px;
+  transform: rotate(-45deg);
+}
+
+.burger:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.menu {
+  position: fixed;
+  z-index: 70;
+  inset: 0;
+  background: #0b0d0e;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 112px 28px calc(32px + env(safe-area-inset-bottom, 0px));
+  visibility: hidden;
+  clip-path: circle(0 at calc(100% - 40px) 34px);
+  transition:
+    clip-path 0.6s cubic-bezier(0.7, 0, 0.2, 1),
+    visibility 0s 0.6s;
+}
+
+.menuOpen {
+  visibility: visible;
+  clip-path: circle(150% at calc(100% - 40px) 34px);
+  transition:
+    clip-path 0.65s cubic-bezier(0.7, 0, 0.2, 1),
+    visibility 0s;
+}
+
+.ml2 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ml2 a {
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  padding: 10px 0;
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.4s,
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.menuOpen .ml2 a,
+.menuOpen .mcta {
+  opacity: 1;
+  transform: none;
+}
+
+.menuOpen .ml2 a:nth-child(1) {
+  transition-delay: 0.22s;
+}
+
+.menuOpen .ml2 a:nth-child(2) {
+  transition-delay: 0.3s;
+}
+
+.menuOpen .ml2 a:nth-child(3) {
+  transition-delay: 0.38s;
+}
+
+.mcta {
+  display: block;
+  text-align: center;
+  padding: 16px;
+  font-size: 17px;
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.4s 0.46s,
+    transform 0.5s 0.46s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.ml2 a:active {
+  opacity: 0.6;
+}
+
+.intro {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  background: #0b0d0e;
+  display: grid;
+  place-items: center;
+  pointer-events: all;
+  transition:
+    opacity 1s ease,
+    visibility 0s 1s;
+  animation: introOut 1s 7s forwards;
+}
+
+.introDone {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@keyframes introOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+.bl {
+  position: relative;
+  width: min(340px, 60vw);
+  aspect-ratio: 1;
+  filter: blur(34px) saturate(1.2);
+  animation: grow 3.2s cubic-bezier(0.3, 0.6, 0.3, 1) forwards;
+}
+
+@keyframes grow {
+  from {
+    transform: scale(0.4);
+  }
+  to {
+    transform: scale(1.25);
+  }
+}
+
+.bl i {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  border-radius: 50%;
+  opacity: 0.85;
+  animation: drift 11s ease-in-out infinite alternate;
+}
+
+.bl i:nth-child(1) {
+  background: #5ee7ff;
+  left: 0;
+  top: 6%;
+}
+
+.bl i:nth-child(2) {
+  background: #a78bfa;
+  right: 0;
+  top: 0;
+  animation-delay: -3s;
+  animation-duration: 13s;
+}
+
+.bl i:nth-child(3) {
+  background: #ff7ac6;
+  left: 18%;
+  bottom: 0;
+  animation-delay: -6s;
+  animation-duration: 15s;
+}
+
+.bl i:nth-child(4) {
+  background: #ffc46b;
+  right: 6%;
+  bottom: 8%;
+  width: 42%;
+  height: 42%;
+  animation-delay: -9s;
+  animation-duration: 10s;
+}
+
+@keyframes drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(8%, -6%) scale(1.08);
+  }
+}
+
+.swarm {
+  border-top: 1px solid var(--line);
+  background: #0b0d0e;
+}
+
+@media (max-width: 820px) {
+  .sh {
+    padding: 0 20px;
+  }
+
+  .dl {
+    display: none;
+  }
+
+  .burger {
+    display: block;
+    margin-right: -10px;
+  }
+}
+
+@media (min-width: 821px) {
+  .menu {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bl,
+  .bl i {
+    animation: none;
+  }
+
+  .menu,
+  .menu * {
+    transition-duration: 0.01s !important;
+    transition-delay: 0s !important;
+  }
+}
