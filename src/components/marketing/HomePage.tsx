@@ -1,17 +1,10 @@
-import { getHomeMediaAvailability } from "@/lib/marketing/home-media";
-import { HomeBelowFold, HomeMapHero } from "./HomeMapHero";
+import { HomeExperience } from "./HomeExperience";
 
 type Props = {
   initialCityId: string;
 };
 
-/** Public home: real map hero + sunrise marketing shell. */
+/** Public home: black/white swarm hero + real map panel + below-fold. */
 export function HomePage({ initialCityId }: Props) {
-  const media = getHomeMediaAvailability();
-  return (
-    <div className="marketing-sunrise text-ink">
-      <HomeMapHero initialCityId={initialCityId} />
-      <HomeBelowFold media={media} />
-    </div>
-  );
+  return <HomeExperience initialCityId={initialCityId} />;
 }

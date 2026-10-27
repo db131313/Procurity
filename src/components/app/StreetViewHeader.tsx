@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
+import { ThinkingBlob } from "@/components/ui/ThinkingBlob";
 
 type Props = {
   lat: number;
@@ -77,10 +78,7 @@ export function StreetViewHeader({ lat, lng, className, projectId }: Props) {
                 "absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-ink to-slate/80 text-white/70",
               )}
             >
-              <WorkingSpinner className="text-white/80" size="md" />
-              <p className="text-xs font-semibold tracking-wide">
-                Loading street imagery…
-              </p>
+              <ThinkingBlob size="panel" className="h-16 w-16" label="Loading street imagery" />
             </div>
           )}
           {/* eslint-disable-next-line @next/next/no-img-element -- proxied API image */}

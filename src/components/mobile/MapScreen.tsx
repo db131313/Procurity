@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { PhoneShell } from "@/components/mobile/PhoneShell";
+import { ThinkingBlob } from "@/components/ui/ThinkingBlob";
 import type { OpportunityView } from "@/lib/opportunity";
 import { toOpportunity } from "@/lib/opportunity";
 import type { Top20Response } from "@/lib/types";
@@ -13,8 +14,8 @@ const MobileMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full items-center justify-center bg-pc-mist text-sm text-pc-slate">
-        Loading map…
+      <div className="flex h-full items-center justify-center bg-pc-mist">
+        <ThinkingBlob size="panel" label="Loading map" />
       </div>
     ),
   },

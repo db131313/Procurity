@@ -1,11 +1,12 @@
 "use client";
 
-import { Loader2, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { ThinkingBlob } from "@/components/ui/ThinkingBlob";
 
 type Size = "sm" | "md";
 
-/** Spinning loader used inside buttons and inline status. */
+/** Inline aurora loader used inside buttons and status chips. */
 export function WorkingSpinner({
   className,
   size = "sm",
@@ -14,13 +15,14 @@ export function WorkingSpinner({
   size?: Size;
 }) {
   return (
-    <Loader2
+    <ThinkingBlob
+      size="inline"
       className={cn(
-        "animate-spin",
         size === "sm" ? "h-4 w-4" : "h-5 w-5",
+        "shrink-0",
         className,
       )}
-      aria-hidden
+      label=""
     />
   );
 }
@@ -30,13 +32,12 @@ type PillProps = {
   className?: string;
   /** Teal agent framing (Plan My Day). */
   agent?: boolean;
-  /** Show spinning loader (default true). */
+  /** Show thinking blob (default true). */
   spin?: boolean;
 };
 
 /**
  * Consistent frosted loading chip used on map, overlays, and agent waits.
- * Matches existing map chrome: white/95 + border-line + backdrop-blur.
  */
 export function WorkingPill({
   children,
@@ -59,7 +60,7 @@ export function WorkingPill({
       {agent ? (
         <Sparkles className="h-4 w-4 shrink-0 animate-pulse text-teal" aria-hidden />
       ) : spin ? (
-        <WorkingSpinner className="shrink-0 text-purple" />
+        <ThinkingBlob size="inline" className="shrink-0" label="" />
       ) : null}
       <span>{children}</span>
     </div>

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState, useTransition } from "react";
 import { UpgradeButton } from "@/components/UpgradeButton";
+import { ThinkingBlob } from "@/components/ui/ThinkingBlob";
 import { formatCurrency, formatShortDate, scoreTone } from "@/lib/format";
 import type { ScoredSite, Top20Response } from "@/lib/types";
 
@@ -11,8 +12,8 @@ const Map3D = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full min-h-[420px] items-center justify-center rounded-xl border border-[var(--line)] bg-ink/40 text-sm text-sand/60">
-        Loading 3D field map…
+      <div className="flex h-full min-h-[420px] items-center justify-center rounded-xl border border-[var(--line)] bg-ink/40">
+        <ThinkingBlob size="panel" label="Loading map" />
       </div>
     ),
   },

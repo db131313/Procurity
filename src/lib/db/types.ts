@@ -199,10 +199,29 @@ export const PLAN_LIMITS: Record<PlanTier, number> = {
 };
 
 export const PLAN_PRICING = {
-  starter: { monthly: 99, annual: 79, zips: 1, name: "Starter" },
-  growth: { monthly: 199, annual: 159, zips: 5, name: "Growth" },
+  starter: {
+    monthly: 99,
+    /** Effective monthly when billed yearly ($990/yr). */
+    annual: 82,
+    annualBilled: 990,
+    zips: 1,
+    name: "Starter",
+  },
+  growth: {
+    monthly: 199,
+    annual: 166,
+    annualBilled: 1990,
+    zips: 5,
+    name: "Growth",
+  },
   /** zips sentinel matches PLAN_LIMITS.pro; marketing copy uses "Full US". */
-  pro: { monthly: 299, annual: 239, zips: 9999, name: "Pro" },
+  pro: {
+    monthly: 299,
+    annual: 249,
+    annualBilled: 2990,
+    zips: 9999,
+    name: "Pro",
+  },
 } as const;
 
 /** Marketing / settings label for a plan's zip access. */

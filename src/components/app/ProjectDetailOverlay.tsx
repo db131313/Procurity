@@ -7,6 +7,7 @@ import { ScoreRing } from "@/components/ui/ScoreRing";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { WorkingSpinner } from "@/components/ui/WorkingIndicator";
+import { ThinkingBlob } from "@/components/ui/ThinkingBlob";
 import { DataFreshnessBadge } from "@/components/ui/DataFreshnessBadge";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { formatMoneyRange, relativeTime, scoreBandLabel } from "@/lib/format";
@@ -272,8 +273,8 @@ export function ProjectDetailOverlay({
               projectId={isPublic ? project.id : undefined}
             />
           ) : (
-            <div className="flex h-56 w-full items-center justify-center bg-ink text-xs font-semibold text-white/70 sm:h-72 md:h-80">
-              Loading location…
+            <div className="flex h-56 w-full flex-col items-center justify-center gap-3 bg-ink sm:h-72 md:h-80">
+              <ThinkingBlob size="panel" label="Loading location" />
             </div>
           )}
 
@@ -349,19 +350,12 @@ export function ProjectDetailOverlay({
             )}
 
             {!detail && !loadError && (
-              <div className="mt-6 space-y-3" aria-busy="true" aria-live="polite">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate">
-                  <WorkingSpinner />
-                  Loading project detail…
-                </div>
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-8 w-full" />
-                <div className="flex flex-wrap gap-2">
-                  <Skeleton className="h-7 w-20 rounded-full" />
-                  <Skeleton className="h-7 w-24 rounded-full" />
-                  <Skeleton className="h-7 w-16 rounded-full" />
-                </div>
-                <Skeleton className="h-16 w-full" />
+              <div
+                className="mt-6 flex flex-col items-center gap-3 py-6"
+                aria-busy="true"
+                aria-live="polite"
+              >
+                <ThinkingBlob size="panel" label="Loading project detail" />
               </div>
             )}
             {loadError && (

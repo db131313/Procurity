@@ -45,7 +45,8 @@ import {
   HOME_SHOTS,
   type HomeMediaAvailability,
 } from "@/lib/marketing/home-media-shared";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ArrowLeft } from "lucide-react";
+import { ThinkingBlob } from "@/components/ui/ThinkingBlob";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
@@ -103,9 +104,19 @@ type TeaserPin = FilterablePin & {
 
 type Props = {
   initialCityId: string;
+  /** Full-viewport panel opened from the swarm hero */
+  panel?: boolean;
+  onBack?: () => void;
+  /** Open this project once pins are ready (from swarm click) */
+  focusProjectId?: string | null;
 };
 
-export function HomeMapHero({ initialCityId }: Props) {
+export function HomeMapHero({
+  initialCityId,
+  panel = false,
+  onBack,
+  focusProjectId = null,
+}: Props) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -616,6 +627,23 @@ export function HomeMapHero({ initialCityId }: Props) {
     };
   }, [openProject]);
 
+  // Open a project from the swarm when the panel mounts with focusProjectId
+  const focusedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusProjectId || !ready || pins.length === 0) return;
+    if (focusedRef.current === focusProjectId) return;
+    const p = pins.find((x) => x.id === focusProjectId);
+    if (!p) return;
+    focusedRef.current = focusProjectId;
+    openProject(
+      p.id,
+      p.latitude,
+      p.longitude,
+      p.score,
+      p.projectType || "Project",
+    );
+  }, [focusProjectId, ready, pins, openProject]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
@@ -749,8 +777,11 @@ export function HomeMapHero({ initialCityId }: Props) {
   return (
     <>
       <section
-        className="relative h-[88dvh] w-full overflow-hidden bg-[#EDE6DA]"
-        data-testid="home-hero"
+        className={cn(
+          "relative w-full overflow-hidden bg-[#EDE6DA]",
+          panel ? "h-dvh" : "h-[88dvh]",
+        )}
+        data-testid={panel ? "home-map-panel-inner" : "home-hero"}
       >
         <div
           ref={wrapperRef}
@@ -778,20 +809,34 @@ export function HomeMapHero({ initialCityId }: Props) {
             className="pointer-events-auto flex h-16 items-center justify-between border-b border-[#E7DFD0]/80 bg-[#FBF7F0]/92 pl-5 pr-3 md:pl-6 md:pr-5"
             data-testid="home-topbar"
           >
-            <Link
-              href="/"
-              className="flex h-full shrink-0 items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
-              aria-label="Procurity home"
-            >
-              <Logo variant="dark" size={28} />
-            </Link>
-            <nav className="flex shrink-0 items-center gap-1 sm:gap-2">
-              <Link
-                href="#pricing"
-                className="inline-flex h-10 items-center px-2.5 text-sm font-medium text-[#14213D] hover:opacity-80 sm:px-3"
+            {panel && onBack ? (
+              <button
+                type="button"
+                onClick={onBack}
+                className="pc-press inline-flex h-10 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-[#14213D]"
+                data-testid="map-back"
               >
-                Pricing
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Back
+              </button>
+            ) : (
+              <Link
+                href="/"
+                className="flex h-full shrink-0 items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2563EB]"
+                aria-label="Procurity home"
+              >
+                <Logo variant="dark" size={28} />
               </Link>
+            )}
+            <nav className="flex shrink-0 items-center gap-1 sm:gap-2">
+              {!panel && (
+                <Link
+                  href="#pricing"
+                  className="inline-flex h-10 items-center px-2.5 text-sm font-medium text-[#14213D] hover:opacity-80 sm:px-3"
+                >
+                  Pricing
+                </Link>
+              )}
               <Link
                 href="/login"
                 className="mkt-btn-ghost inline-flex h-10 items-center rounded-lg px-2.5 text-sm font-medium sm:px-3"
@@ -808,50 +853,63 @@ export function HomeMapHero({ initialCityId }: Props) {
           </div>
         </header>
 
-        {/* Value prop panel — left on desktop, bottom-left on mobile */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-14 top-[calc(4rem+env(safe-area-inset-top,0px))] z-20 flex flex-col justify-end px-4 md:bottom-8 md:left-0 md:right-auto md:top-[calc(4rem+env(safe-area-inset-top,0px)+1rem)] md:justify-start md:px-8">
-          <div
-            className="pointer-events-auto w-full max-w-md rounded-xl border border-[#E7DFD0] bg-[#FBF7F0]/92 p-4 sm:p-5 md:max-w-lg md:p-6"
-            data-testid="value-prop"
-          >
-            <h1 className="font-display text-[1.65rem] leading-[1.12] tracking-tight text-[#14213D] sm:text-3xl md:text-[2.35rem]">
-              Know which projects are about to need you.
-            </h1>
-            <p className="mt-2.5 text-sm leading-relaxed text-[#5B6475] md:text-[15px]">
-              Procurity shows you new commercial construction near you, scored
-              by how ready it is to buy, with who to contact and when. Then
-              measure, quote, and get paid in one place.
-            </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Link
-                href={freeSignup}
-                className="mkt-btn-primary inline-flex h-11 items-center rounded-lg px-4 text-sm font-medium"
-              >
-                Start free
-              </Link>
-              <Link
-                href="#pricing"
-                className="mkt-btn-ghost inline-flex h-11 items-center rounded-lg border border-[#E7DFD0] px-4 text-sm font-medium"
-              >
-                See pricing
-              </Link>
-            </div>
-            {proofLine && (
-              <p
-                className="mt-3 text-xs font-medium text-[#5B6475]"
-                data-testid="proof-line"
-              >
-                {proofLine}
+        {/* Value prop — swarm homepage owns the pitch; panel keeps Ask + proof */}
+        {!panel && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-14 top-[calc(4rem+env(safe-area-inset-top,0px))] z-20 flex flex-col justify-end px-4 md:bottom-8 md:left-0 md:right-auto md:top-[calc(4rem+env(safe-area-inset-top,0px)+1rem)] md:justify-start md:px-8">
+            <div
+              className="pointer-events-auto w-full max-w-md rounded-xl border border-[#E7DFD0] bg-[#FBF7F0]/92 p-4 sm:p-5 md:max-w-lg md:p-6"
+              data-testid="value-prop"
+            >
+              <h1 className="font-display text-[1.65rem] leading-[1.12] tracking-tight text-[#14213D] sm:text-3xl md:text-[2.35rem]">
+                Know which projects are about to need you.
+              </h1>
+              <p className="mt-2.5 text-sm leading-relaxed text-[#5B6475] md:text-[15px]">
+                Procurity shows you new commercial construction near you, scored
+                by how ready it is to buy, with who to contact and when. Then
+                measure, quote, and get paid in one place.
               </p>
-            )}
-            <div className="mt-4 border-t border-[#E7DFD0] pt-3">
-              <AskProcurity onApply={applyAskIntent} compact />
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <Link
+                  href={freeSignup}
+                  className="mkt-btn-primary inline-flex h-11 items-center rounded-lg px-4 text-sm font-medium"
+                >
+                  Start free
+                </Link>
+                <Link
+                  href="#pricing"
+                  className="mkt-btn-ghost inline-flex h-11 items-center rounded-lg border border-[#E7DFD0] px-4 text-sm font-medium"
+                >
+                  See pricing
+                </Link>
+              </div>
+              {proofLine && (
+                <p
+                  className="mt-3 text-xs font-medium text-[#5B6475]"
+                  data-testid="proof-line"
+                >
+                  {proofLine}
+                </p>
+              )}
+              <div className="mt-4 border-t border-[#E7DFD0] pt-3">
+                <AskProcurity onApply={applyAskIntent} compact />
+              </div>
+              <p className="mt-2 text-[11px] font-medium text-[#5B6475]">
+                {remaining} free view{remaining === 1 ? "" : "s"} left
+              </p>
             </div>
-            <p className="mt-2 text-[11px] font-medium text-[#5B6475]">
-              {remaining} free view{remaining === 1 ? "" : "s"} left
-            </p>
           </div>
-        </div>
+        )}
+
+        {panel && (
+          <div className="pointer-events-none absolute bottom-4 left-4 z-20 md:bottom-6 md:left-6">
+            <div className="pointer-events-auto max-w-sm rounded-xl border border-[#E7DFD0] bg-[#FBF7F0]/92 p-3">
+              <AskProcurity onApply={applyAskIntent} compact />
+              <p className="mt-2 text-[11px] font-medium text-[#5B6475]">
+                {remaining} free view{remaining === 1 ? "" : "s"} left
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="pointer-events-none absolute right-3 top-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)] z-20 md:right-5">
           <div className="pointer-events-auto max-w-full">
@@ -869,20 +927,22 @@ export function HomeMapHero({ initialCityId }: Props) {
           <MapPinLegend scoreMode={filters.scoreMode} publicRamp />
         </div>
 
-        <a
-          href="#what-you-get"
-          className="pointer-events-auto absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-0.5 text-[11px] font-medium text-[#14213D]/80"
-          data-testid="scroll-cue"
-        >
-          <span>Scroll</span>
-          <ChevronDown className="h-4 w-4" aria-hidden strokeWidth={2} />
-        </a>
+        {!panel && (
+          <a
+            href="#how-it-works"
+            className="pointer-events-auto absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-0.5 text-[11px] font-medium text-[#14213D]/80"
+            data-testid="scroll-cue"
+          >
+            <span>Scroll</span>
+            <ChevronDown className="h-4 w-4" aria-hidden strokeWidth={2} />
+          </a>
+        )}
 
         {loading && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center">
-            <span className="rounded-lg border border-[#E7DFD0] bg-[#FBF7F0] px-4 py-2 text-xs font-medium text-[#14213D]">
-              Loading projects…
-            </span>
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <div className="rounded-2xl border border-[#E7DFD0] bg-[#FBF7F0]/95 p-6 shadow-lg">
+              <ThinkingBlob size="panel" label="Loading projects" />
+            </div>
           </div>
         )}
 
