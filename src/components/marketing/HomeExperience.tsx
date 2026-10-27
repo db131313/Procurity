@@ -106,8 +106,8 @@ export function HomeExperience({ initialCityId }: Props) {
                 </div>
               </div>
 
-              <div className="relative mt-4 min-h-[52vh] flex-1 md:min-h-[58vh]">
-                <HomeSwarmMap onExplore={openMap} />
+              <div className="relative mt-4 h-[min(58vh,560px)] min-h-[320px] w-full flex-1 md:h-auto md:min-h-[58vh]">
+                <HomeSwarmMap onExplore={openMap} className="absolute inset-0" />
               </div>
             </div>
           </section>

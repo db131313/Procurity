@@ -83,6 +83,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
   >([]);
   const rafRef = useRef(0);
   const reducedRef = useRef(true);
+  const [layoutTick, setLayoutTick] = useState(0);
 
   const filteredPins = useMemo(() => {
     if (!pins) return [];
@@ -148,39 +149,46 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     return () => cancelAnimationFrame(id);
   }, [pins]);
 
-  const rebuildLayout = useCallback(() => {
+  const measure = useCallback(() => {
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
-    if (!canvas || !wrap) return;
+    if (!canvas || !wrap) return false;
     const rect = wrap.getBoundingClientRect();
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = Math.max(1, Math.floor(rect.width));
     const h = Math.max(1, Math.floor(rect.height));
+    if (w < 40 || h < 40) return false;
+    const prev = sizeRef.current;
     sizeRef.current = { w, h, dpr };
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
-
-    const padX = w * 0.06;
-    const padY = h * 0.08;
-    const projection = geoAlbersUsa().fitExtent(
-      [
-        [padX, padY],
-        [w - padX, h - padY * 1.15],
-      ],
-      { type: "Sphere" },
-    );
-    // Fit to nation after topology loads — placeholder until then
-    projectRef.current = projection;
+    if (prev.w !== w || prev.h !== h) setLayoutTick((t) => t + 1);
+    return true;
   }, []);
+
+  useEffect(() => {
+    measure();
+    const wrap = wrapRef.current;
+    const ro =
+      typeof ResizeObserver !== "undefined" && wrap
+        ? new ResizeObserver(() => measure())
+        : null;
+    ro?.observe(wrap!);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [measure]);
 
   useEffect(() => {
     let cancelled = false;
     reducedRef.current = prefersReducedMotion();
 
     (async () => {
-      rebuildLayout();
+      if (!measure()) return;
       const mod = await import("us-atlas/states-10m.json");
       const topo = (mod.default ?? mod) as {
         type: string;
@@ -193,16 +201,14 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         topo as any,
         topo.objects.nation,
       ) as unknown as FeatureCollection<Geometry>;
-      const canvas = canvasRef.current;
-      const wrap = wrapRef.current;
-      if (!canvas || !wrap) return;
       const { w, h } = sizeRef.current;
-      const padX = w * 0.06;
-      const padY = h * 0.1;
+      if (w < 40 || h < 40) return;
+      const padX = w * 0.04;
+      const padY = h * 0.06;
       const projection = geoAlbersUsa().fitExtent(
         [
-          [padX, padY + 20],
-          [w - padX, h - padY * 1.35],
+          [padX, padY],
+          [w - padX, h - padY * 1.2],
         ],
         nation,
       );
@@ -211,7 +217,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
 
       // Dot-matrix outline sampling
       const matrix: { x: number; y: number }[] = [];
-      const step = Math.max(5, Math.floor(Math.min(w, h) / 90));
+      const step = Math.max(4, Math.floor(Math.min(w, h) / 100));
       const off = document.createElement("canvas");
       off.width = w;
       off.height = h;
@@ -254,7 +260,10 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         const count = byCity[c.id]?.totalCount ?? byCity[c.id]?.pinCount ?? 0;
         return {
           id: c.id,
-          label: c.id === "miami_dade" ? "Miami-Dade" : c.label.replace(" City", ""),
+          label:
+            c.id === "miami_dade"
+              ? "Miami-Dade"
+              : c.label.replace(" City", ""),
           count,
           x: xy[0],
           y: xy[1] - 14,
@@ -281,13 +290,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [filteredPins, byCity, rebuildLayout]);
-
-  useEffect(() => {
-    const onResize = () => rebuildLayout();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [rebuildLayout]);
+  }, [filteredPins, byCity, measure, layoutTick]);
 
   // Draw loop
   useEffect(() => {
@@ -301,23 +304,23 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
-      const alpha = fade;
-      // Matrix
-      ctx.globalAlpha = 0.22 * alpha;
-      ctx.fillStyle = "#9ca3af";
+      const alpha = Math.max(0.15, fade);
+      // Matrix US outline
+      ctx.globalAlpha = 0.45 * alpha;
+      ctx.fillStyle = "#a3a3a3";
       for (const p of matrixRef.current) {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 0.9, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 1.15, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // Swarm dots — brighter = higher score
-      ctx.globalAlpha = 1 * alpha;
       for (const d of dotsRef.current) {
         const t = Math.max(0, Math.min(1, (d.score - 20) / 80));
-        const r = 1.1 + t * 1.8;
-        const bright = 0.35 + t * 0.65;
-        ctx.fillStyle = `rgba(255,255,255,${bright})`;
+        const r = 1.4 + t * 2.2;
+        const bright = 0.55 + t * 0.45;
+        ctx.globalAlpha = bright * alpha;
+        ctx.fillStyle = "#ffffff";
         ctx.beginPath();
         ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
         ctx.fill();
@@ -339,14 +342,14 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       }
 
       // Labels
-      ctx.globalAlpha = 0.85 * alpha;
-      ctx.fillStyle = "#d4d4d4";
+      ctx.globalAlpha = 0.95 * alpha;
+      ctx.fillStyle = "#e5e5e5";
       ctx.font =
-        '500 11px var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif';
+        "500 12px ui-sans-serif, system-ui, -apple-system, sans-serif";
       ctx.textAlign = "center";
       for (const lab of labelsRef.current) {
-        if (lab.count <= 0) continue;
-        ctx.fillText(`${lab.label} ${formatCount(lab.count)}`, lab.x, lab.y);
+        const n = lab.count > 0 ? lab.count : 0;
+        ctx.fillText(`${lab.label} ${formatCount(n)}`, lab.x, lab.y);
       }
 
       ctx.globalAlpha = 1;
