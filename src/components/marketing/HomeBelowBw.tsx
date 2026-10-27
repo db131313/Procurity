@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { PhoneTour } from "./PhoneTour";
-import { HomeSiteVideo } from "./HomeSiteVideo";
 import { PricingCards } from "./PricingCards";
 
 const STEPS = [
@@ -23,12 +21,10 @@ const STEPS = [
   },
 ] as const;
 
+/** Below-fold: how it works, pricing, closing CTA (carousel lives above). */
 export function HomeBelowBw() {
   return (
-    <div className="relative bg-[#0B0D0E] text-white">
-      <PhoneTour />
-      <HomeSiteVideo />
-
+    <div className="relative bg-[var(--night,#0B0D0E)] text-white">
       <section
         id="how-it-works"
         className="border-t border-[var(--line)] px-5 py-16 md:px-10 md:py-24"
@@ -89,7 +85,7 @@ export function HomeBelowBw() {
         <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 text-sm text-[var(--mute)] sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} Procurity</p>
           <nav className="flex flex-wrap gap-4">
-            <Link href="#tour" className="hover:text-white">
+            <Link href="#how-it-works" className="hover:text-white">
               How it works
             </Link>
             <Link href="#pricing" className="hover:text-white">

@@ -31,3 +31,9 @@
 # Production uses ADMIN_EMAILS / ADMIN_EMAIL (Netlify UI) plus server bootstrap owners.
 [context.deploy-preview.environment]
   ADMIN_EMAIL = "devplan-preview-admin@example.com"
+
+# Immutable cache for home marketing media (versioned by deploy / content hash)
+[[headers]]
+  for = "/home/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

@@ -1,18 +1,21 @@
 # Home page media slots
 
-Optional files under `public/home/`. If a file is missing, that slot is **not rendered** (no placeholder, no “coming soon”).
+Files under `public/home/`. Featured on the black/white swarm home + feature carousel.
 
-## Site video (BW home)
+## Feature carousel video
 
-Single left-flush video panel (`HomeSiteVideo`).
+Used as full-bleed slide backgrounds (and the Measure phone camera). See [carousel.md](./carousel.md).
 
-| File | Format | Used for |
+| File | Format | Notes |
 | --- | --- | --- |
-| `field-3.mp4` | H.264 MP4 | Site video |
-| `field-3.webm` | VP9/AV1 WebM | Progressive enhancement |
-| `field-3.jpg` | JPEG poster | Poster + PhoneTour Measure background |
+| `field-3.mp4` | H.264 +faststart | Desktop; muted; target ≤1.5MB |
+| `field-3.webm` | VP9 | Desktop progressive enhancement |
+| `field-3-640.mp4` | H.264 | `media="(max-width:820px)"` |
+| `field-3-640.webm` | VP9 | Mobile pair |
+| `field-3.webp` | WebP poster | Preloaded; target ≤80KB |
+| `field-3.jpg` | JPEG poster | Fallback |
 
-Muted, loop, `playsInline`, plays only while visible (`IntersectionObserver`, threshold 0.35). Caption chip rotates at 0s / 3s / 6s. Poster when `prefers-reduced-motion`.
+Muted, loop, `playsInline`. Only the active slide’s video plays; others use `preload="none"`. Videos mount when the carousel is within about one viewport.
 
 ## Real product screenshots
 
@@ -27,13 +30,9 @@ Captured by `npx tsx scripts/capture-home-screens.ts` against a production build
 
 Suggested max dimensions: ~780×1688 px (2× of 390×844). PNG, sRGB.
 
-## Legacy optional slots
+## iPhone app line
 
-Older sunrise screenshots and `hero-photo.jpg` may remain for other marketing pages but are unused by the black/white swarm home.
-
-## iPhone app section
-
-The PhoneTour block always shows “coming soon” copy unless `NEXT_PUBLIC_IOS_APP_URL` is set (then “Download on the App Store”). The Jobs workflow LiDAR card / waitlist are unchanged.
+Carousel footer shows “iPhone app coming soon to the App Store” unless `NEXT_PUBLIC_IOS_APP_URL` is set (then “Download on the App Store”).
 
 ## Capture command
 

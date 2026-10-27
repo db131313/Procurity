@@ -28,6 +28,8 @@ type ByCity = Record<string, { totalCount: number; pinCount: number }>;
 
 type Props = {
   onExplore: (opts?: { cityId?: string; projectId?: string }) => void;
+  /** Fires when load progress changes (0→1). Parent hides headline until 1. */
+  onProgress?: (progress: number) => void;
   className?: string;
 };
 
@@ -70,8 +72,9 @@ async function loadNation(): Promise<NationFC> {
 /**
  * National D3 canvas swarm: US outline as a dot matrix + real teaser pins.
  * Pins + us-atlas load in parallel; ThinkingBlob grows with real progress.
+ * Page scroll is never blocked (touch-action: pan-y; no wheel preventDefault).
  */
-export function HomeSwarmMap({ onExplore, className }: Props) {
+export function HomeSwarmMap({ onExplore, onProgress, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [pins, setPins] = useState<SwarmPin[] | null>(null);
@@ -80,6 +83,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
   const [progress, setProgress] = useState(0);
   const [blobGone, setBlobGone] = useState(false);
   const [fade, setFade] = useState(0);
+  const [uiOn, setUiOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [scoreMin, setScoreMin] = useState(0);
@@ -103,8 +107,15 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
   const reducedRef = useRef(true);
   const [layoutTick, setLayoutTick] = useState(0);
   const firstFrameRef = useRef(false);
+  const onProgressRef = useRef(onProgress);
+  onProgressRef.current = onProgress;
+
   const bumpProgress = useCallback((v: number) => {
-    setProgress((p) => Math.max(p, v));
+    setProgress((p) => {
+      const next = Math.max(p, v);
+      if (next !== p) onProgressRef.current?.(next);
+      return next;
+    });
   }, []);
 
   const filteredPins = useMemo(() => {
@@ -132,7 +143,9 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     setError(null);
     setBlobGone(false);
     setFade(0);
+    setUiOn(false);
     setProgress(0.1);
+    onProgressRef.current?.(0.1);
     setPins(null);
     setNation(null);
 
@@ -150,6 +163,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
             byCity?: ByCity;
           };
           bumpProgress(0.6);
+          // Fix: !data.ok must throw (not silent return) so Retry works and blob clears
           if (!data.ok || !Array.isArray(data.pins)) {
             throw new Error("Pins response invalid");
           }
@@ -170,6 +184,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : "Could not load the map");
         setProgress(0);
+        onProgressRef.current?.(0);
       }
     })();
 
@@ -178,34 +193,32 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     };
   }, [bumpProgress, retryKey]);
 
-  // Count-up + fade when pins ready
+  // When progress hits 1: fade UI + dots in, blob out
   useEffect(() => {
-    if (pins === null || !nation) return;
-    const target = pins.length;
+    if (progress < 1 || error) return;
     if (prefersReducedMotion()) {
-      setDisplayCount(target);
       setFade(1);
-      bumpProgress(1);
+      setUiOn(true);
+      setDisplayCount(pins?.length ?? 0);
       setBlobGone(true);
       return;
     }
+    setUiOn(true);
     const t0 = performance.now();
-    const dur = 900;
+    const dur = 700;
+    const target = pins?.length ?? 0;
     let id = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - t0) / dur);
       const eased = 1 - Math.pow(1 - t, 3);
-      setDisplayCount(Math.round(target * eased));
       setFade(eased);
+      setDisplayCount(Math.round(target * eased));
       if (t < 1) id = requestAnimationFrame(tick);
-      else {
-        bumpProgress(1);
-        setTimeout(() => setBlobGone(true), 280);
-      }
+      else setTimeout(() => setBlobGone(true), 280);
     };
     id = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(id);
-  }, [pins, nation, bumpProgress]);
+  }, [progress, error, pins]);
 
   const measure = useCallback(() => {
     const canvas = canvasRef.current;
@@ -336,7 +349,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     };
   }, [filteredPins, byCity, measure, layoutTick, nation]);
 
-  // Draw loop
+  // Draw loop — first painted frame bumps progress to 1
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -348,11 +361,17 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
-      const alpha = Math.max(0, fade);
-      if (alpha > 0.02 && !firstFrameRef.current && matrixRef.current.length) {
+      if (
+        !firstFrameRef.current &&
+        matrixRef.current.length &&
+        nation &&
+        pins
+      ) {
         firstFrameRef.current = true;
         bumpProgress(1);
       }
+
+      const alpha = Math.max(0, fade);
 
       ctx.globalAlpha = 0.45 * alpha;
       ctx.fillStyle = "#a3a3a3";
@@ -402,7 +421,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
 
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [fade, bumpProgress]);
+  }, [fade, bumpProgress, nation, pins]);
 
   const hitTest = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -480,8 +499,9 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     if (!dragEdge) return;
     const move = (e: PointerEvent) => updateFromClientX(e.clientX, dragEdge);
     const up = () => setDragEdge(null);
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
+    // Passive listeners — never block page scroll
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerup", up, { passive: true });
     return () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
@@ -495,6 +515,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       ref={wrapRef}
       className={cn("relative h-full w-full select-none", className)}
       data-testid="home-swarm"
+      style={{ touchAction: "pan-y" }}
     >
       {showBlob && (
         <div
@@ -502,6 +523,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
             "absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-500",
             progress >= 1 ? "pointer-events-none opacity-0" : "opacity-100",
           )}
+          data-testid="swarm-blob"
         >
           <ThinkingBlob
             size="fullscreen"
@@ -527,13 +549,14 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
 
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 h-full w-full touch-none"
-        style={{ opacity: fade }}
+        className="absolute inset-0 h-full w-full"
+        style={{ opacity: fade, touchAction: "pan-y" }}
         onPointerMove={onPointerMove}
         onPointerLeave={() => setTooltip(null)}
         onPointerUp={onPointerUp}
         role="img"
         aria-label="National map of commercial projects"
+        data-testid="swarm-canvas"
       />
 
       <ul className="sr-only">
@@ -553,7 +576,14 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4 px-5 pb-5 md:px-10 md:pb-8">
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4 px-5 pb-5 transition-opacity duration-500 md:px-10 md:pb-8",
+          uiOn ? "opacity-100" : "opacity-0",
+        )}
+        data-testid="swarm-chrome"
+        aria-hidden={!uiOn}
+      >
         <div>
           <p
             className="text-4xl font-semibold tabular-nums tracking-tight text-white md:text-5xl"
@@ -569,6 +599,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         <div
           className="pointer-events-auto w-[min(100%,280px)] shrink-0"
           data-testid="buy-score-hist"
+          style={{ touchAction: "none" }}
         >
           <div className="mb-1 flex items-center justify-between text-[11px] text-neutral-300">
             <span>Buy score</span>
@@ -581,6 +612,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
           <div
             ref={histRef}
             className="relative h-12 cursor-ew-resize"
+            style={{ touchAction: "none" }}
             onPointerDown={(e) => {
               const el = histRef.current;
               if (!el) return;
