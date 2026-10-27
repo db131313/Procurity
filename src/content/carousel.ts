@@ -5,6 +5,8 @@
  * - screen: which phone screen (discover|measure|design|quote|invoice)
  * - screenshot: optional image path; when set, replaces the drawn phone screen
  * - cta: optional { label, href } under the copy
+ *
+ * Keep titles short (3–4 words) and body to one short line.
  */
 
 export type CarouselScreenId =
@@ -33,49 +35,59 @@ export type CarouselSlide = {
   cta?: { label: string; href: string };
 };
 
+/** Versioned filenames bust immutable /home/* caches after re-encode. */
 const FIELD3: CarouselVideo = {
-  webm: "/home/field-3.webm",
-  mp4: "/home/field-3.mp4",
-  webm640: "/home/field-3-640.webm",
-  mp4640: "/home/field-3-640.mp4",
-  poster: "/home/field-3.webp",
+  webm: "/home/field-3-v2.webm",
+  mp4: "/home/field-3-v2.mp4",
+  webm640: "/home/field-3-v2-640.webm",
+  mp4640: "/home/field-3-v2-640.mp4",
+  poster: "/home/field-3-v2.webp",
 };
 
 export const SLIDES: CarouselSlide[] = [
   {
     label: "Discover",
-    title: "See every commercial build near you.",
-    body: "Scored by how soon each one will buy. Tap one to start a job.",
+    title: "Find the next job.",
+    body: "Every commercial build near you, scored.",
     screen: "discover",
     video: FIELD3,
   },
   {
     label: "Measure",
-    title: "Scan the opening. Get real dimensions.",
-    body: "LiDAR on your iPhone saves exact sizes straight to the job.",
+    title: "Measure on site.",
+    body: "Scan with your iPhone.",
     screen: "measure",
     video: FIELD3,
   },
   {
     label: "Design",
-    title: "Pick the sign. Price it from your list.",
-    body: "Type, material and color, priced from your own supplier price book.",
+    title: "Design the sign.",
+    body: "Priced from your own price list.",
     screen: "design",
     video: FIELD3,
   },
   {
     label: "Quote",
-    title: "One tap sends a branded quote.",
-    body: "Your client approves it from their phone.",
+    title: "Send the quote.",
+    body: "Approved on their phone.",
     screen: "quote",
     video: FIELD3,
   },
   {
     label: "Invoice",
-    title: "Bill in full or take a 50% deposit.",
-    body: "Send a payment link. The paperwork is packaged for your head office.",
+    title: "Get paid.",
+    body: "Full amount or a 50% deposit.",
     screen: "invoice",
     video: FIELD3,
     cta: { label: "Start free", href: "/signup" },
   },
 ];
+
+/** Unique video sources (slides that share a file reuse one <video>). */
+export function uniqueVideos(slides: CarouselSlide[] = SLIDES): CarouselVideo[] {
+  const seen = new Map<string, CarouselVideo>();
+  for (const s of slides) {
+    if (!seen.has(s.video.mp4)) seen.set(s.video.mp4, s.video);
+  }
+  return [...seen.values()];
+}

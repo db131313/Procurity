@@ -2,11 +2,19 @@
 
 .car {
   position: relative;
-  height: min(100vh, 880px);
+  height: 100svh;
   min-height: 640px;
   overflow: hidden;
   background: #000;
-  border-top: 1px solid var(--line);
+}
+
+.reveal {
+  opacity: 0;
+  transition: opacity 1s 0.35s;
+}
+
+.revealOn {
+  opacity: 1;
 }
 
 .bgs {
@@ -845,7 +853,7 @@
     left: 20px;
     right: 20px;
     width: auto;
-    top: 24px;
+    top: 84px;
     transform: none;
   }
 
@@ -855,19 +863,20 @@
 
   .cp p {
     font-size: 16px;
-    max-width: 70%;
   }
 
   .cp b {
     margin-bottom: 12px;
   }
 
+  /* Phone centered on mobile — fully visible, never cut off */
   .phs {
-    right: -34px;
+    right: auto;
+    left: 50%;
     top: auto;
     bottom: 64px;
-    transform: scale(0.46);
-    transform-origin: bottom right;
+    transform: translateX(-50%) scale(0.46);
+    transform-origin: bottom center;
   }
 
   .tabs {
