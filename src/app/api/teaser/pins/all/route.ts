@@ -9,73 +9,51 @@ export const dynamic = "force-dynamic";
 
 const SERVED = PICKER_CITIES.filter((c) => c.served && c.cityCode);
 
+function round4(n: number) {
+  return Math.round(n * 10000) / 10000;
+}
+
 /**
- * Public home map pin feed — ALL projects for every served city.
- * Only fields needed to draw + filter. No address/contacts/filings.
- * Cached 5 minutes. Sync is non-blocking.
+ * Public home swarm pin feed — compact fields only for every served city.
+ * One listProjects() call (no per-city loop). Cached 5 minutes.
  */
 export async function GET() {
   void ensureMapDataFresh().catch(() => {});
 
-  const byCity: Record<
-    string,
-    { totalCount: number; pinCount: number }
-  > = {};
+  const byCityCode = new Map(
+    SERVED.map((c) => [c.cityCode as string, c] as const),
+  );
+
+  const byCity: Record<string, { totalCount: number; pinCount: number }> = {};
+  for (const c of SERVED) {
+    byCity[c.id] = { totalCount: 0, pinCount: 0 };
+  }
+
   const pins: Array<{
     id: string;
     city: string;
     latitude: number;
     longitude: number;
-    phase: string;
     score: number;
-    tradeScores: {
-      signage: number;
-      lighting: number;
-      glass: number;
-      security: number;
-      flooring: number;
-    };
     projectType: string;
-    updatedAt: string | null;
   }> = [];
 
-  // Sequential — file-backed store is not safe under concurrent listProjects.
-  for (const city of SERVED) {
-    const projects = await listProjects({ city: city.cityCode! });
-    const valid = projects.filter((p) =>
-      isValidTeaserCoord(p.latitude, p.longitude, city),
-    );
-    byCity[city.id] = { totalCount: valid.length, pinCount: valid.length };
-    for (const p of valid) {
-      const trades = p.tradeScores ?? {
-        signage: p.score,
-        lighting: p.score,
-        glass: p.score,
-        security: p.score,
-        flooring: p.score,
-      };
-      pins.push({
-        id: p.id,
-        city: city.id,
-        latitude: p.latitude,
-        longitude: p.longitude,
-        phase: p.phase,
-        score: p.score,
-        tradeScores: {
-          signage: trades.signage ?? 0,
-          lighting: trades.lighting ?? 0,
-          glass: trades.glass ?? 0,
-          security: trades.security ?? 0,
-          flooring: trades.flooring ?? 0,
-        },
-        projectType: projectTeaserLabel(
-          p.jobType,
-          p.occupancy,
-          p.buildingType,
-        ),
-        updatedAt: p.updatedAt ?? p.lastActivityAt ?? null,
-      });
-    }
+  const projects = await listProjects();
+  for (const p of projects) {
+    const city = byCityCode.get(String(p.city));
+    if (!city) continue;
+    if (!isValidTeaserCoord(p.latitude, p.longitude, city)) continue;
+    const bucket = byCity[city.id]!;
+    bucket.totalCount += 1;
+    bucket.pinCount += 1;
+    pins.push({
+      id: p.id,
+      city: city.id,
+      latitude: round4(p.latitude),
+      longitude: round4(p.longitude),
+      score: p.score,
+      projectType: projectTeaserLabel(p.jobType, p.occupancy, p.buildingType),
+    });
   }
 
   return NextResponse.json(

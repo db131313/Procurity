@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { HomeVideoBand } from "./HomeVideoBand";
+import { PhoneTour } from "./PhoneTour";
+import { HomeSiteVideo } from "./HomeSiteVideo";
 import { PricingCards } from "./PricingCards";
 
 const STEPS = [
@@ -24,23 +25,24 @@ const STEPS = [
 
 export function HomeBelowBw() {
   return (
-    <div className="relative bg-black text-white">
-      <HomeVideoBand />
+    <div className="relative bg-[#0B0D0E] text-white">
+      <PhoneTour />
+      <HomeSiteVideo />
 
       <section
         id="how-it-works"
-        className="border-t border-white/10 px-5 py-16 md:px-10 md:py-24"
+        className="border-t border-[var(--line)] px-5 py-16 md:px-10 md:py-24"
       >
         <div className="mx-auto grid max-w-5xl gap-12 md:grid-cols-3 md:gap-10">
           {STEPS.map((s) => (
             <div key={s.n}>
-              <p className="text-xs font-medium tabular-nums text-neutral-500">
+              <p className="text-xs font-medium tabular-nums text-[var(--mute)]">
                 {s.n}
               </p>
               <h3 className="mt-3 text-xl font-semibold tracking-tight">
                 {s.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-neutral-400">
+              <p className="mt-2 text-sm leading-relaxed text-[var(--mute)]">
                 {s.body}
               </p>
             </div>
@@ -50,13 +52,13 @@ export function HomeBelowBw() {
 
       <section
         id="pricing"
-        className="border-t border-white/10 px-5 py-16 md:px-10 md:py-24"
+        className="border-t border-[var(--line)] px-5 py-16 md:px-10 md:py-24"
       >
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-3xl font-semibold tracking-tight md:text-4xl">
             Simple pricing
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-center text-neutral-400">
+          <p className="mx-auto mt-2 max-w-md text-center text-[var(--mute)]">
             Start free. Upgrade when your coverage grows.
           </p>
           <div className="mt-10">
@@ -65,12 +67,12 @@ export function HomeBelowBw() {
         </div>
       </section>
 
-      <section className="border-t border-white/10 px-5 py-20 md:px-10 md:py-28">
+      <section className="border-t border-[var(--line)] px-5 py-20 md:px-10 md:py-28">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">
             Know which projects are about to need you.
           </h2>
-          <p className="mt-4 max-w-lg text-neutral-400">
+          <p className="mt-4 max-w-lg text-[var(--mute)]">
             Commercial builds near you, scored by how soon they will buy — then
             measure, quote, and get paid in one place.
           </p>
@@ -83,11 +85,11 @@ export function HomeBelowBw() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 px-5 py-8 md:px-10">
-        <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 text-sm text-neutral-500 sm:flex-row sm:items-center">
+      <footer className="border-t border-[var(--line)] px-5 py-8 md:px-10">
+        <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 text-sm text-[var(--mute)] sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} Procurity</p>
           <nav className="flex flex-wrap gap-4">
-            <Link href="#how-it-works" className="hover:text-white">
+            <Link href="#tour" className="hover:text-white">
               How it works
             </Link>
             <Link href="#pricing" className="hover:text-white">

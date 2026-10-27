@@ -12,9 +12,12 @@
   --pc-grey-700: #3f3f3f;
   --pc-grey-900: #171717;
 
+  --line: #24282c;
+  --mute: #8b9096;
+
   /* Aurora — ONLY for micro-interactions, animations, and loading */
   --aurora: linear-gradient(
-    135deg,
+    120deg,
     #5ee7ff 0%,
     #a78bfa 35%,
     #ff7ac6 70%,
