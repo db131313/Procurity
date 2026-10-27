@@ -44,6 +44,8 @@ type SwarmDot = {
 
 type Ping = { x: number; y: number; t0: number; hue: number };
 
+type NationFC = FeatureCollection<Geometry>;
+
 function prefersReducedMotion() {
   if (typeof window === "undefined") return true;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -53,17 +55,33 @@ function formatCount(n: number) {
   return n.toLocaleString("en-US");
 }
 
+async function loadNation(): Promise<NationFC> {
+  const mod = await import("us-atlas/states-10m.json");
+  const topo = (mod.default ?? mod) as {
+    objects: { nation: Parameters<typeof feature>[1] };
+  };
+  return feature(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    topo as any,
+    topo.objects.nation,
+  ) as unknown as NationFC;
+}
+
 /**
  * National D3 canvas swarm: US outline as a dot matrix + real teaser pins.
- * Wheel events are ignored so page scroll never zooms.
+ * Pins + us-atlas load in parallel; ThinkingBlob grows with real progress.
  */
 export function HomeSwarmMap({ onExplore, className }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [pins, setPins] = useState<SwarmPin[] | null>(null);
   const [byCity, setByCity] = useState<ByCity>({});
-  const [ready, setReady] = useState(false);
+  const [nation, setNation] = useState<NationFC | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [blobGone, setBlobGone] = useState(false);
   const [fade, setFade] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [scoreMin, setScoreMin] = useState(0);
   const [scoreMax, setScoreMax] = useState(100);
   const [dragEdge, setDragEdge] = useState<"min" | "max" | null>(null);
@@ -84,6 +102,10 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
   const rafRef = useRef(0);
   const reducedRef = useRef(true);
   const [layoutTick, setLayoutTick] = useState(0);
+  const firstFrameRef = useRef(false);
+  const bumpProgress = useCallback((v: number) => {
+    setProgress((p) => Math.max(p, v));
+  }, []);
 
   const filteredPins = useMemo(() => {
     if (!pins) return [];
@@ -101,42 +123,74 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
   }, [pins]);
 
   const totalVisible = filteredPins.length;
+  const showBlob = !blobGone && !error;
 
+  // Parallel: pins fetch + us-atlas geometry
   useEffect(() => {
     let cancelled = false;
+    firstFrameRef.current = false;
+    setError(null);
+    setBlobGone(false);
+    setFade(0);
+    setProgress(0.1);
+    setPins(null);
+    setNation(null);
+
     (async () => {
+      bumpProgress(0.1);
       try {
-        const res = await fetch("/api/teaser/pins/all", { cache: "no-store" });
-        const data = (await res.json()) as {
-          ok?: boolean;
-          pins?: SwarmPin[];
-          byCity?: ByCity;
-        };
-        if (cancelled || !data.ok || !Array.isArray(data.pins)) return;
-        setPins(data.pins);
-        setByCity(data.byCity || {});
-      } catch {
-        if (!cancelled) setPins([]);
+        const pinsPromise = (async () => {
+          const res = await fetch("/api/teaser/pins/all", { cache: "default" });
+          if (cancelled) return null;
+          bumpProgress(0.3);
+          if (!res.ok) throw new Error(`Pins failed (${res.status})`);
+          const data = (await res.json()) as {
+            ok?: boolean;
+            pins?: SwarmPin[];
+            byCity?: ByCity;
+          };
+          bumpProgress(0.6);
+          if (!data.ok || !Array.isArray(data.pins)) {
+            throw new Error("Pins response invalid");
+          }
+          return data;
+        })();
+
+        const [pinData, nationData] = await Promise.all([
+          pinsPromise,
+          loadNation(),
+        ]);
+        if (cancelled) return;
+        if (!pinData) return;
+        setPins(pinData.pins || []);
+        setByCity(pinData.byCity || {});
+        setNation(nationData);
+        bumpProgress(0.8);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "Could not load the map");
+        setProgress(0);
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [bumpProgress, retryKey]);
 
-  // Count-up when pins arrive
+  // Count-up + fade when pins ready
   useEffect(() => {
-    if (pins === null) return;
+    if (pins === null || !nation) return;
     const target = pins.length;
     if (prefersReducedMotion()) {
       setDisplayCount(target);
-      setReady(true);
       setFade(1);
+      bumpProgress(1);
+      setBlobGone(true);
       return;
     }
-    setReady(true);
     const t0 = performance.now();
-    const dur = 1100;
+    const dur = 900;
     let id = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - t0) / dur);
@@ -144,10 +198,14 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       setDisplayCount(Math.round(target * eased));
       setFade(eased);
       if (t < 1) id = requestAnimationFrame(tick);
+      else {
+        bumpProgress(1);
+        setTimeout(() => setBlobGone(true), 280);
+      }
     };
     id = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(id);
-  }, [pins]);
+  }, [pins, nation, bumpProgress]);
 
   const measure = useCallback(() => {
     const canvas = canvasRef.current;
@@ -175,7 +233,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       typeof ResizeObserver !== "undefined" && wrap
         ? new ResizeObserver(() => measure())
         : null;
-    ro?.observe(wrap!);
+    if (wrap) ro?.observe(wrap);
     window.addEventListener("resize", measure);
     return () => {
       ro?.disconnect();
@@ -186,21 +244,11 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
   useEffect(() => {
     let cancelled = false;
     reducedRef.current = prefersReducedMotion();
+    if (!nation) return;
 
     (async () => {
       if (!measure()) return;
-      const mod = await import("us-atlas/states-10m.json");
-      const topo = (mod.default ?? mod) as {
-        type: string;
-        objects: { nation: Parameters<typeof feature>[1] };
-        arcs: unknown;
-      };
       if (cancelled) return;
-      const nation = feature(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        topo as any,
-        topo.objects.nation,
-      ) as unknown as FeatureCollection<Geometry>;
       const { w, h } = sizeRef.current;
       if (w < 40 || h < 40) return;
       const padX = w * 0.04;
@@ -215,7 +263,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       projectRef.current = projection;
       const path = geoPath(projection);
 
-      // Dot-matrix outline sampling
       const matrix: { x: number; y: number }[] = [];
       const step = Math.max(4, Math.floor(Math.min(w, h) / 100));
       const off = document.createElement("canvas");
@@ -237,7 +284,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       }
       matrixRef.current = matrix;
 
-      // Project pins
       const dots: SwarmDot[] = [];
       for (const p of filteredPins) {
         const xy = projection([p.longitude, p.latitude]);
@@ -253,7 +299,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       }
       dotsRef.current = dots;
 
-      // City labels from registry + byCity counts
       labelsRef.current = SERVED.map((c) => {
         const xy = projection(c.center);
         if (!xy) return null;
@@ -276,7 +321,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         y: number;
       }[];
 
-      // Gradient pings on top-scoring dots
       const top = [...dots].sort((a, b) => b.score - a.score).slice(0, 4);
       const now = performance.now();
       pingsRef.current = top.map((d, i) => ({
@@ -290,7 +334,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [filteredPins, byCity, measure, layoutTick]);
+  }, [filteredPins, byCity, measure, layoutTick, nation]);
 
   // Draw loop
   useEffect(() => {
@@ -304,8 +348,12 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
 
-      const alpha = Math.max(0.15, fade);
-      // Matrix US outline
+      const alpha = Math.max(0, fade);
+      if (alpha > 0.02 && !firstFrameRef.current && matrixRef.current.length) {
+        firstFrameRef.current = true;
+        bumpProgress(1);
+      }
+
       ctx.globalAlpha = 0.45 * alpha;
       ctx.fillStyle = "#a3a3a3";
       for (const p of matrixRef.current) {
@@ -314,7 +362,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         ctx.fill();
       }
 
-      // Swarm dots — brighter = higher score
       for (const d of dotsRef.current) {
         const t = Math.max(0, Math.min(1, (d.score - 20) / 80));
         const r = 1.4 + t * 2.2;
@@ -326,7 +373,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         ctx.fill();
       }
 
-      // Aurora pings
       if (!reducedRef.current) {
         const hues = ["#5EE7FF", "#A78BFA", "#FF7AC6", "#FFC46B"];
         for (const ping of pingsRef.current) {
@@ -341,15 +387,13 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         }
       }
 
-      // Labels
       ctx.globalAlpha = 0.95 * alpha;
       ctx.fillStyle = "#e5e5e5";
       ctx.font =
         "500 12px ui-sans-serif, system-ui, -apple-system, sans-serif";
       ctx.textAlign = "center";
       for (const lab of labelsRef.current) {
-        const n = lab.count > 0 ? lab.count : 0;
-        ctx.fillText(`${lab.label} ${formatCount(n)}`, lab.x, lab.y);
+        ctx.fillText(`${lab.label} ${formatCount(lab.count)}`, lab.x, lab.y);
       }
 
       ctx.globalAlpha = 1;
@@ -358,7 +402,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
 
     rafRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [fade]);
+  }, [fade, bumpProgress]);
 
   const hitTest = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -366,7 +410,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     const rect = canvas.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
-    // City label hit
     for (const lab of labelsRef.current) {
       if (Math.hypot(lab.x - x, lab.y - y) < 28) {
         return { kind: "city" as const, id: lab.id, label: lab.label, x, y };
@@ -419,7 +462,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
     else onExplore({ cityId: hit.city, projectId: hit.id });
   };
 
-  // Histogram drag
   const histRef = useRef<HTMLDivElement | null>(null);
   const updateFromClientX = useCallback(
     (clientX: number, edge: "min" | "max") => {
@@ -454,19 +496,39 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       className={cn("relative h-full w-full select-none", className)}
       data-testid="home-swarm"
     >
-      {!ready && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center">
-          <ThinkingBlob size="fullscreen" label="Loading projects" />
+      {showBlob && (
+        <div
+          className={cn(
+            "absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-500",
+            progress >= 1 ? "pointer-events-none opacity-0" : "opacity-100",
+          )}
+        >
+          <ThinkingBlob
+            size="fullscreen"
+            label="Loading projects"
+            progress={progress}
+          />
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <p className="max-w-sm text-sm text-neutral-300">{error}</p>
+          <button
+            type="button"
+            className="bw-btn-primary pc-press h-11 px-6 text-sm"
+            data-testid="swarm-retry"
+            onClick={() => setRetryKey((k) => k + 1)}
+          >
+            Retry
+          </button>
         </div>
       )}
 
       <canvas
         ref={canvasRef}
-        className={cn(
-          "absolute inset-0 h-full w-full touch-none transition-opacity duration-700",
-          ready ? "opacity-100" : "opacity-0",
-        )}
-        style={{ opacity: ready ? fade : 0 }}
+        className="absolute inset-0 h-full w-full touch-none"
+        style={{ opacity: fade }}
         onPointerMove={onPointerMove}
         onPointerLeave={() => setTooltip(null)}
         onPointerUp={onPointerUp}
@@ -474,7 +536,6 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
         aria-label="National map of commercial projects"
       />
 
-      {/* City labels are drawn on canvas; keep DOM labels for a11y list */}
       <ul className="sr-only">
         {labelsRef.current.map((l) => (
           <li key={l.id}>
@@ -493,7 +554,7 @@ export function HomeSwarmMap({ onExplore, className }: Props) {
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4 px-5 pb-5 md:px-10 md:pb-8">
-        <div className="pointer-events-none">
+        <div>
           <p
             className="text-4xl font-semibold tabular-nums tracking-tight text-white md:text-5xl"
             data-testid="swarm-count"

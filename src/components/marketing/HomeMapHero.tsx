@@ -42,7 +42,6 @@ import { cn } from "@/lib/cn";
 import type { ProjectPhase } from "@/lib/db/types";
 import { IphoneAppSection } from "./IphoneAppSection";
 import {
-  HOME_FIELD_VIDEOS,
   HOME_SHOTS,
   type HomeMediaAvailability,
 } from "@/lib/marketing/home-media-shared";
@@ -210,8 +209,22 @@ export function HomeMapHero({
         cache: "default",
       });
       if (!res.ok) return;
-      const data = (await res.json()) as { pins?: TeaserPin[] };
-      const next = Array.isArray(data.pins) ? data.pins : [];
+      const data = (await res.json()) as {
+        pins?: Array<Partial<TeaserPin> & { id: string; latitude: number; longitude: number; score: number }>;
+      };
+      const next: TeaserPin[] = (Array.isArray(data.pins) ? data.pins : []).map(
+        (p) => ({
+          id: p.id,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          score: p.score,
+          city: p.city,
+          projectType: p.projectType,
+          phase: p.phase || "pre_construction",
+          tradeScores: p.tradeScores ?? null,
+          updatedAt: p.updatedAt ?? null,
+        }),
+      );
       pinsRef.current = next;
       setPins(next);
       try {
@@ -1073,9 +1086,6 @@ const WHAT_YOU_GET = [
 
 export function HomeBelowFold({ media }: { media: HomeMediaAvailability }) {
   const shots = HOME_SHOTS.filter((s) => media[s.key]);
-  const fieldVideos = HOME_FIELD_VIDEOS.filter(
-    (v) => media[v.mp4Key] || media[v.webmKey],
-  );
 
   return (
     <div className="relative">
@@ -1154,59 +1164,6 @@ export function HomeBelowFold({ media }: { media: HomeMediaAvailability }) {
                 </li>
               ))}
             </ol>
-          </div>
-        </section>
-      )}
-
-      {fieldVideos.length > 0 && (
-        <section
-          className="border-t border-[#E7DFD0] px-5 py-14 md:px-10 md:py-20"
-          data-testid="home-field-videos"
-        >
-          <div className="mx-auto max-w-5xl">
-            <h2 className="font-display text-2xl tracking-tight text-[#14213D] md:text-3xl">
-              See it in use
-            </h2>
-            <p className="mt-2 max-w-lg text-[#5B6475]">
-              From the sidewalk to the handshake — find the job, show up ready.
-            </p>
-            <div
-              className={cn(
-                "mt-8 grid gap-6",
-                fieldVideos.length > 1
-                  ? "mx-auto max-w-3xl grid-cols-1 sm:grid-cols-2"
-                  : "mx-auto max-w-sm",
-              )}
-            >
-              {fieldVideos.map((clip) => (
-                <figure key={clip.id} className="min-w-0">
-                  <div className="overflow-hidden rounded-xl border border-[#E7DFD0] bg-[#14213D]">
-                    <video
-                      className="aspect-[416/752] w-full object-cover"
-                      poster={
-                        media[clip.posterKey] ? clip.posterSrc : undefined
-                      }
-                      muted
-                      loop
-                      playsInline
-                      preload="metadata"
-                      controls
-                      aria-label={clip.label}
-                    >
-                      {media[clip.webmKey] && (
-                        <source src={clip.webmSrc} type="video/webm" />
-                      )}
-                      {media[clip.mp4Key] && (
-                        <source src={clip.mp4Src} type="video/mp4" />
-                      )}
-                    </video>
-                  </div>
-                  <figcaption className="mt-3 text-sm text-[#5B6475]">
-                    {clip.label}
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
           </div>
         </section>
       )}
