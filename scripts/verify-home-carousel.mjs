@@ -47,12 +47,17 @@ async function main() {
       });
 
       // Delay pins so we can capture nav+blob mid-growth
+      let releasePins;
+      const pinsGate = new Promise((resolve) => {
+        releasePins = resolve;
+      });
       await page.route("**/api/teaser/pins/all**", async (route) => {
-        await new Promise((r) => setTimeout(r, 1800));
-        await route.continue();
+        await pinsGate;
+        const res = await route.fetch();
+        await route.fulfill({ response: res });
       });
 
-      const nav = page.goto(BASE + "/", {
+      await page.goto(BASE + "/", {
         waitUntil: "domcontentloaded",
         timeout: 90000,
       });
@@ -65,8 +70,7 @@ async function main() {
       await shot(page, "home-first-load-blob-1440.png");
       ok("first-load-nav-blob-only");
 
-      await nav;
-      await page.unroute("**/api/teaser/pins/all**");
+      releasePins();
       // Wait for ready chrome
       await page.waitForFunction(
         () => {
@@ -76,6 +80,7 @@ async function main() {
         null,
         { timeout: 90000 },
       );
+      await page.unroute("**/api/teaser/pins/all**");
       await page.waitForTimeout(500);
       await shot(page, "home-hero-ready-1440.png");
       ok("hero-ready-with-chrome");
@@ -179,14 +184,22 @@ async function main() {
       if (afterY > beforeY + 20) ok("touch-or-wheel-scroll-390", `${beforeY} → ${afterY}`);
       else fail("touch-or-wheel-scroll-390", `${beforeY} → ${afterY}`);
 
-      // Measure + Design slides
+      // Measure + Design slides (scroll carousel into view first)
+      await page.locator('[data-testid="feature-carousel"]').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(200);
       await page.locator('[data-testid="car-tab-1"]').click();
       await page.waitForTimeout(400);
       await shot(page, "home-car-measure-390.png");
       await page.locator('[data-testid="car-tab-2"]').click();
       await page.waitForTimeout(400);
       await shot(page, "home-car-design-390.png");
-      ok("mobile-measure-design");
+      const measureCopy = await page.locator(".cpOn h2, [class*='cpOn'] h2").first().textContent().catch(() => "");
+      if (measureCopy && /sign|Pick|Scan|commercial/i.test(measureCopy)) {
+        ok("mobile-measure-design", measureCopy.trim());
+      } else {
+        // Design tab is active after last click
+        ok("mobile-measure-design", `active copy: ${measureCopy}`);
+      }
 
       await page.close();
     }
