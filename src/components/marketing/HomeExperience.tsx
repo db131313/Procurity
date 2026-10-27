@@ -4,21 +4,24 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import { HomeSwarmMap } from "./HomeSwarmMap";
 import { HomeMapHero } from "./HomeMapHero";
+import { FeatureCarousel } from "./FeatureCarousel";
 import { HomeBelowBw } from "./HomeBelowBw";
 import { cn } from "@/lib/cn";
+import { SLIDES } from "@/content/carousel";
 
 type Props = {
   initialCityId: string;
 };
 
 /**
- * Public home: black/white swarm hero → optional full-viewport real map panel,
- * then video / steps / pricing below.
+ * Public home: black/white swarm hero → feature carousel → steps / pricing.
+ * First paint is nav + ThinkingBlob only; copy/CTAs fade in at progress=1.
  */
 export function HomeExperience({ initialCityId }: Props) {
   const [mapOpen, setMapOpen] = useState(false);
   const [mapCityId, setMapCityId] = useState(initialCityId);
   const [focusProjectId, setFocusProjectId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   const openMap = useCallback(
     (opts?: { cityId?: string; projectId?: string }) => {
@@ -34,12 +37,20 @@ export function HomeExperience({ initialCityId }: Props) {
     setFocusProjectId(null);
   }, []);
 
+  const onProgress = useCallback((p: number) => {
+    if (p >= 1) setReady(true);
+  }, []);
+
   return (
-    <div className="marketing-bw min-h-dvh bg-black text-white">
+    <div className="marketing-bw min-h-dvh bg-[var(--night,#0B0D0E)] text-white">
+      {/* First-slide poster preload for LCP */}
+      <link rel="preload" as="image" href={SLIDES[0]!.video.poster} />
+
       {!mapOpen && (
         <>
           <section
-            className="relative flex min-h-dvh flex-col"
+            className="relative flex flex-col"
+            style={{ height: "max(640px, calc(100svh - 96px))" }}
             data-testid="home-hero-bw"
           >
             <header
@@ -83,8 +94,15 @@ export function HomeExperience({ initialCityId }: Props) {
               </div>
             </header>
 
-            <div className="relative flex flex-1 flex-col pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:pt-[calc(4rem+env(safe-area-inset-top,0px))]">
-              <div className="relative z-20 mx-auto flex w-full max-w-3xl flex-col items-center px-5 pt-6 text-center md:pt-10">
+            <div className="relative flex min-h-0 flex-1 flex-col pt-[calc(3.5rem+env(safe-area-inset-top,0px))] md:pt-[calc(4rem+env(safe-area-inset-top,0px))]">
+              <div
+                className={cn(
+                  "relative z-20 mx-auto flex w-full max-w-3xl flex-col items-center px-5 pt-6 text-center transition-opacity duration-500 md:pt-8",
+                  ready ? "opacity-100" : "pointer-events-none opacity-0",
+                )}
+                data-testid="home-hero-copy"
+                aria-hidden={!ready}
+              >
                 <h1 className="text-[1.65rem] font-semibold leading-[1.15] tracking-tight text-white sm:text-4xl md:text-[2.75rem]">
                   Every commercial build, scored by how soon it will buy.
                 </h1>
@@ -106,12 +124,17 @@ export function HomeExperience({ initialCityId }: Props) {
                 </div>
               </div>
 
-              <div className="relative mt-4 h-[min(58vh,560px)] min-h-[320px] w-full flex-1 md:h-auto md:min-h-[58vh]">
-                <HomeSwarmMap onExplore={openMap} className="absolute inset-0" />
+              <div className="relative mt-2 min-h-0 w-full flex-1">
+                <HomeSwarmMap
+                  onExplore={openMap}
+                  onProgress={onProgress}
+                  className="absolute inset-0"
+                />
               </div>
             </div>
           </section>
 
+          <FeatureCarousel />
           <HomeBelowBw />
         </>
       )}
