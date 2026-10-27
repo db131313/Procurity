@@ -36,8 +36,8 @@ type BottomSheetProps = {
   tone?: "default" | "paper";
 };
 
-const DISMISS_OFFSET_PX = 120;
-const DISMISS_VELOCITY = 650;
+const DISMISS_OFFSET_PX = 90;
+const DISMISS_VELOCITY = 500;
 
 export function BottomSheet({
   open,

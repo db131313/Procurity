@@ -2,6 +2,29 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
 
 :root {
+  /* Black / white / grey foundation */
+  --pc-black: #000000;
+  --pc-white: #ffffff;
+  --pc-grey-50: #f5f5f5;
+  --pc-grey-100: #e8e8e8;
+  --pc-grey-300: #a3a3a3;
+  --pc-grey-500: #737373;
+  --pc-grey-700: #3f3f3f;
+  --pc-grey-900: #171717;
+
+  /* Aurora — ONLY for micro-interactions, animations, and loading */
+  --aurora: linear-gradient(
+    135deg,
+    #5ee7ff 0%,
+    #a78bfa 35%,
+    #ff7ac6 70%,
+    #ffc46b 100%
+  );
+  --aurora-a: #5ee7ff;
+  --aurora-b: #a78bfa;
+  --aurora-c: #ff7ac6;
+  --aurora-d: #ffc46b;
+
   --pc-purple: #7c6cf6;
   --pc-teal: #38d9c9;
   --pc-ink: #0b0f19;
@@ -11,7 +34,6 @@
   --pc-success: #22c55e;
   --pc-warning: #f59e0b;
   --pc-hot: #f97316;
-  --pc-white: #ffffff;
   --pc-gradient: linear-gradient(135deg, #7c6cf6 0%, #4f9cf8 48%, #38d9c9 100%);
   --pc-shadow: 0 12px 40px rgba(11, 15, 25, 0.08);
   --pc-shadow-lg: 0 20px 50px rgba(124, 108, 246, 0.18);
@@ -68,8 +90,177 @@ a {
   text-decoration: none;
 }
 
+/* App-wide press: shrink + aurora edge flash (buttons + button-like links) */
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active,
+a.btn:active,
+a.b:active,
+a.k:active,
+.pc-press:active,
+.mkt-btn-primary:active,
+.mkt-btn-ghost:active {
+  transform: scale(0.95);
+  transition: transform 80ms ease;
+}
+
+button:not(:disabled):active::after,
+[role="button"]:not([aria-disabled="true"]):active::after,
+a.btn:active::after,
+a.b:active::after,
+a.k:active::after,
+.pc-press:active::after,
+.mkt-btn-primary:active::after,
+.mkt-btn-ghost:active::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: var(--aurora);
+  opacity: 0.85;
+  z-index: -1;
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+button,
+[role="button"],
+a.btn,
+a.b,
+a.k,
+.pc-press,
+.mkt-btn-primary,
+.mkt-btn-ghost {
+  position: relative;
+  isolation: isolate;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+.pc-press:focus-visible,
+.mkt-btn-primary:focus-visible,
+.mkt-btn-ghost:focus-visible {
+  outline: 2px solid var(--pc-white);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25);
+}
+
+.marketing-bw button:focus-visible,
+.marketing-bw [role="button"]:focus-visible,
+.marketing-bw a:focus-visible {
+  outline-color: var(--pc-white);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
 ::selection {
-  background: rgba(124, 108, 246, 0.22);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* —— ThinkingBlob (aurora loading) —— */
+.pc-think {
+  position: relative;
+  border-radius: 50%;
+  overflow: visible;
+}
+
+.pc-think-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(18px);
+  opacity: 0.9;
+  will-change: transform;
+  animation: pc-think-drift 7s ease-in-out infinite;
+}
+
+.pc-think-orb-a {
+  inset: 8% 35% 45% 8%;
+  background: var(--aurora-a);
+  animation-delay: 0s;
+}
+.pc-think-orb-b {
+  inset: 10% 8% 40% 40%;
+  background: var(--aurora-b);
+  animation-delay: -1.6s;
+}
+.pc-think-orb-c {
+  inset: 42% 12% 8% 30%;
+  background: var(--aurora-c);
+  animation-delay: -3.2s;
+}
+.pc-think-orb-d {
+  inset: 38% 38% 10% 8%;
+  background: var(--aurora-d);
+  animation-delay: -4.8s;
+}
+
+.pc-think-static {
+  display: none;
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  background: var(--aurora);
+  filter: blur(22px);
+  opacity: 0.75;
+}
+
+@keyframes pc-think-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(12%, -10%) scale(1.08);
+  }
+  66% {
+    transform: translate(-10%, 12%) scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-think-orb {
+    animation: none;
+    opacity: 0;
+  }
+  .pc-think-static {
+    display: block;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Black/white marketing shell for the public home */
+.marketing-bw {
+  color: var(--pc-white);
+  background: var(--pc-black);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.marketing-bw .bw-muted {
+  color: var(--pc-grey-300);
+}
+
+.bw-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--pc-white);
+  color: var(--pc-black);
+  font-weight: 600;
+  transition: transform 80ms ease;
+}
+
+.bw-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: transparent;
+  color: var(--pc-white);
+  font-weight: 600;
+  transition: transform 80ms ease;
 }
 
 .pc-gradient-text {

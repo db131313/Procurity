@@ -2,6 +2,18 @@
 
 Optional files under `public/home/`. If a file is missing, that slot is **not rendered** (no placeholder, no “coming soon”).
 
+## Field video band (required for the BW home)
+
+Edge-to-edge three-up band. Desktop: 3 columns, no gaps. Mobile: stacked full width.
+
+| File | Format | Used for |
+| --- | --- | --- |
+| `field-1.mp4` / `.webm` / `.jpg` | H.264 / VP9 / JPEG poster | Column 1 |
+| `field-2.mp4` / `.webm` / `.jpg` | H.264 / VP9 / JPEG poster | Column 2 |
+| `field-3.mp4` / `.webm` / `.jpg` | H.264 / VP9 / JPEG poster | Column 3 |
+
+Videos are muted, loop, `playsInline`, and play only while visible (`IntersectionObserver`). When `prefers-reduced-motion: reduce`, the poster is shown and playback stays paused.
+
 ## Real product screenshots
 
 Captured by `npx tsx scripts/capture-home-screens.ts` against a production build (logged in as the demo user). Viewport **390×844 @ 2×**.
@@ -28,6 +40,10 @@ Suggested max dimensions: ~780×1688 px (2× of 390×844). PNG, sRGB.
 | `field-poster-2.jpg` | JPEG | Matching video frame | Clip 2 poster |
 
 Each clip renders only when its `.mp4` and/or `.webm` exists. Posters are optional. Portrait (9:16) is preferred; the home layout stacks on mobile and pairs side-by-side from `sm` up.
+
+## Legacy optional slots
+
+Older sunrise screenshots (`map.png`, `project-card.png`, …) and `hero-photo.jpg` are unused by the black/white swarm home but may remain for other marketing pages.
 
 ## iPhone app section
 
