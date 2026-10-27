@@ -11,6 +11,29 @@ import { chromium, type Page } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 
+declare global {
+  interface Window {
+    __pcHomePinCount?: number;
+    __pcHomeMap?: {
+      loaded?: () => boolean;
+      jumpTo: (opts: { center: [number, number]; zoom: number }) => void;
+      queryRenderedFeatures: (opts: {
+        layers: string[];
+      }) => Array<{
+        properties?: { id?: string; score?: number; projectType?: string };
+        geometry: { coordinates: [number, number] };
+      }>;
+    };
+    __pcOpenHomeProject?: (
+      id: string,
+      lat: number,
+      lng: number,
+      score: number,
+      projectType: string,
+    ) => void;
+  }
+}
+
 const BASE = process.env.BASE_URL || "http://127.0.0.1:3000";
 const OUT = path.join(process.cwd(), "public", "home");
 const DEMO_EMAIL = process.env.DEMO_EMAIL || "demo@procurity.pro";
