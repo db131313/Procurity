@@ -3,8 +3,10 @@
  *
  * - label:      tab name along the bottom
  * - caption:    1–2 words under the phone
- * - video:      { webm, mp4, poster, webm640?, mp4640? } — slides sharing mp4 share one <video>
+ * - video:      { webm, mp4, poster } — slides sharing mp4 share one <video>
  * - screen:     discover | measure | design | quote | invoice
+ * - duration:   ms this slide stays up (match the clip length so the story finishes)
+ * - focus:      CSS object-position for the video crop on wide screens
  * - screenshot: optional image path; replaces the animated phone screen when set
  */
 
@@ -28,16 +30,11 @@ export type CarouselSlide = {
   caption: string;
   screen: CarouselScreenId;
   screenshot?: string;
+  /** Milliseconds this slide stays up — tab progress uses the same value. */
+  duration: number;
+  /** CSS object-position for cropping the background video. */
+  focus: string;
   video: CarouselVideo;
-};
-
-/** Versioned filenames bust immutable /home/* caches after re-encode. */
-const FIELD3: CarouselVideo = {
-  webm: "/home/field-3-v2.webm",
-  mp4: "/home/field-3-v2.mp4",
-  webm640: "/home/field-3-v2-640.webm",
-  mp4640: "/home/field-3-v2-640.mp4",
-  poster: "/home/field-3-v2.webp",
 };
 
 export const SLIDES: CarouselSlide[] = [
@@ -45,31 +42,61 @@ export const SLIDES: CarouselSlide[] = [
     label: "Discover",
     caption: "On site",
     screen: "discover",
-    video: FIELD3,
+    duration: 10000,
+    focus: "50% 40%",
+    video: {
+      webm: "/home/field-3.webm",
+      mp4: "/home/field-3.mp4",
+      poster: "/home/field-3.jpg",
+    },
   },
   {
     label: "Measure",
     caption: "Measuring",
     screen: "measure",
-    video: FIELD3,
+    duration: 5800,
+    focus: "50% 40%",
+    video: {
+      webm: "/home/bg-measure.webm",
+      mp4: "/home/bg-measure.mp4",
+      poster: "/home/bg-measure.jpg",
+    },
   },
   {
     label: "Design",
     caption: "Designing",
     screen: "design",
-    video: FIELD3,
+    duration: 10000,
+    focus: "50% 45%",
+    video: {
+      webm: "/home/bg-design.webm",
+      mp4: "/home/bg-design.mp4",
+      poster: "/home/bg-design.jpg",
+    },
   },
   {
     label: "Quote",
     caption: "Quoting",
     screen: "quote",
-    video: FIELD3,
+    duration: 10000,
+    focus: "50% 45%",
+    video: {
+      webm: "/home/bg-quote.webm",
+      mp4: "/home/bg-quote.mp4",
+      poster: "/home/bg-quote.jpg",
+    },
   },
   {
     label: "Invoice",
     caption: "Invoicing",
     screen: "invoice",
-    video: FIELD3,
+    duration: 10000,
+    focus: "50% 45%",
+    video: {
+      webm: "/home/bg-invoice.webm",
+      mp4: "/home/bg-invoice.mp4",
+      poster: "/home/bg-invoice.jpg",
+    },
   },
 ];
 

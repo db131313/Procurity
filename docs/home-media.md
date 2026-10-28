@@ -4,14 +4,15 @@
 
 See [carousel.md](./carousel.md).
 
-| File | Notes |
-| --- | --- |
-| `field-3-v2.mp4` / `.webm` | Desktop backgrounds (shared across slides) |
-| `field-3-v2-640.mp4` / `.webm` | Mobile `media="(max-width:820px)"` |
-| `field-3-v2.webp` | Poster (preload); target ≤80KB |
-| `field-3-v2.jpg` | JPEG fallback |
+| Slide | Files | Notes |
+| --- | --- | --- |
+| Discover | `field-3.{mp4,webm,jpg}` | ~10s, ~1.0MB mp4 (under 1.5MB — no re-encode) |
+| Measure | `bg-measure.{mp4,webm,jpg}` | ~5.8s, ~0.24MB mp4 |
+| Design | `bg-design.{mp4,webm,jpg}` | ~10s, ~0.57MB mp4 |
+| Quote | `bg-quote.{mp4,webm,jpg}` | ~10s, ~0.66MB mp4 |
+| Invoice | `bg-invoice.{mp4,webm,jpg}` | ~10s, ~0.74MB mp4 |
 
-Legacy `field-3.*` (unversioned) may remain for older references; the live carousel uses `*-v2*`.
+Legacy `field-3-v2*` / `field-3-640*` may remain on disk for older deploys; the live carousel uses the paths in `src/content/carousel.ts`.
 
 ## Product screenshots
 
