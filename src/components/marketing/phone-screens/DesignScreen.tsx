@@ -1,21 +1,17 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import styles from "../FeatureCarousel.module.css";
 import { StatusBar } from "./StatusBar";
-
-const LETTERS = [
-  { ch: "A", i: 0 },
-  { ch: "L", i: 1 },
-  { ch: "D", i: 2 },
-  { ch: "E", i: 3 },
-  { ch: "R", i: 4 },
-  { ch: "&", i: 5, gap: true },
-  { ch: "F", i: 6 },
-  { ch: "I", i: 7 },
-  { ch: "N", i: 8 },
-  { ch: "C", i: 9 },
-  { ch: "H", i: 10 },
-];
+import { buildSign } from "./generatedArt";
 
 export function DesignScreen() {
+  const signRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    buildSign(signRef.current, { ext: styles.ext!, f: styles.f! });
+  }, []);
+
   return (
     <>
       <StatusBar />
@@ -26,22 +22,27 @@ export function DesignScreen() {
           <span className={styles.s3d}>3D</span>
         </div>
       </div>
-      <div className={styles.canvas}>
-        <div className={styles.sign}>
-          {LETTERS.map((l) => (
-            <span
-              key={`${l.ch}-${l.i}`}
-              className={styles.ltr}
-              style={{
-                ["--i" as string]: l.i,
-                ...(l.gap ? { margin: "0 .35em" } : null),
-              }}
-            >
-              {l.ch}
-            </span>
-          ))}
+      <div className={styles.vp}>
+        <div className={styles.cam3d}>
+          <div className={styles.world}>
+            <div className={styles.gnd} />
+            <div className={styles.wall}>
+              <div className={styles.fas} />
+              <div className={styles.win} />
+            </div>
+            <div ref={signRef} className={styles.sg}>
+              <div className={styles.sk} />
+              <div className={styles.halo} aria-hidden>
+                ALDER &amp; FINCH
+              </div>
+            </div>
+            <div className={styles.dimx}>
+              <i />
+              <i />
+              <b>12′ 2″</b>
+            </div>
+          </div>
         </div>
-        <div className={styles.dim}>12′ × 2′</div>
       </div>
       <div className={styles.panel}>
         <small>Type</small>
@@ -56,6 +57,10 @@ export function DesignScreen() {
           <b style={{ background: "#f3f3f1" }} />
           <b style={{ background: "#2b2d30" }} />
           <span className={styles.so} />
+        </div>
+        <div className={styles.mn}>
+          <u className={styles.mna}>Matte black</u>
+          <u className={styles.mnb}>Brushed aluminum</u>
         </div>
         <div className={styles.lit}>
           <span>Illuminated</span>

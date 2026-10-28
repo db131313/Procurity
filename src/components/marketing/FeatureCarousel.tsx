@@ -11,16 +11,13 @@ import {
   type RefObject,
 } from "react";
 import Link from "next/link";
-import { SLIDES, uniqueVideos } from "@/content/carousel";
+import { LAYOUT, SLIDES, uniqueVideos } from "@/content/carousel";
 import { PhoneScreen } from "./phone-screens";
 import { cn } from "@/lib/cn";
 import styles from "./FeatureCarousel.module.css";
 
 const INT = 7000;
 const N = SLIDES.length;
-
-/** Phone Measure screen cam still uses field footage, not the bg-measure poster. */
-const MEASURE_CAM_POSTER = "/home/field-3.jpg";
 
 function prefersReducedMotion() {
   if (typeof window === "undefined") return true;
@@ -33,9 +30,11 @@ type Props = {
 };
 
 /**
- * Full-bleed carousel hero: centered phone + caption pill (no slide headlines).
- * Phone screens are CSS-animated 7s timelines restarted via `.scPlay`.
- * Each slide has its own video, duration, and object-position focus.
+ * Full-bleed carousel hero.
+ * LAYOUT 'split' (default): phone on the right, big bold caption on the left.
+ * LAYOUT 'center': phone centered, caption under it.
+ * Mobile always centers the phone with caption top-left.
+ * Phone screens are CSS-animated timelines restarted via `.scPlay`.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
@@ -55,7 +54,6 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
 
   const videos = useMemo(() => uniqueVideos(SLIDES), []);
 
-  /** First focus per unique video key (for object-position). */
   const focusByKey = useMemo(() => {
     const m = new Map<string, string>();
     for (const s of SLIDES) {
@@ -103,7 +101,6 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     return () => io.disconnect();
   }, []);
 
-  // Caption crossfade + restart phone timeline when slide changes
   useEffect(() => {
     setCapOpacity(0);
     const t = setTimeout(() => {
@@ -114,7 +111,6 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     return () => clearTimeout(t);
   }, [cur]);
 
-  // Play / pause / prefetch / reset currentTime on activate
   useEffect(() => {
     const slide = SLIDES[cur]!;
     const key = slide.video.mp4;
@@ -125,15 +121,13 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       v.classList.toggle(styles.bgvOn, on);
       if (on) {
         v.preload = "auto";
-        // Reset to 0 when this slide becomes active (and video element changed or re-entered)
         if (prevKey !== key && v.currentTime > 0) {
           try {
             v.currentTime = 0;
           } catch {
-            /* ignore seek errors */
+            /* ignore */
           }
         }
-        // Update crop for this slide's focus
         v.style.objectPosition = slide.focus || "50% 50%";
         if (vis && !reduced) void v.play().catch(() => {});
       } else {
@@ -153,7 +147,6 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     return () => clearTimer();
   }, [cur, vis, ready, reduced, arm, clearTimer]);
 
-  // intro-done: restart tab progress + phone timeline + arm
   useEffect(() => {
     if (!ready) return;
     setTabKey((k) => k + 1);
@@ -185,6 +178,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       ref={carRef}
       className={cn(styles.car, (!vis || !ready) && styles.paused)}
       id="car"
+      data-layout={LAYOUT}
       aria-roledescription="carousel"
       aria-label="App walkthrough"
       data-testid="feature-carousel"
@@ -295,7 +289,6 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                     <PhoneScreen
                       id={id}
                       screenshot={slide?.screenshot || undefined}
-                      measurePoster={MEASURE_CAM_POSTER}
                     />
                   </div>
                 );
@@ -333,11 +326,11 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 ["--dur" as string]: `${(s.duration || INT) / 1000}s`,
               } as CSSProperties
             }
+            aria-label={s.label}
             aria-selected={i === cur}
             data-testid={`car-tab-${i}`}
             onClick={() => go(i)}
           >
-            <span>{s.label}</span>
             <i />
           </button>
         ))}

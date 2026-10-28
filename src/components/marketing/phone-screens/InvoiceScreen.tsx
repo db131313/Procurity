@@ -50,6 +50,7 @@ export function InvoiceScreen() {
         </div>
       </div>
       <div className={`${styles.toast} ${styles.t1}`}>Payment link sent</div>
+      <div className={`${styles.toast} ${styles.t2}`}>Invoice sent to head office</div>
       <div className={`${styles.cta2} ${styles.press}`}>Send payment link</div>
     </div>
   );

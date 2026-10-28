@@ -11,11 +11,9 @@ import styles from "../FeatureCarousel.module.css";
 export function PhoneScreen({
   id,
   screenshot,
-  measurePoster,
 }: {
   id: CarouselScreenId;
   screenshot?: string;
-  measurePoster: string;
 }) {
   if (screenshot) {
     return (
@@ -27,7 +25,7 @@ export function PhoneScreen({
     case "discover":
       return <DiscoverScreen />;
     case "measure":
-      return <MeasureScreen poster={measurePoster} />;
+      return <MeasureScreen />;
     case "design":
       return <DesignScreen />;
     case "quote":
