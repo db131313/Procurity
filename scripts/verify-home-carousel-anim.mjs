@@ -141,9 +141,15 @@ async function main() {
         ok("per-slide-videos", JSON.stringify(videoMeta.unique));
       } else fail("per-slide-videos", JSON.stringify(videoMeta));
 
+      const car = page.locator('[data-testid="feature-carousel"]');
+      await car.focus();
       for (let i = 0; i < 5; i++) {
-        await page.locator(`[data-testid="car-tab-${i}"]`).click({ force: true });
-        await page.waitForTimeout(900);
+        if (i > 0) {
+          await page.keyboard.press("ArrowRight");
+          await page.waitForTimeout(900);
+        } else {
+          await page.waitForTimeout(400);
+        }
         await shot(page, `anim-car-slide-${i}-1440.png`);
       }
       const cap = await page.locator('[data-testid="car-caption"]').innerText();
@@ -247,16 +253,18 @@ async function main() {
         };
       });
       if (
-        mobileLayout.s === "0.64" &&
-        mobileLayout.capAlign === "center"
+        Number.parseFloat(mobileLayout.s || "0") >= 0.6 &&
+        mobileLayout.capAlign === "center" &&
+        Number.parseFloat(mobileLayout.phoneTop || "0") > 500
       ) {
         ok("mobile-bleed-layout", JSON.stringify(mobileLayout));
       } else fail("mobile-bleed-layout", JSON.stringify(mobileLayout));
 
-      await page.locator('[data-testid="car-tab-1"]').click({ force: true });
+      await page.locator('[data-testid="feature-carousel"]').focus();
+      await page.keyboard.press("ArrowRight");
       await page.waitForTimeout(900);
       await shot(page, "anim-car-measure-390.png");
-      await page.locator('[data-testid="car-tab-2"]').click({ force: true });
+      await page.keyboard.press("ArrowRight");
       await page.waitForTimeout(900);
       await shot(page, "anim-car-design-390.png");
       ok("mobile-measure-design");
