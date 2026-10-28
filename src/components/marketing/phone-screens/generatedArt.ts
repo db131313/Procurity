@@ -20,87 +20,137 @@ function svgEl(parent: Element, tag: string, attrs: Attrs) {
   return e;
 }
 
-/** Dark city map: blocks, buildings, arterials, river, park, selected lot, street labels. */
-export function buildMap(svg: SVGSVGElement | null, patternId = "pcm-pk") {
+/**
+ * Light Apple-Maps-style city map: cream land, white streets, warm yellow arterials,
+ * river, park, soft-shadow buildings, the dark selected site and street labels.
+ */
+export function buildMap(svg: SVGSVGElement | null, filterId = "pcm-bsh") {
   if (!svg || svg.dataset.done) return;
   svg.dataset.done = "1";
   const R = rng(7);
   const el = (t: string, a: Attrs) => svgEl(svg, t, a);
+  const shadow = `url(#${filterId})`;
 
-  el("rect", { width: 390, height: 844, fill: "#0F1112" });
+  const defs = el("defs", {});
+  const filter = svgEl(defs, "filter", {
+    id: filterId,
+    x: "-20%",
+    y: "-20%",
+    width: "140%",
+    height: "150%",
+  });
+  svgEl(filter, "feDropShadow", {
+    dx: 2,
+    dy: 3,
+    stdDeviation: 1.6,
+    "flood-color": "#6b6250",
+    "flood-opacity": 0.35,
+  });
+
+  el("rect", { width: 390, height: 844, fill: "#F0EDE5" });
   const xs = [-20, 50, 118, 190, 262, 330, 400];
   const ys = [60, 130, 200, 270, 340, 410, 480, 550, 620, 690, 760, 830];
+  const park = { i: 3, j: 6 };
   for (let i = 0; i < xs.length - 1; i++) {
     for (let j = 0; j < ys.length - 1; j++) {
-      const x = xs[i]! + 7;
-      const y = ys[j]! + 7;
-      const w = xs[i + 1]! - xs[i]! - 14;
-      const h = ys[j + 1]! - ys[j]! - 14;
-      el("rect", { x, y, width: w, height: h, rx: 3, fill: "#15181A" });
-      const n = 1 + Math.floor(R() * 3);
+      const x = xs[i]! + 6;
+      const y = ys[j]! + 6;
+      const w = xs[i + 1]! - xs[i]! - 12;
+      const h = ys[j + 1]! - ys[j]! - 12;
+      if (i === park.i && j === park.j) {
+        el("rect", { x, y, width: w, height: h, rx: 6, fill: "#CFE6C0" });
+        for (let k = 0; k < 16; k++) {
+          el("circle", {
+            cx: x + 8 + R() * (w - 16),
+            cy: y + 8 + R() * (h - 16),
+            r: 4 + R() * 3,
+            fill: "#B6D7A3",
+          });
+        }
+        el("path", {
+          d: `M${x} ${y + h * 0.6}Q${x + w * 0.5} ${y + h * 0.3} ${x + w} ${y + h * 0.5}`,
+          stroke: "#EFE9D6",
+          "stroke-width": 3,
+          fill: "none",
+        });
+        continue;
+      }
+      el("rect", { x, y, width: w, height: h, rx: 4, fill: "#E7E2D7" });
+      const n = 2 + Math.floor(R() * 3);
       for (let k = 0; k < n; k++) {
-        const bw = 12 + R() * w * 0.5;
-        const bh = 10 + R() * h * 0.5;
+        const bw = 14 + R() * w * 0.45;
+        const bh = 12 + R() * h * 0.45;
+        const bx = x + 4 + R() * (w - bw - 8);
+        const by = y + 4 + R() * (h - bh - 8);
         el("rect", {
-          x: x + 3 + R() * (w - bw - 6),
-          y: y + 3 + R() * (h - bh - 6),
+          x: bx,
+          y: by,
           width: bw,
           height: bh,
           rx: 2,
-          fill: R() < 0.25 ? "#22262A" : "#1B1E21",
+          fill: R() < 0.3 ? "#F7F5EF" : "#FBFAF6",
+          filter: shadow,
         });
       }
     }
   }
-  for (const x of [118, 262]) {
-    el("rect", { x: x - 3, y: 0, width: 6, height: 844, fill: "#23272B" });
-  }
-  for (const y of [270, 550]) {
-    el("rect", { x: 0, y: y - 3, width: 390, height: 6, fill: "#23272B" });
-  }
-  const river = "M-20 452 C 90 410, 190 480, 410 396";
-  el("path", { d: river, fill: "none", stroke: "#2A2E32", "stroke-width": 40 });
-  el("path", { d: river, fill: "none", stroke: "#0A0B0C", "stroke-width": 36 });
 
-  const defs = svgEl(svg, "defs", {});
-  const pattern = svgEl(defs, "pattern", {
-    id: patternId,
-    width: 7,
-    height: 7,
-    patternUnits: "userSpaceOnUse",
+  const river = "M-20 452 C 90 410, 190 480, 410 396";
+  el("path", {
+    d: river,
+    fill: "none",
+    stroke: "#9FCBE6",
+    "stroke-width": 46,
+    "stroke-linecap": "round",
   });
-  svgEl(pattern, "circle", { cx: 3, cy: 3, r: 1.2, fill: "#3a3f44" });
-  el("rect", { x: 197, y: 557, width: 58, height: 56, rx: 3, fill: `url(#${patternId})` });
+  el("path", { d: river, fill: "none", stroke: "#B4D9EE", "stroke-width": 38 });
+
+  const road = (d: string, w: number, c = "#fff") => {
+    el("path", { d, fill: "none", stroke: "#D8D2C4", "stroke-width": w + 2.5, "stroke-linecap": "butt" });
+    el("path", { d, fill: "none", stroke: c, "stroke-width": w });
+  };
+  for (const x of xs) road(`M${x} 0V844`, 7);
+  for (const y of ys) road(`M0 ${y}H390`, 7);
+  road("M118 0V844", 11, "#FFF3CF");
+  road("M0 550H390", 11, "#FFF3CF");
+  road("M262 0V844", 9);
+  road("M0 270H390", 9);
+  road("M30 840L390 560", 8);
 
   el("rect", {
-    x: 196,
-    y: 316,
-    width: 36,
-    height: 28,
-    rx: 3,
-    fill: "rgba(255,255,255,.16)",
-    stroke: "rgba(255,255,255,.7)",
-    "stroke-width": 1.5,
+    x: xs[3]! + 7,
+    y: ys[3]! + 7,
+    width: xs[4]! - xs[3]! - 14,
+    height: ys[4]! - ys[3]! - 14,
+    rx: 4,
+    fill: "#E7E2D7",
   });
+  el("rect", { x: 200, y: 312, width: 34, height: 30, rx: 2, fill: "#26282B", filter: shadow });
 
-  const tx = (x: number, y: number, t: string, rot?: number) => {
+  const tx = (x: number, y: number, t: string, rot?: number, c = "#70757A") => {
     const e = el("text", {
       x,
       y,
-      fill: "#5E646A",
-      "font-size": 9,
+      fill: c,
+      "font-size": 9.5,
+      "font-weight": 600,
       "font-family": "Inter,system-ui,sans-serif",
-      "letter-spacing": ".06em",
+      "letter-spacing": ".05em",
+      "paint-order": "stroke",
+      stroke: "#fff",
+      "stroke-width": 3,
+      "stroke-linejoin": "round",
       transform: rot ? `rotate(${rot} ${x} ${y})` : "",
     });
     e.textContent = t;
   };
-  tx(124, 200, "N CLARK ST", -90);
-  tx(268, 420, "N LA SALLE ST", -90);
-  tx(10, 266, "W HUBBARD ST");
-  tx(10, 546, "W KINZIE ST");
-  tx(40, 436, "CHICAGO RIVER", -9);
-  tx(205, 596, "PARK");
+  tx(124, 214, "N CLARK ST", -90);
+  tx(268, 430, "N LA SALLE ST", -90);
+  tx(12, 266, "W HUBBARD ST");
+  tx(12, 546, "W KINZIE ST");
+  tx(40, 440, "Chicago River", -9, "#5E9BC4");
+  tx(205, 590, "Park", 0, "#6E9F5A");
+  tx(300, 260, "River North", 0, "#8A8F94");
 }
 
 /** Jittered triangle mesh for the AR scan; each triangle gets its own shimmer delay via --d. */

@@ -46,7 +46,7 @@ export type CarouselSlide = {
 export const SLIDES: CarouselSlide[] = [
   {
     label: "Discover",
-    caption: "On site",
+    caption: "Find who's buying",
     screen: "discover",
     duration: 10000,
     focus: "50% 40%",
@@ -60,7 +60,7 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Measure",
-    caption: "Measuring",
+    caption: "Measure",
     screen: "measure",
     duration: 5800,
     focus: "50% 40%",
@@ -72,7 +72,7 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Design",
-    caption: "Designing",
+    caption: "Design",
     screen: "design",
     duration: 10000,
     focus: "50% 45%",
@@ -84,7 +84,7 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Quote",
-    caption: "Quoting",
+    caption: "Quote",
     screen: "quote",
     duration: 10000,
     focus: "50% 45%",
@@ -96,7 +96,7 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Invoice",
-    caption: "Invoicing",
+    caption: "Invoice",
     screen: "invoice",
     duration: 10000,
     focus: "50% 45%",
