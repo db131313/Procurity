@@ -1,42 +1,49 @@
+"use client";
+
+import { useEffect, useRef, type CSSProperties } from "react";
 import styles from "../FeatureCarousel.module.css";
 import { StatusBar } from "./StatusBar";
+import { buildMap } from "./generatedArt";
 
-const PINS: Array<{ left: number; top: number; d: string; sel?: boolean }> = [
-  { left: 90, top: 200, d: ".2s" },
-  { left: 270, top: 176, d: ".35s" },
-  { left: 310, top: 250, d: ".5s" },
-  { left: 150, top: 290, d: ".65s" },
-  { left: 215, top: 330, d: ".8s", sel: true },
-  { left: 70, top: 380, d: ".95s" },
-  { left: 290, top: 400, d: "1.1s" },
-  { left: 130, top: 460, d: "1.25s" },
+const PINS: Array<{ left: number; top: number; d: string; score: number; sel?: boolean }> = [
+  { left: 80, top: 170, d: ".3s", score: 61 },
+  { left: 300, top: 190, d: ".55s", score: 74 },
+  { left: 150, top: 250, d: ".8s", score: 88 },
+  { left: 320, top: 300, d: "1.05s", score: 67 },
+  { left: 215, top: 330, d: "1.3s", score: 92, sel: true },
+  { left: 70, top: 380, d: "1.55s", score: 81 },
+  { left: 290, top: 430, d: "1.8s", score: 58 },
+  { left: 150, top: 490, d: "2.05s", score: 70 },
 ];
 
 export function DiscoverScreen() {
+  const mapRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    buildMap(mapRef.current);
+  }, []);
+
   return (
     <>
-      <StatusBar />
-      <div className={styles.mapbg}>
-        <u style={{ left: "14%", top: "26%", ["--k" as string]: 1.2 }} />
-        <u style={{ left: "56%", top: "20%", ["--k" as string]: 1.5 }} />
-        <u style={{ left: "40%", top: "44%", ["--k" as string]: 0.9 }} />
-        <u style={{ left: "18%", top: "52%", ["--k" as string]: 1.1 }} />
-        <u style={{ left: "66%", top: "46%", ["--k" as string]: 1 }} />
-      </div>
-      <div className={styles.pins}>
-        {PINS.map((p, i) => (
-          <p
-            key={i}
-            className={p.sel ? styles.sel : undefined}
-            style={{
-              left: p.left,
-              top: p.top,
-              ["--d" as string]: p.d,
-            }}
-          />
+      <div className={styles.mz}>
+        <svg ref={mapRef} className={styles.mapart} viewBox="0 0 390 844" aria-hidden />
+        <div className={styles.me} />
+        {PINS.map((p) => (
+          <div
+            key={p.score}
+            className={p.sel ? `${styles.bg} ${styles.sel}` : styles.bg}
+            style={{ left: p.left, top: p.top, ["--d" as string]: p.d } as CSSProperties}
+          >
+            <i>{p.score}</i>
+          </div>
         ))}
       </div>
-      <div className={styles.pill1}>Search the map</div>
+      <StatusBar />
+      <div className={styles.fr}>
+        <span className={styles.frOn}>Commercial</span>
+        <span>Score 80+</span>
+        <span>Signs</span>
+      </div>
       <div className={styles.sheet}>
         <div className={styles.hd}>
           <span className={styles.bd} />
@@ -46,20 +53,19 @@ export function DiscoverScreen() {
           </div>
         </div>
         <div className={styles.st3}>
-          <div style={{ ["--i" as string]: 0 }}>
+          <div style={{ ["--i" as string]: 0 } as CSSProperties}>
             <b>$48M</b>Value
           </div>
-          <div style={{ ["--i" as string]: 1 }}>
+          <div style={{ ["--i" as string]: 1 } as CSSProperties}>
             <b>Framing</b>Phase
           </div>
-          <div style={{ ["--i" as string]: 2 }}>
+          <div style={{ ["--i" as string]: 2 } as CSSProperties}>
             <b>6 wks</b>To buy
           </div>
         </div>
-        <div className={`${styles.cta} ${styles.s1btn} ${styles.press}`}>
-          Start job
-        </div>
+        <div className={`${styles.cta} ${styles.s1btn} ${styles.press}`}>Start job</div>
       </div>
+      <div className={`${styles.toast} ${styles.d1}`}>Job started: Mixed-use tower</div>
     </>
   );
 }

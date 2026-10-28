@@ -1,14 +1,20 @@
 /**
  * Feature carousel content — edit ONLY this file to swap videos, captions, or screens.
  *
- * - label:      tab name along the bottom
- * - caption:    1–2 words under the phone
- * - video:      { webm, mp4, poster } — slides sharing mp4 share one <video>
+ * - label:      accessible name of the bottom progress bar (not shown as text)
+ * - caption:    1–2 words shown as the big caption
+ * - video:      { webm, mp4, poster, webm640?, mp4640? } — same mp4 → one <video>
  * - screen:     discover | measure | design | quote | invoice
  * - duration:   ms this slide stays up (match the clip length so the story finishes)
  * - focus:      CSS object-position for the video crop on wide screens
  * - screenshot: optional image path; replaces the animated phone screen when set
+ *
+ * LAYOUT (FeatureCarousel): 'split' = phone right + big caption left (desktop);
+ * 'center' = phone centered, caption under it. Mobile always centers the phone.
  */
+
+/** Desktop layout: 'split' (default) or 'center'. */
+export const LAYOUT: "split" | "center" = "split";
 
 export type CarouselScreenId =
   | "discover"
@@ -47,7 +53,9 @@ export const SLIDES: CarouselSlide[] = [
     video: {
       webm: "/home/field-3.webm",
       mp4: "/home/field-3.mp4",
-      poster: "/home/field-3.jpg",
+      webm640: "/home/field-3-640.webm",
+      mp4640: "/home/field-3-640.mp4",
+      poster: "/home/field-3.webp",
     },
   },
   {

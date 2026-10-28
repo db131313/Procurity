@@ -89,6 +89,31 @@ async function main() {
         ok("map-peek-56", JSON.stringify(peek));
       } else fail("map-peek-56", JSON.stringify(peek));
 
+      const layout = await page.evaluate(() => {
+        const car = document.querySelector("[data-testid=feature-carousel]");
+        const phs = car?.querySelector("[class*='phs']");
+        const cap = document.querySelector("[data-testid=car-caption]");
+        const tabs = [...document.querySelectorAll('[role="tab"]')];
+        const pr = phs ? getComputedStyle(phs) : null;
+        const cr = cap ? getComputedStyle(cap) : null;
+        return {
+          dataLayout: car?.getAttribute("data-layout"),
+          phoneRight: pr?.right,
+          capFontSize: cr?.fontSize,
+          capFontWeight: cr?.fontWeight,
+          tabLabelsVisible: tabs.map((t) => (t.textContent || "").trim()),
+          tabAria: tabs.map((t) => t.getAttribute("aria-label")),
+        };
+      });
+      if (
+        layout.dataLayout === "split" &&
+        layout.tabAria?.includes("Discover") &&
+        layout.tabLabelsVisible.every((t) => t === "") &&
+        Number.parseFloat(layout.capFontSize || "0") >= 40
+      ) {
+        ok("split-layout-unlabeled-tabs", JSON.stringify(layout));
+      } else fail("split-layout-unlabeled-tabs", JSON.stringify(layout));
+
       const videoMeta = await page.evaluate(() => {
         const vids = [
           ...document.querySelectorAll(
