@@ -1,37 +1,35 @@
 # Feature carousel
 
-The homepage **hero** is `FeatureCarousel` (full `100svh`). An intro blob overlay covers first paint; after reveal, the carousel auto-advances.
+The homepage **hero** is `FeatureCarousel` at `calc(100svh - 56px)` so ~56px of the swarm map peeks below. An intro blob covers first paint; after reveal, the carousel auto-advances.
 
-## Swap a video, copy, or screen
+## Swap a video, caption, or screen
 
 Edit **only** [`src/content/carousel.ts`](../src/content/carousel.ts).
 
 | Field | Meaning |
 | --- | --- |
-| `label` | Tab label + pill text |
-| `title` / `body` | Keep short (3–4 word title, one short body line) |
-| `screen` | Phone UI: `discover` \| `measure` \| `design` \| `quote` \| `invoice` |
-| `video` | `{ webm, mp4, poster, webm640?, mp4640? }` — slides that share the same `mp4` reuse **one** `<video>` |
-| `screenshot` | Optional image; replaces the drawn phone screen |
-| `cta` | Optional `{ label, href }` (Invoice → `/signup`) |
+| `label` | Bottom tab name |
+| `caption` | 1–2 words in the pill under the phone |
+| `screen` | Animated phone UI: `discover` \| `measure` \| `design` \| `quote` \| `invoice` |
+| `video` | `{ webm, mp4, poster, webm640?, mp4640? }` — same `mp4` → one shared `<video>` |
+| `screenshot` | Optional image; replaces the animated screen |
 
-Phone UIs: `src/components/marketing/phone-screens/`.
+There is **no** slide headline/body/CTA — only the phone + caption + tabs.
+
+Phone UIs: `src/components/marketing/phone-screens/` (pure CSS 7s timelines; `.scPlay` restarts on each open).
+
+## Layout
+
+- Phone centered (`--s: .8` desktop / `.46` mobile, `--phone-top`)
+- Tabs centered along the bottom; App Store line on desktop near tabs
 
 ## Media
 
-Versioned under `public/home/` (`field-3-v2.*`) so immutable CDN caches bust after re-encode.
-
-- Desktop: `field-3-v2.mp4` / `.webm` (≤ ~1.5MB)
-- Mobile: `field-3-v2-640.*` via `media="(max-width:820px)"`
-- Poster: `field-3-v2.webp` (preloaded on first paint)
-
-Netlify: `/home/*` → `Cache-Control: public, max-age=31536000, immutable`.
+Versioned under `public/home/` (`field-3-v2.*`). Netlify: `/home/*` immutable cache.
 
 ## Behavior
 
-- Intro: blob grows ≥3s, waits up to +2s for first video, CSS `introOut` at 7s as fallback
-- Auto-advance every 7s **starts only after** intro reveal (`ready`)
-- Prefetch next slide’s video (`preload="auto"`)
-- `pointerdown` retries `play()` (iOS Low Power Mode)
-- Phone: right side desktop (scale .8); **centered** on mobile (scale .46)
-- `prefers-reduced-motion`: short intro (~300ms), posters only, no auto-advance
+- Intro ≥3s (+2s wait for video); CSS `introOut` at 7s fallback
+- Auto-advance every 7s starts only after intro reveal
+- Prefetch next slide’s video; `pointerdown` retries `play()`
+- `prefers-reduced-motion`: short intro, posters, animations jump to end

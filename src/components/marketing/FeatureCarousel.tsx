@@ -24,26 +24,26 @@ function prefersReducedMotion() {
 }
 
 type Props = {
-  /** Intro finished — fade in UI and start 7s auto-advance / tab progress. */
   ready: boolean;
-  /** Expose first background <video> so intro can wait for readyState. */
   firstVideoRef?: RefObject<HTMLVideoElement | null>;
 };
 
 /**
- * Full-viewport feature carousel hero. Slide content: src/content/carousel.ts.
- * Slides that share a video file reuse ONE <video> element.
+ * Full-bleed carousel hero: centered phone + caption pill (no slide headlines).
+ * Phone screens are CSS-animated 7s timelines restarted via `.scPlay`.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
   const videoByKey = useRef<Map<string, HTMLVideoElement>>(new Map());
-  const measureRef = useRef<HTMLVideoElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchX0 = useRef<number | null>(null);
   const [cur, setCur] = useState(0);
-  const [vis, setVis] = useState(true); // hero starts in view
+  const [vis, setVis] = useState(true);
   const [reduced, setReduced] = useState(true);
   const [tabKey, setTabKey] = useState(0);
+  const [playKey, setPlayKey] = useState(0);
+  const [capText, setCapText] = useState(SLIDES[0]!.caption);
+  const [capOpacity, setCapOpacity] = useState(1);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const iosUrl = process.env.NEXT_PUBLIC_IOS_APP_URL?.trim() || "";
 
@@ -87,11 +87,21 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     return () => io.disconnect();
   }, []);
 
-  // Play / pause / prefetch when slide or visibility changes
+  // Caption crossfade + restart phone timeline when slide changes
+  useEffect(() => {
+    setCapOpacity(0);
+    const t = setTimeout(() => {
+      setCapText(SLIDES[cur]!.caption);
+      setCapOpacity(1);
+    }, 160);
+    setPlayKey((k) => k + 1);
+    return () => clearTimeout(t);
+  }, [cur]);
+
+  // Play / pause / prefetch
   useEffect(() => {
     const slide = SLIDES[cur]!;
     const key = slide.video.mp4;
-    const active = videoByKey.current.get(key) ?? null;
 
     for (const [k, v] of videoByKey.current) {
       const on = k === key;
@@ -104,20 +114,10 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       }
     }
 
-    // Prefetch next distinct video
     const nextSlide = SLIDES[(cur + 1) % N]!;
     if (nextSlide.video.mp4 !== key) {
       const nx = videoByKey.current.get(nextSlide.video.mp4);
       if (nx) nx.preload = "auto";
-    }
-
-    const pv = measureRef.current;
-    if (pv) {
-      if (slide.screen === "measure" && vis && !reduced) {
-        void pv.play().catch(() => {});
-      } else {
-        pv.pause();
-      }
     }
 
     if (vis && ready) arm();
@@ -125,21 +125,18 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     return () => clearTimer();
   }, [cur, vis, ready, reduced, arm, clearTimer]);
 
-  // intro-done: restart tab progress animation + arm
+  // intro-done: restart tab progress + phone timeline + arm
   useEffect(() => {
     if (!ready) return;
     setTabKey((k) => k + 1);
+    setPlayKey((k) => k + 1);
     arm();
   }, [ready, arm]);
 
   const tryPlay = useCallback(() => {
     if (reduced) return;
     const key = SLIDES[cur]!.video.mp4;
-    const v = videoByKey.current.get(key);
-    void v?.play().catch(() => {});
-    if (SLIDES[cur]!.screen === "measure") {
-      void measureRef.current?.play().catch(() => {});
-    }
+    void videoByKey.current.get(key)?.play().catch(() => {});
   }, [cur, reduced]);
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -152,7 +149,9 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     }
   };
 
-  const measureSlide = SLIDES.find((s) => s.screen === "measure") ?? SLIDES[1]!;
+  const measurePoster =
+    SLIDES.find((s) => s.screen === "measure")?.video.poster ??
+    SLIDES[0]!.video.poster;
   const activePoster = SLIDES[cur]!.video.poster;
   const activeKey = SLIDES[cur]!.video.mp4;
 
@@ -180,7 +179,6 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       }}
     >
       <div className={styles.bgs} aria-hidden>
-        {/* Poster until the active shared video is playing */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className={styles.poster}
@@ -199,8 +197,9 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
               if (el) {
                 videoByKey.current.set(vid.mp4, el);
                 if (i === 0 && firstVideoRef) {
-                  (firstVideoRef as { current: HTMLVideoElement | null }).current =
-                    el;
+                  (
+                    firstVideoRef as { current: HTMLVideoElement | null }
+                  ).current = el;
                 }
               }
             }}
@@ -236,34 +235,6 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       </div>
 
       <div
-        className={cn(styles.cps, styles.reveal, ready && styles.revealOn)}
-        data-testid="car-copy"
-      >
-        {SLIDES.map((s, i) => (
-          <div key={s.label} className={cn(styles.cp, i === cur && styles.cpOn)}>
-            <b>{s.label}</b>
-            <h2>{s.title}</h2>
-            <p>{s.body}</p>
-            {s.cta ? (
-              <Link
-                href={s.cta.href}
-                className={cn(
-                  "b",
-                  "bw-btn-primary",
-                  "pc-press",
-                  "h-11",
-                  "px-6",
-                  "text-sm",
-                )}
-              >
-                {s.cta.label}
-              </Link>
-            ) : null}
-          </div>
-        ))}
-      </div>
-
-      <div
         className={cn(styles.phs, styles.reveal, ready && styles.revealOn)}
         aria-hidden={false}
       >
@@ -280,8 +251,12 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 const active = SLIDES[cur]?.screen === id;
                 return (
                   <div
-                    key={id}
-                    className={cn(styles.sc, active && styles.scOn)}
+                    key={`${id}-${active ? playKey : "x"}`}
+                    className={cn(
+                      styles.sc,
+                      active && styles.scOn,
+                      active && styles.scPlay,
+                    )}
                     data-screen={id}
                     data-testid={`car-screen-${id}`}
                     aria-hidden={!active}
@@ -289,12 +264,8 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                   >
                     <PhoneScreen
                       id={id}
-                      active={!!active}
                       screenshot={slide?.screenshot || undefined}
-                      measureVideo={measureSlide.video}
-                      measurePlay={active && ready}
-                      measureRef={measureRef}
-                      reducedMotion={reduced}
+                      measurePoster={measurePoster}
                     />
                   </div>
                 );
@@ -302,6 +273,14 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             </div>
           </div>
         </div>
+      </div>
+
+      <div
+        className={cn(styles.cap, styles.reveal, ready && styles.revealOn)}
+        aria-live="polite"
+        data-testid="car-caption"
+      >
+        <span style={{ opacity: capOpacity }}>{capText}</span>
       </div>
 
       <div

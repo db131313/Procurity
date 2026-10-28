@@ -1,7 +1,6 @@
 "use client";
 
-import type { RefObject } from "react";
-import type { CarouselScreenId, CarouselVideo } from "@/content/carousel";
+import type { CarouselScreenId } from "@/content/carousel";
 import { DiscoverScreen } from "./DiscoverScreen";
 import { MeasureScreen } from "./MeasureScreen";
 import { DesignScreen } from "./DesignScreen";
@@ -11,39 +10,24 @@ import styles from "../FeatureCarousel.module.css";
 
 export function PhoneScreen({
   id,
-  active,
   screenshot,
-  measureVideo,
-  measurePlay,
-  measureRef,
-  reducedMotion,
+  measurePoster,
 }: {
   id: CarouselScreenId;
-  active: boolean;
   screenshot?: string;
-  measureVideo: CarouselVideo;
-  measurePlay: boolean;
-  measureRef: RefObject<HTMLVideoElement | null>;
-  reducedMotion: boolean;
+  measurePoster: string;
 }) {
   if (screenshot) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img className={styles.shot} src={screenshot} alt="" data-active={active} />
+      <img className={styles.shot} src={screenshot} alt="" />
     );
   }
   switch (id) {
     case "discover":
       return <DiscoverScreen />;
     case "measure":
-      return (
-        <MeasureScreen
-          playVideo={measurePlay}
-          video={measureVideo}
-          videoRef={measureRef}
-          reducedMotion={reducedMotion}
-        />
-      );
+      return <MeasureScreen poster={measurePoster} />;
     case "design":
       return <DesignScreen />;
     case "quote":
