@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type RefObject,
 } from "react";
@@ -17,6 +18,9 @@ import styles from "./FeatureCarousel.module.css";
 
 const INT = 7000;
 const N = SLIDES.length;
+
+/** Phone Measure screen cam still uses field footage, not the bg-measure poster. */
+const MEASURE_CAM_POSTER = "/home/field-3.jpg";
 
 function prefersReducedMotion() {
   if (typeof window === "undefined") return true;
@@ -31,12 +35,14 @@ type Props = {
 /**
  * Full-bleed carousel hero: centered phone + caption pill (no slide headlines).
  * Phone screens are CSS-animated 7s timelines restarted via `.scPlay`.
+ * Each slide has its own video, duration, and object-position focus.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
   const videoByKey = useRef<Map<string, HTMLVideoElement>>(new Map());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchX0 = useRef<number | null>(null);
+  const prevKeyRef = useRef<string | null>(null);
   const [cur, setCur] = useState(0);
   const [vis, setVis] = useState(true);
   const [reduced, setReduced] = useState(true);
@@ -49,6 +55,15 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
 
   const videos = useMemo(() => uniqueVideos(SLIDES), []);
 
+  /** First focus per unique video key (for object-position). */
+  const focusByKey = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of SLIDES) {
+      if (!m.has(s.video.mp4)) m.set(s.video.mp4, s.focus);
+    }
+    return m;
+  }, []);
+
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -59,12 +74,13 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const arm = useCallback(() => {
     clearTimer();
     if (!reduced && vis && ready) {
+      const dur = SLIDES[cur]?.duration ?? INT;
       timerRef.current = setTimeout(() => {
         setCur((c) => (c + 1) % N);
         setTabKey((k) => k + 1);
-      }, INT);
+      }, dur);
     }
-  }, [clearTimer, reduced, vis, ready]);
+  }, [clearTimer, reduced, vis, ready, cur]);
 
   const go = useCallback((i: number) => {
     const next = ((i % N) + N) % N;
@@ -98,21 +114,33 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     return () => clearTimeout(t);
   }, [cur]);
 
-  // Play / pause / prefetch
+  // Play / pause / prefetch / reset currentTime on activate
   useEffect(() => {
     const slide = SLIDES[cur]!;
     const key = slide.video.mp4;
+    const prevKey = prevKeyRef.current;
 
     for (const [k, v] of videoByKey.current) {
       const on = k === key;
       v.classList.toggle(styles.bgvOn, on);
       if (on) {
         v.preload = "auto";
+        // Reset to 0 when this slide becomes active (and video element changed or re-entered)
+        if (prevKey !== key && v.currentTime > 0) {
+          try {
+            v.currentTime = 0;
+          } catch {
+            /* ignore seek errors */
+          }
+        }
+        // Update crop for this slide's focus
+        v.style.objectPosition = slide.focus || "50% 50%";
         if (vis && !reduced) void v.play().catch(() => {});
       } else {
         v.pause();
       }
     }
+    prevKeyRef.current = key;
 
     const nextSlide = SLIDES[(cur + 1) % N]!;
     if (nextSlide.video.mp4 !== key) {
@@ -149,9 +177,6 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     }
   };
 
-  const measurePoster =
-    SLIDES.find((s) => s.screen === "measure")?.video.poster ??
-    SLIDES[0]!.video.poster;
   const activePoster = SLIDES[cur]!.video.poster;
   const activeKey = SLIDES[cur]!.video.mp4;
 
@@ -212,6 +237,11 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             playsInline
             preload={i === 0 ? "auto" : "metadata"}
             poster={vid.poster}
+            style={
+              {
+                objectPosition: focusByKey.get(vid.mp4) || "50% 50%",
+              } as CSSProperties
+            }
             onPlaying={() => setPlayingKey(vid.mp4)}
           >
             {vid.webm640 ? (
@@ -265,7 +295,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                     <PhoneScreen
                       id={id}
                       screenshot={slide?.screenshot || undefined}
-                      measurePoster={measurePoster}
+                      measurePoster={MEASURE_CAM_POSTER}
                     />
                   </div>
                 );
@@ -298,6 +328,11 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
               i === cur && styles.tabOn,
               i < cur && styles.tabDone,
             )}
+            style={
+              {
+                ["--dur" as string]: `${(s.duration || INT) / 1000}s`,
+              } as CSSProperties
+            }
             aria-selected={i === cur}
             data-testid={`car-tab-${i}`}
             onClick={() => go(i)}

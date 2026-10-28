@@ -89,6 +89,41 @@ async function main() {
         ok("map-peek-56", JSON.stringify(peek));
       } else fail("map-peek-56", JSON.stringify(peek));
 
+      const videoMeta = await page.evaluate(() => {
+        const vids = [
+          ...document.querySelectorAll(
+            "[data-testid=feature-carousel] video source[type='video/mp4']",
+          ),
+        ]
+          .map((s) => s.getAttribute("src"))
+          .filter(Boolean);
+        const unique = [...new Set(vids)];
+        const tabs = [...document.querySelectorAll('[role="tab"]')].map(
+          (t) => getComputedStyle(t).getPropertyValue("--dur").trim(),
+        );
+        return { unique, tabs };
+      });
+      const expected = [
+        "/home/field-3.mp4",
+        "/home/bg-measure.mp4",
+        "/home/bg-design.mp4",
+        "/home/bg-quote.mp4",
+        "/home/bg-invoice.mp4",
+      ];
+      if (
+        expected.every((u) => videoMeta.unique.includes(u)) &&
+        videoMeta.unique.length >= 5
+      ) {
+        ok("per-slide-videos", JSON.stringify(videoMeta.unique));
+      } else fail("per-slide-videos", JSON.stringify(videoMeta));
+      if (
+        videoMeta.tabs[0] === "10s" &&
+        videoMeta.tabs[1] === "5.8s" &&
+        videoMeta.tabs.slice(2).every((d) => d === "10s")
+      ) {
+        ok("per-slide-dur", JSON.stringify(videoMeta.tabs));
+      } else fail("per-slide-dur", JSON.stringify(videoMeta.tabs));
+
       for (let i = 0; i < 5; i++) {
         await page.locator(`[data-testid="car-tab-${i}"]`).click();
         await page.waitForTimeout(500);

@@ -308,7 +308,7 @@
 }
 
 .tabOn i::after {
-  animation: fill 7s linear forwards;
+  animation: fill var(--dur, 7s) linear forwards;
 }
 
 .tabDone i::after {
