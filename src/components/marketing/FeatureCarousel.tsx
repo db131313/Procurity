@@ -30,26 +30,26 @@ type Props = {
 };
 
 /**
- * Full-bleed carousel hero.
- * LAYOUT 'split' (default): phone on the right, big bold caption on the left.
- * LAYOUT 'center': phone centered, caption under it.
- * Mobile always centers the phone with caption top-left.
- * Phone screens are CSS-animated timelines restarted via `.scPlay`.
+ * Full-bleed carousel hero with direction-aware horizontal slide transitions.
+ * Progress bars are hidden; navigate via swipe / arrow keys.
+ * LAYOUT 'split' | 'center'; mobile bleeds the phone off the bottom.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
   const videoByKey = useRef<Map<string, HTMLVideoElement>>(new Map());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchX0 = useRef<number | null>(null);
-  const prevKeyRef = useRef<string | null>(null);
+  const curRef = useRef(-1);
   const [cur, setCur] = useState(0);
   const [vis, setVis] = useState(true);
   const [reduced, setReduced] = useState(true);
-  const [tabKey, setTabKey] = useState(0);
   const [playKey, setPlayKey] = useState(0);
   const [capText, setCapText] = useState(SLIDES[0]!.caption);
-  const [capOpacity, setCapOpacity] = useState(1);
+  const [devSwap, setDevSwap] = useState<"none" | "out" | "in">("none");
+  const [capSwap, setCapSwap] = useState<"none" | "out" | "in">("none");
   const [playingKey, setPlayingKey] = useState<string | null>(null);
+  const [dir, setDir] = useState(1);
   const iosUrl = process.env.NEXT_PUBLIC_IOS_APP_URL?.trim() || "";
 
   const videos = useMemo(() => uniqueVideos(SLIDES), []);
@@ -71,20 +71,114 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
 
   const arm = useCallback(() => {
     clearTimer();
+    const i = curRef.current;
+    if (i < 0) return;
     if (!reduced && vis && ready) {
-      const dur = SLIDES[cur]?.duration ?? INT;
+      const dur = SLIDES[i]?.duration ?? INT;
       timerRef.current = setTimeout(() => {
-        setCur((c) => (c + 1) % N);
-        setTabKey((k) => k + 1);
+        goRef.current((i + 1) % N);
       }, dur);
     }
-  }, [clearTimer, reduced, vis, ready, cur]);
+  }, [clearTimer, reduced, vis, ready]);
 
-  const go = useCallback((i: number) => {
-    const next = ((i % N) + N) % N;
-    setCur(next);
-    setTabKey((k) => k + 1);
-  }, []);
+  const goRef = useRef<(i: number) => void>(() => {});
+
+  const go = useCallback(
+    (i: number) => {
+      const next = ((i % N) + N) % N;
+      const prev = curRef.current;
+      if (next === prev) return;
+
+      const first = prev < 0;
+      const fwd = first
+        ? 1
+        : (next - prev + N) % N <= N / 2
+          ? 1
+          : -1;
+      setDir(fwd);
+      carRef.current?.style.setProperty("--dir", String(fwd));
+
+      const slide = SLIDES[next]!;
+      const key = slide.video.mp4;
+      const prevKey = first ? null : SLIDES[prev]!.video.mp4;
+      const cv = videoByKey.current.get(key) ?? null;
+      const prevV = prevKey ? videoByKey.current.get(prevKey) ?? null : null;
+
+      if (cv && cv !== prevV && cv.currentTime > 0) {
+        try {
+          cv.currentTime = 0;
+        } catch {
+          /* ignore */
+        }
+      }
+
+      for (const [k, v] of videoByKey.current) {
+        if (k === key) {
+          v.classList.remove(styles.bgvTr);
+          v.style.transform = first
+            ? "translate3d(0,0,0)"
+            : `translate3d(${fwd * 100}%,0,0)`;
+          void v.offsetWidth;
+          if (!first) {
+            v.classList.add(styles.bgvTr);
+            v.style.transform = "translate3d(0,0,0)";
+          }
+          v.classList.add(styles.bgvOn);
+          v.preload = "auto";
+          v.style.objectPosition = slide.focus || "50% 50%";
+          if (vis && !reduced) void v.play().catch(() => {});
+        } else if (prevV && v === prevV) {
+          v.classList.add(styles.bgvTr);
+          v.style.transform = `translate3d(${-fwd * 100}%,0,0)`;
+          v.classList.remove(styles.bgvOn);
+          window.setTimeout(() => {
+            if (!v.classList.contains(styles.bgvOn)) v.pause();
+          }, 800);
+        } else {
+          v.classList.remove(styles.bgvTr, styles.bgvOn);
+          v.style.transform = `translate3d(${fwd * 100}%,0,0)`;
+          v.pause();
+        }
+      }
+
+      const nx = videoByKey.current.get(SLIDES[(next + 1) % N]!.video.mp4);
+      if (nx && nx !== cv) nx.preload = "auto";
+
+      curRef.current = next;
+      setCur(next);
+
+      if (swapTimerRef.current) {
+        clearTimeout(swapTimerRef.current);
+        swapTimerRef.current = null;
+      }
+
+      const applyScreen = () => {
+        setCapText(slide.caption);
+        setPlayKey((k) => k + 1);
+        if (!first && !reduced) {
+          setDevSwap("in");
+          setCapSwap("in");
+        } else {
+          setDevSwap("none");
+          setCapSwap("none");
+        }
+      };
+
+      if (first || reduced) {
+        applyScreen();
+      } else {
+        setDevSwap("out");
+        setCapSwap("out");
+        swapTimerRef.current = setTimeout(applyScreen, 260);
+      }
+
+      // re-arm after state settles
+      window.setTimeout(() => arm(), 0);
+    },
+    [vis, reduced, arm],
+  );
+
+  goRef.current = go;
 
   useEffect(() => {
     setReduced(prefersReducedMotion());
@@ -101,72 +195,47 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     return () => io.disconnect();
   }, []);
 
+  // Initial go(0) once videos are mounted
   useEffect(() => {
-    setCapOpacity(0);
-    const t = setTimeout(() => {
-      setCapText(SLIDES[cur]!.caption);
-      setCapOpacity(1);
-    }, 160);
-    setPlayKey((k) => k + 1);
-    return () => clearTimeout(t);
-  }, [cur]);
+    if (curRef.current >= 0) return;
+    const id = window.requestAnimationFrame(() => {
+      if (curRef.current < 0 && videoByKey.current.size > 0) go(0);
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [go, videos.length]);
 
   useEffect(() => {
-    const slide = SLIDES[cur]!;
-    const key = slide.video.mp4;
-    const prevKey = prevKeyRef.current;
-
-    for (const [k, v] of videoByKey.current) {
-      const on = k === key;
-      v.classList.toggle(styles.bgvOn, on);
-      if (on) {
-        v.preload = "auto";
-        if (prevKey !== key && v.currentTime > 0) {
-          try {
-            v.currentTime = 0;
-          } catch {
-            /* ignore */
-          }
-        }
-        v.style.objectPosition = slide.focus || "50% 50%";
-        if (vis && !reduced) void v.play().catch(() => {});
-      } else {
-        v.pause();
-      }
-    }
-    prevKeyRef.current = key;
-
-    const nextSlide = SLIDES[(cur + 1) % N]!;
-    if (nextSlide.video.mp4 !== key) {
-      const nx = videoByKey.current.get(nextSlide.video.mp4);
-      if (nx) nx.preload = "auto";
-    }
-
     if (vis && ready) arm();
     else clearTimer();
+    if (vis && !reduced) {
+      const key = SLIDES[curRef.current >= 0 ? curRef.current : 0]!.video.mp4;
+      void videoByKey.current.get(key)?.play().catch(() => {});
+    } else {
+      for (const v of videoByKey.current.values()) v.pause();
+    }
     return () => clearTimer();
-  }, [cur, vis, ready, reduced, arm, clearTimer]);
+  }, [vis, ready, reduced, arm, clearTimer]);
 
   useEffect(() => {
     if (!ready) return;
-    setTabKey((k) => k + 1);
     setPlayKey((k) => k + 1);
     arm();
   }, [ready, arm]);
 
   const tryPlay = useCallback(() => {
     if (reduced) return;
-    const key = SLIDES[cur]!.video.mp4;
+    const i = curRef.current >= 0 ? curRef.current : 0;
+    const key = SLIDES[i]!.video.mp4;
     void videoByKey.current.get(key)?.play().catch(() => {});
-  }, [cur, reduced]);
+  }, [reduced]);
 
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowRight") {
       e.preventDefault();
-      go(cur + 1);
+      go(curRef.current + 1);
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      go(cur - 1);
+      go(curRef.current - 1);
     }
   };
 
@@ -179,6 +248,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       className={cn(styles.car, (!vis || !ready) && styles.paused)}
       id="car"
       data-layout={LAYOUT}
+      style={{ ["--dir" as string]: dir } as CSSProperties}
       aria-roledescription="carousel"
       aria-label="App walkthrough"
       data-testid="feature-carousel"
@@ -193,7 +263,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         const x = e.changedTouches[0]?.clientX;
         if (x == null) return;
         const d = x - touchX0.current;
-        if (Math.abs(d) > 50) go(cur + (d < 0 ? 1 : -1));
+        if (Math.abs(d) > 50) go(curRef.current + (d < 0 ? 1 : -1));
         touchX0.current = null;
       }}
     >
@@ -215,17 +285,17 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             ref={(el) => {
               if (el) {
                 videoByKey.current.set(vid.mp4, el);
-                if (i === 0 && firstVideoRef) {
-                  (
-                    firstVideoRef as { current: HTMLVideoElement | null }
-                  ).current = el;
+                if (i === 0) {
+                  el.style.transform = "translate3d(0,0,0)";
+                  if (firstVideoRef) {
+                    (
+                      firstVideoRef as { current: HTMLVideoElement | null }
+                    ).current = el;
+                  }
                 }
               }
             }}
-            className={cn(
-              styles.bgv,
-              SLIDES[cur]!.video.mp4 === vid.mp4 && styles.bgvOn,
-            )}
+            className={styles.bgv}
             muted
             loop
             playsInline
@@ -262,7 +332,13 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         className={cn(styles.phs, styles.reveal, ready && styles.revealOn)}
         aria-hidden={false}
       >
-        <div className={styles.dev}>
+        <div
+          className={cn(
+            styles.dev,
+            devSwap === "out" && styles.devSwapOut,
+            devSwap === "in" && styles.devSwapIn,
+          )}
+        >
           <i className={styles.sb1} />
           <i className={styles.sb2} />
           <i className={styles.sb3} />
@@ -303,29 +379,28 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         aria-live="polite"
         data-testid="car-caption"
       >
-        <span style={{ opacity: capOpacity }}>{capText}</span>
+        <span
+          className={cn(
+            capSwap === "out" && styles.capSwapOut,
+            capSwap === "in" && styles.capSwapIn,
+          )}
+        >
+          {capText}
+        </span>
       </div>
 
       <div
-        className={cn(styles.tabs, styles.reveal, ready && styles.revealOn)}
+        className={styles.tabs}
         role="tablist"
         aria-label="Feature steps"
+        aria-hidden
       >
         {SLIDES.map((s, i) => (
           <button
-            key={`${s.label}-${i === cur ? tabKey : "x"}`}
+            key={s.label}
             type="button"
             role="tab"
-            className={cn(
-              styles.tab,
-              i === cur && styles.tabOn,
-              i < cur && styles.tabDone,
-            )}
-            style={
-              {
-                ["--dur" as string]: `${(s.duration || INT) / 1000}s`,
-              } as CSSProperties
-            }
+            className={styles.tab}
             aria-label={s.label}
             aria-selected={i === cur}
             data-testid={`car-tab-${i}`}

@@ -94,6 +94,7 @@ async function main() {
         const phs = car?.querySelector("[class*='phs']");
         const cap = document.querySelector("[data-testid=car-caption]");
         const tabs = [...document.querySelectorAll('[role="tab"]')];
+        const tabWrap = car?.querySelector('[role="tablist"]');
         const pr = phs ? getComputedStyle(phs) : null;
         const cr = cap ? getComputedStyle(cap) : null;
         return {
@@ -101,18 +102,20 @@ async function main() {
           phoneRight: pr?.right,
           capFontSize: cr?.fontSize,
           capFontWeight: cr?.fontWeight,
-          tabLabelsVisible: tabs.map((t) => (t.textContent || "").trim()),
+          capText: cap?.textContent?.trim(),
+          tabsDisplay: tabWrap ? getComputedStyle(tabWrap).display : null,
           tabAria: tabs.map((t) => t.getAttribute("aria-label")),
         };
       });
       if (
         layout.dataLayout === "split" &&
+        layout.tabsDisplay === "none" &&
         layout.tabAria?.includes("Discover") &&
-        layout.tabLabelsVisible.every((t) => t === "") &&
+        /who.?s buying/i.test(layout.capText || "") &&
         Number.parseFloat(layout.capFontSize || "0") >= 40
       ) {
-        ok("split-layout-unlabeled-tabs", JSON.stringify(layout));
-      } else fail("split-layout-unlabeled-tabs", JSON.stringify(layout));
+        ok("split-hidden-tabs-caption", JSON.stringify(layout));
+      } else fail("split-hidden-tabs-caption", JSON.stringify(layout));
 
       const videoMeta = await page.evaluate(() => {
         const vids = [
@@ -122,11 +125,7 @@ async function main() {
         ]
           .map((s) => s.getAttribute("src"))
           .filter(Boolean);
-        const unique = [...new Set(vids)];
-        const tabs = [...document.querySelectorAll('[role="tab"]')].map(
-          (t) => getComputedStyle(t).getPropertyValue("--dur").trim(),
-        );
-        return { unique, tabs };
+        return { unique: [...new Set(vids)] };
       });
       const expected = [
         "/home/field-3.mp4",
@@ -141,21 +140,35 @@ async function main() {
       ) {
         ok("per-slide-videos", JSON.stringify(videoMeta.unique));
       } else fail("per-slide-videos", JSON.stringify(videoMeta));
-      if (
-        videoMeta.tabs[0] === "10s" &&
-        videoMeta.tabs[1] === "5.8s" &&
-        videoMeta.tabs.slice(2).every((d) => d === "10s")
-      ) {
-        ok("per-slide-dur", JSON.stringify(videoMeta.tabs));
-      } else fail("per-slide-dur", JSON.stringify(videoMeta.tabs));
 
+      const car = page.locator('[data-testid="feature-carousel"]');
+      await car.focus();
       for (let i = 0; i < 5; i++) {
-        await page.locator(`[data-testid="car-tab-${i}"]`).click();
-        await page.waitForTimeout(500);
+        if (i > 0) {
+          await page.keyboard.press("ArrowRight");
+          await page.waitForTimeout(900);
+        } else {
+          await page.waitForTimeout(400);
+        }
         await shot(page, `anim-car-slide-${i}-1440.png`);
       }
       const cap = await page.locator('[data-testid="car-caption"]').innerText();
-      ok("desktop-five-slides", `last caption: ${cap}`);
+      if (cap.trim() === "Invoice") ok("desktop-five-slides", `last caption: ${cap}`);
+      else fail("desktop-five-slides", `last caption: ${cap}`);
+
+      // Direction-aware transition: active video near translateX 0
+      const slideTx = await page.evaluate(() => {
+        const on = document.querySelector(
+          "[data-testid=feature-carousel] video.bgvOn, [data-testid=feature-carousel] video",
+        );
+        // pick the video whose transform is closest to identity
+        const vids = [...document.querySelectorAll("[data-testid=feature-carousel] video")];
+        return vids.map((v) => ({
+          t: getComputedStyle(v).transform,
+          src: v.currentSrc || v.querySelector("source")?.getAttribute("src"),
+        }));
+      });
+      ok("slide-transforms-present", JSON.stringify(slideTx).slice(0, 400));
 
       await page
         .locator('[data-testid="home-swarm-section"]')
@@ -229,11 +242,30 @@ async function main() {
         ok("no-horizontal-scroll-390", JSON.stringify(overflow));
       else fail("no-horizontal-scroll-390", JSON.stringify(overflow));
 
-      await page.locator('[data-testid="car-tab-1"]').click();
-      await page.waitForTimeout(500);
+      const mobileLayout = await page.evaluate(() => {
+        const car = document.querySelector("[data-testid=feature-carousel]");
+        const phs = car?.querySelector("[class*='phs']");
+        const cap = document.querySelector("[data-testid=car-caption]");
+        return {
+          phoneTop: phs ? getComputedStyle(phs).top : null,
+          s: car ? getComputedStyle(car).getPropertyValue("--s").trim() : null,
+          capAlign: cap ? getComputedStyle(cap).textAlign : null,
+        };
+      });
+      if (
+        Number.parseFloat(mobileLayout.s || "0") >= 0.6 &&
+        mobileLayout.capAlign === "center" &&
+        Number.parseFloat(mobileLayout.phoneTop || "0") > 500
+      ) {
+        ok("mobile-bleed-layout", JSON.stringify(mobileLayout));
+      } else fail("mobile-bleed-layout", JSON.stringify(mobileLayout));
+
+      await page.locator('[data-testid="feature-carousel"]').focus();
+      await page.keyboard.press("ArrowRight");
+      await page.waitForTimeout(900);
       await shot(page, "anim-car-measure-390.png");
-      await page.locator('[data-testid="car-tab-2"]').click();
-      await page.waitForTimeout(500);
+      await page.keyboard.press("ArrowRight");
+      await page.waitForTimeout(900);
       await shot(page, "anim-car-design-390.png");
       ok("mobile-measure-design");
 
