@@ -31,19 +31,25 @@ type Props = {
 
 /**
  * Full-bleed carousel hero: per-slide header + caption (fade on change),
- * crossfading backgrounds (wait for paint), phone only during action window.
+ * crossfading backgrounds (wait for paint). Phone pops in at phone.in and
+ * stays until the next slide. Animated WebP fallback if autoplay is refused.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
   const phsRef = useRef<HTMLDivElement | null>(null);
+  const bgsRef = useRef<HTMLDivElement | null>(null);
   const videoByKey = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const imgByKey = useRef<Map<string, HTMLImageElement>>(new Map());
+  const blobified = useRef<WeakSet<HTMLVideoElement>>(new WeakSet());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tinRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tfadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchX0 = useRef<number | null>(null);
   const curRef = useRef(-1);
   const visRef = useRef(true);
+  const noVidRef = useRef(false);
+  const stuckRef = useRef(0);
+  const stallRef = useRef(0);
   const [cur, setCur] = useState(0);
   const [vis, setVis] = useState(true);
   const [reduced, setReduced] = useState(true);
@@ -54,13 +60,14 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const [copyOpacity, setCopyOpacity] = useState(1);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [onKey, setOnKey] = useState<string | null>(null);
+  const [useAnim, setUseAnim] = useState(false);
   const iosUrl = process.env.NEXT_PUBLIC_IOS_APP_URL?.trim() || "";
 
   const videos = useMemo(() => uniqueVideos(SLIDES), []);
 
   const playVideo = useCallback(
     (v: HTMLVideoElement | null | undefined) => {
-      if (reduced || !v) return;
+      if (reduced || !v || noVidRef.current) return;
       const p = v.play();
       if (p && typeof p.catch === "function") p.catch(() => {});
     },
@@ -76,9 +83,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
 
   const clearPhoneTimers = useCallback(() => {
     if (tinRef.current) clearTimeout(tinRef.current);
-    if (toutRef.current) clearTimeout(toutRef.current);
     tinRef.current = null;
-    toutRef.current = null;
   }, []);
 
   const applyPlaybackRate = useCallback((el: HTMLElement | null, speed: number) => {
@@ -119,11 +124,8 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         showPhone(i);
         return;
       }
-      tinRef.current = setTimeout(() => showPhone(i), Math.max(w.in, 500));
-      toutRef.current = setTimeout(
-        () => setPhoneShow(false),
-        Math.max(w.in + 800, w.out - 300),
-      );
+      // Phone stays until the next slide; fade out only happens in go()
+      tinRef.current = setTimeout(() => showPhone(i), Math.max(w.in, 900));
     },
     [clearPhoneTimers, reduced, showPhone],
   );
@@ -140,10 +142,92 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     }
   }, [clearArm, reduced, ready]);
 
+  const ensureAnimImg = useCallback((key: string) => {
+    let im = imgByKey.current.get(key);
+    if (im) return im;
+    const slide = SLIDES.find((s) => s.video.mp4 === key);
+    if (!slide?.video.anim || !bgsRef.current) return null;
+    im = document.createElement("img");
+    im.className = `${styles.bgv} ${styles.bgi}`;
+    im.alt = "";
+    im.decoding = "async";
+    im.style.objectPosition = slide.focus || "50% 50%";
+    im.dataset.src = slide.video.anim;
+    bgsRef.current.appendChild(im);
+    imgByKey.current.set(key, im);
+    return im;
+  }, []);
+
+  const switchToAnim = useCallback(() => {
+    if (noVidRef.current) return;
+    noVidRef.current = true;
+    setUseAnim(true);
+    for (const v of videoByKey.current.values()) {
+      v.pause();
+      v.style.display = "none";
+    }
+    const i = curRef.current >= 0 ? curRef.current : 0;
+    const key = SLIDES[i]!.video.mp4;
+    const im = ensureAnimImg(key);
+    if (im) {
+      im.removeAttribute("src");
+      im.src = im.dataset.src || "";
+      setOnKey(`anim:${key}`);
+      setPlayingKey(`anim:${key}`);
+    }
+  }, [ensureAnimImg]);
+
+  const blobify = useCallback(
+    (v: HTMLVideoElement) => {
+      if (blobified.current.has(v)) return;
+      blobified.current.add(v);
+      const src =
+        v.querySelector('source[type="video/mp4"]')?.getAttribute("src") ||
+        null;
+      if (!src) return;
+      fetch(src)
+        .then((r) => r.blob())
+        .then((b) => {
+          v.removeAttribute("src");
+          while (v.firstChild) v.removeChild(v.firstChild);
+          v.src = URL.createObjectURL(b);
+          v.load();
+          playVideo(v);
+        })
+        .catch(() => {});
+    },
+    [playVideo],
+  );
+
   /** Fade in only once the clip is painting (or after 1.5s fallback). */
   const reveal = useCallback(
     (i: number, key: string) => {
       if (tfadeRef.current) clearTimeout(tfadeRef.current);
+
+      if (noVidRef.current) {
+        const im = ensureAnimImg(key);
+        if (!im) {
+          setOnKey(`anim:${key}`);
+          return;
+        }
+        im.removeAttribute("src");
+        im.src = im.dataset.src || "";
+        const show = () => {
+          if (curRef.current !== i) return;
+          for (const [k, el] of imgByKey.current) {
+            el.classList.toggle(styles.bgvOn, k === key);
+          }
+          setOnKey(`anim:${key}`);
+          setPlayingKey(`anim:${key}`);
+        };
+        if (im.complete && im.naturalWidth) show();
+        else {
+          im.onload = show;
+          tfadeRef.current = setTimeout(show, 1500);
+        }
+        return;
+      }
+
       const cv = videoByKey.current.get(key);
       if (!cv) {
         setOnKey(key);
@@ -174,7 +258,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         tfadeRef.current = setTimeout(fin, 1500);
       }
     },
-    [playVideo],
+    [playVideo, ensureAnimImg],
   );
 
   const go = useCallback(
@@ -302,20 +386,37 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     };
   }, [playVideo]);
 
-  // Keep trying: if Safari pauses the active video, restart (never show a play button)
+  // Keep trying / escalate: pause-restart → blob URL → animated WebP (~2s paused)
   useEffect(() => {
     const kick = () => {
-      if (reduced || document.hidden || !visRef.current) return;
+      if (reduced || document.hidden || !visRef.current || noVidRef.current) return;
       const i = curRef.current >= 0 ? curRef.current : 0;
       const v = videoByKey.current.get(SLIDES[i]!.video.mp4);
-      if (v && v.paused) playVideo(v);
+      if (!v) return;
+      if (v.paused) {
+        playVideo(v);
+        // ~2s of stubborn pause (5 × 400ms) → switch carousel to animated WebP
+        if (ready && ++stuckRef.current >= 5) switchToAnim();
+      } else {
+        stuckRef.current = 0;
+        // playing but no data for ~3s (8 × 400ms) → fetch mp4 as blob
+        if (v.readyState < 2 && ready && ++stallRef.current >= 8) blobify(v);
+        else if (v.readyState >= 2) stallRef.current = 0;
+      }
     };
     const id = window.setInterval(kick, 400);
     const onPause = (e: Event) => {
       const el = e.target as HTMLVideoElement | null;
       const i = curRef.current >= 0 ? curRef.current : 0;
       const active = videoByKey.current.get(SLIDES[i]!.video.mp4);
-      if (el && el === active && visRef.current && !reduced && !document.hidden) {
+      if (
+        el &&
+        el === active &&
+        visRef.current &&
+        !reduced &&
+        !document.hidden &&
+        !noVidRef.current
+      ) {
         window.setTimeout(() => playVideo(el), 50);
       }
     };
@@ -325,7 +426,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       window.clearInterval(id);
       for (const v of vids) v.removeEventListener("pause", onPause);
     };
-  }, [playVideo, reduced, videos.length]);
+  }, [playVideo, reduced, videos.length, ready, switchToAnim, blobify]);
 
   // intro-done: restart clip + phone + arm; later bump remaining preloads
   useEffect(() => {
@@ -380,6 +481,8 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const activeKey = SLIDES[cur]!.video.mp4;
   const activeScreen = SLIDES[cur]!.screen;
   const fadeOnKey = onKey ?? activeKey;
+  const mediaPlaying =
+    useAnim || playingKey === activeKey || playingKey === `anim:${activeKey}`;
 
   return (
     <section
@@ -389,6 +492,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       aria-roledescription="carousel"
       aria-label="App walkthrough"
       data-testid="feature-carousel"
+      data-anim-fallback={useAnim ? "1" : "0"}
       tabIndex={0}
       onKeyDown={onKeyDown}
       onPointerDown={() => {
@@ -407,14 +511,14 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         touchX0.current = null;
       }}
     >
-      <div className={styles.bgs} aria-hidden>
+      <div ref={bgsRef} className={styles.bgs} aria-hidden>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className={styles.poster}
           src={activePoster}
           alt=""
           style={{
-            opacity: playingKey === activeKey ? 0 : 1,
+            opacity: mediaPlaying ? 0 : 1,
             transition: "opacity .8s",
           }}
           fetchPriority="high"
@@ -434,6 +538,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 el.setAttribute("autoplay", "");
                 el.setAttribute("playsinline", "");
                 el.setAttribute("webkit-playsinline", "");
+                if (useAnim) el.style.display = "none";
                 if (i === 0 && firstVideoRef) {
                   (
                     firstVideoRef as { current: HTMLVideoElement | null }
@@ -443,7 +548,10 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 if (i === 0 && curRef.current <= 0) playVideo(el);
               }
             }}
-            className={cn(styles.bgv, fadeOnKey === vid.mp4 && styles.bgvOn)}
+            className={cn(
+              styles.bgv,
+              !useAnim && fadeOnKey === vid.mp4 && styles.bgvOn,
+            )}
             muted
             autoPlay
             loop
@@ -457,6 +565,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 objectPosition:
                   SLIDES.find((s) => s.video.mp4 === vid.mp4)?.focus ||
                   "50% 50%",
+                display: useAnim ? "none" : undefined,
               } as CSSProperties
             }
             onPlaying={() => setPlayingKey(vid.mp4)}

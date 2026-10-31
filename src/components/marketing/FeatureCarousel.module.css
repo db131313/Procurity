@@ -44,6 +44,13 @@
   z-index: 1;
 }
 
+.bgi {
+  /* animated WebP fallback when <video> autoplay is blocked */
+  pointer-events: none;
+  object-fit: cover;
+}
+
+
 .poster {
   position: absolute;
   inset: 0;
@@ -1749,7 +1756,7 @@
   animation: up 0.5s 5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* 4 Design: flat sign designer — type name, flip styles, night mode. No AR/3D */
+/* 4 Design: same look as Connect/Estimate — light grey page, one white card, black buttons */
 .dz {
   position: absolute;
   inset: 0;
@@ -1767,44 +1774,39 @@
   background: #0b0d0e;
 }
 
-.dzt {
+.dzd {
   position: absolute;
-  top: 54px;
+  top: 68px;
   left: 16px;
   right: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dzt b {
-  font-size: 17px;
-  letter-spacing: -0.02em;
-}
-
-.dzt i {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
   background: #fff;
-  display: grid;
-  place-items: center;
-  font-style: normal;
-  font-size: 16px;
+  border-radius: 26px;
+  padding: 20px 22px 6px;
   box-shadow: 0 1px 0 #e4e6e8;
 }
 
+.dzd .dt {
+  margin-bottom: 12px;
+}
+
+.dzd .dt b {
+  display: block;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.dzd .dt small {
+  color: #6b7178;
+}
+
 .dzc {
-  position: absolute;
-  top: 104px;
-  left: 16px;
-  right: 16px;
-  height: 352px;
-  border-radius: 28px;
+  position: relative;
+  height: 218px;
+  border-radius: 18px;
   overflow: hidden;
   background: #e3ddd0;
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(10px);
 }
 
 .scPlay .dzc {
@@ -1837,10 +1839,10 @@
 
 .dzlit {
   position: absolute;
-  left: 36px;
-  top: 178px;
-  width: 168px;
-  height: 170px;
+  left: 26px;
+  top: 124px;
+  width: 132px;
+  height: 100px;
   background: linear-gradient(#ffd98a, #ffb95a);
   opacity: 0;
   border-radius: 4px;
@@ -1860,18 +1862,18 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: 48px;
-  height: 96px;
+  top: 22px;
+  height: 78px;
   display: grid;
   place-items: center;
 }
 
 .dzr {
   position: absolute;
-  left: 24px;
-  right: 24px;
-  top: 14px;
-  bottom: 14px;
+  left: 16px;
+  right: 16px;
+  top: 10px;
+  bottom: 10px;
   border: 2px dashed rgba(255, 255, 255, 0.85);
   border-radius: 6px;
   opacity: 0;
@@ -1886,13 +1888,13 @@
 .dzr span {
   position: absolute;
   left: 50%;
-  bottom: -38px;
+  bottom: -32px;
   transform: translateX(-50%);
   background: #0b0d0e;
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 5px 12px;
+  padding: 5px 11px;
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -1905,7 +1907,7 @@
 
 .vs1 {
   font:
-    900 29px/1 Inter,
+    900 24px/1 Inter,
     system-ui,
     sans-serif;
   letter-spacing: 0.05em;
@@ -1927,7 +1929,7 @@
 
 .vs2 {
   font:
-    italic 700 36px/1 Georgia,
+    italic 700 30px/1 Georgia,
     "Times New Roman",
     serif;
   color: #e8c27a;
@@ -1943,7 +1945,7 @@
 
 .vs3 {
   font:
-    300 33px/1 Inter,
+    300 27px/1 Inter,
     system-ui,
     sans-serif;
   letter-spacing: 0.2em;
@@ -1970,16 +1972,12 @@
 
 .dzm {
   position: absolute;
-  right: 14px;
-  bottom: 14px;
+  right: 10px;
+  bottom: 10px;
   display: flex;
-  background: #fff;
-  border-radius: 999px;
-  padding: 3px;
-  font-size: 13px;
-  font-weight: 700;
+  gap: 6px;
   opacity: 0;
-  transform: scale(0.8);
+  transform: scale(0.85);
 }
 
 .scPlay .dzm {
@@ -1987,178 +1985,129 @@
 }
 
 .dzm u {
-  position: relative;
-  z-index: 1;
   text-decoration: none;
-  width: 54px;
-  text-align: center;
-  line-height: 28px;
-  color: #6b7178;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: #0b0d0e;
 }
 
-.dy {
+.dzm .nt {
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
 .scPlay .dzm .dy {
-  animation: dzc1 0.2s 6.2s forwards;
+  animation: dzoff 0.2s 6.2s forwards;
 }
 
 .scPlay .dzm .nt {
-  animation: dzc2 0.2s 6.2s forwards;
+  animation: dzon 0.2s 6.2s forwards;
 }
 
-@keyframes dzc1 {
+@keyframes dzoff {
   to {
-    color: #6b7178;
-  }
-}
-
-@keyframes dzc2 {
-  to {
+    background: rgba(255, 255, 255, 0.2);
     color: #fff;
   }
 }
 
-.dzm::before {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 3px;
-  width: 54px;
-  height: 28px;
-  border-radius: 999px;
-  background: #0b0d0e;
-}
-
-.scPlay .dzm::before {
-  animation: dzth 0.3s 6.2s cubic-bezier(0.3, 0.1, 0.2, 1) forwards;
-}
-
-@keyframes dzth {
+@keyframes dzon {
   to {
-    transform: translateX(54px);
+    background: #fff;
+    color: #0b0d0e;
   }
 }
 
 .dzp {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 472px;
-  bottom: 0;
-  background: #fff;
-  border-radius: 32px 32px 0 0;
-  padding: 22px 20px;
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 6px;
   opacity: 0;
-  transform: translateY(40px);
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(8px);
 }
 
 .scPlay .dzp {
-  animation: fadeUp 0.5s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: fadeUp 0.4s 0.6s forwards;
 }
 
-.tiles {
-  position: relative;
-  display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.tl {
+.dzp u {
   flex: 1;
-  height: 70px;
-  border-radius: 16px;
-  background: #14171a;
-  display: grid;
-  place-content: center;
+  text-decoration: none;
   text-align: center;
-  font-size: 12px;
-  color: #9aa0a6;
+  padding: 11px 0;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 14px;
+  background: #f2f2f0;
+  color: #0b0d0e;
 }
 
-.tl b {
-  display: block;
-  line-height: 1.1;
+.dzp .p1 {
+  background: #0b0d0e;
   color: #fff;
 }
 
-.tla b {
-  font:
-    900 17px Inter,
-    system-ui,
-    sans-serif;
-  letter-spacing: 0.04em;
+.scPlay .dzp .p1 {
+  animation:
+    fadeUp 0.4s 0.6s forwards,
+    dzoff2 0.2s 3s forwards;
 }
 
-.tlb b {
-  font:
-    italic 700 20px Georgia,
-    serif;
-  color: #e8c27a;
+.scPlay .dzp .p2 {
+  animation:
+    dzon2 0.2s 3s forwards,
+    dzoff2 0.2s 4.6s forwards;
 }
 
-.tlc b {
-  font:
-    300 17px Inter,
-    system-ui,
-    sans-serif;
-  letter-spacing: 0.18em;
-  text-shadow: 0 0 8px #fff;
+.scPlay .dzp .p3 {
+  animation: dzon2 0.2s 4.6s forwards;
 }
 
-.tring {
-  position: absolute;
-  left: -3px;
-  top: -3px;
-  width: 116px;
-  height: 76px;
-  border-radius: 19px;
-  border: 2.5px solid #0b0d0e;
-  pointer-events: none;
-}
-
-.scPlay .tring {
-  animation: dzring 10s both;
-}
-
-@keyframes dzring {
-  0%,
-  29% {
-    transform: none;
-  }
-  33%,
-  45% {
-    transform: translateX(120px);
-  }
-  49%,
-  100% {
-    transform: translateX(240px);
+@keyframes dzon2 {
+  to {
+    background: #0b0d0e;
+    color: #fff;
   }
 }
 
-.dzmn {
-  position: relative;
+@keyframes dzoff2 {
+  to {
+    background: #f2f2f0;
+    color: #0b0d0e;
+  }
+}
+
+.dzk {
   display: flex;
   justify-content: space-between;
-  font-size: 15px;
-  padding: 12px 0;
+  align-items: center;
+  padding: 13px 0;
   border-top: 1px solid #eceeef;
+  font-size: 16px;
+  opacity: 0;
+  transform: translateY(8px);
 }
 
-.dzmn span {
+.scPlay .dzk {
+  animation: fadeUp 0.4s calc(0.9s + var(--i) * 0.15s) forwards;
+}
+
+.dzk span {
   color: #6b7178;
 }
 
-.dzmn b {
+.dzk b {
   position: relative;
-  width: 170px;
-  height: 20px;
+  width: 190px;
+  height: 22px;
   text-align: right;
+  font-weight: 600;
 }
 
-.dzmn u {
+.dzk b u {
   position: absolute;
   right: 0;
   top: 0;
@@ -2166,95 +2115,61 @@
   opacity: 0;
 }
 
-.dzmn .m1 {
+.dzk b .a1 {
   opacity: 1;
 }
 
-.scPlay .dzmn .m1 {
-  animation: vout 0.2s 3s forwards;
+.dpr {
+  font-size: 20px;
 }
 
-.scPlay .dzmn .m2 {
-  animation:
-    vin 0.2s 3s forwards,
-    vout 0.2s 4.6s forwards;
+.dpr span {
+  font-size: 16px;
 }
 
-.scPlay .dzmn .m3 {
-  animation: vin 0.2s 4.6s forwards;
-}
-
-.tot {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  border-top: 1px solid #eceeef;
-  padding: 12px 0 16px;
-}
-
-.tot span {
-  color: #6b7178;
-  font-size: 14px;
-}
-
-.tot b {
-  position: relative;
-  font-size: 30px;
-  letter-spacing: -0.03em;
+.dpr b {
+  font-weight: 700;
+  height: 26px;
   width: 120px;
-  height: 36px;
-  text-align: right;
 }
 
-.tot b u {
-  text-decoration: none;
-  position: absolute;
-  right: 0;
-  top: 0;
-  opacity: 0;
-}
-
-.tot .v1 {
-  opacity: 1;
-}
-
-.scPlay .tot .v1 {
+.scPlay .dzk .a1 {
   animation: vout 0.2s 3s forwards;
 }
 
-.scPlay .tot .v2 {
+.scPlay .dzk .a2 {
   animation:
     vin 0.2s 3s forwards,
     vout 0.2s 4.6s forwards;
 }
 
-.scPlay .tot .v3 {
+.scPlay .dzk .a3 {
   animation: vin 0.2s 4.6s forwards;
 }
 
 .dzb {
-  position: relative;
-  height: 54px;
-  border-radius: 18px;
-  background: #0b0d0e;
-  color: #fff;
-  font-size: 17px;
-  font-weight: 700;
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 44px;
   display: grid;
   place-items: center;
+  opacity: 0;
+}
+
+.scPlay .dzb {
+  animation:
+    vin 0.4s 0.9s forwards,
+    tap 0.7s 8.2s;
 }
 
 .dzb u {
-  position: absolute;
+  grid-area: 1 / 1;
   text-decoration: none;
 }
 
 .dzb .y {
   opacity: 0;
-}
-
-.scPlay .dzb {
-  animation: tap 0.6s 8.2s;
 }
 
 .scPlay .dzb .n {

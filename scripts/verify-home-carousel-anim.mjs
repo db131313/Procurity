@@ -1,5 +1,5 @@
 /**
- * Playwright proof: 5-slide carousel hero (crossfade + per-slide headers + timed phone).
+ * Playwright proof: 5-slide carousel hero (crossfade + per-slide headers + phone stay + anim fallback wiring).
  * BASE_URL=http://127.0.0.1:3000 node scripts/verify-home-carousel-anim.mjs
  */
 import { chromium } from "playwright";
@@ -238,23 +238,76 @@ async function main() {
         ok("desktop-five-slides", JSON.stringify({ captions, heads }));
       } else fail("desktop-five-slides", JSON.stringify({ captions, heads }));
 
-      // Discover fire pin + flat Design (no AR/3D layers)
+      // Discover fire pin + Design card UI (Connect/Estimate style, no AR/3D)
       const screenBits = await page.evaluate(() => {
         const fire = document.querySelector('[data-testid="car-screen-discover"] [class*="bgFire"]');
         const flameSvg = fire?.querySelector("svg");
-        const dz = document.querySelector('[data-testid="car-screen-design"] [class*="dz"]');
-        const vs = dz ? [...dz.querySelectorAll('[class*="vs"]')].length : 0;
+        const dzd = document.querySelector('[data-testid="car-screen-design"] [class*="dzd"]');
+        const title = dzd?.querySelector("b")?.textContent?.trim();
+        const pills = dzd ? [...dzd.querySelectorAll('[class*="dzp"] u')].map((u) => u.textContent?.trim()) : [];
         const ar = document.querySelector('[data-testid="car-screen-design"] [class*="arg"], [data-testid="car-screen-design"] [class*="ext"]');
         return {
           hasFire: !!fire && !!flameSvg,
-          hasFlatDz: !!dz,
-          vsCount: vs,
+          hasCard: !!dzd,
+          title,
+          pills,
           hasArLayers: !!ar,
         };
       });
-      if (screenBits.hasFire && screenBits.hasFlatDz && screenBits.vsCount >= 3 && !screenBits.hasArLayers) {
-        ok("fire-pin-and-flat-design", JSON.stringify(screenBits));
-      } else fail("fire-pin-and-flat-design", JSON.stringify(screenBits));
+      if (
+        screenBits.hasFire &&
+        screenBits.hasCard &&
+        /Sign design/i.test(screenBits.title || "") &&
+        screenBits.pills?.includes("Bold") &&
+        screenBits.pills?.includes("Halo-lit") &&
+        !screenBits.hasArLayers
+      ) {
+        ok("fire-pin-and-design-card", JSON.stringify(screenBits));
+      } else fail("fire-pin-and-design-card", JSON.stringify(screenBits));
+      const animUrls = [
+        "/home/bg-discover.webp",
+        "/home/field-3.webp",
+        "/home/bg-measure.webp",
+        "/home/bg-design.webp",
+        "/home/bg-quote.webp",
+      ];
+      const animOk = [];
+      for (const u of animUrls) {
+        const res = await page.request.get(new URL(u, BASE).href);
+        animOk.push({ u, status: res.status(), len: Number(res.headers()["content-length"] || 0) });
+      }
+      if (animOk.every((x) => x.status === 200 && x.len > 50_000)) {
+        ok("anim-webp-assets", JSON.stringify(animOk));
+      } else fail("anim-webp-assets", JSON.stringify(animOk));
+
+      // Phone stays: land on Connect (phone.in 900), confirm phone remains visible well after old out-300 window
+      for (let n = 0; n < 6; n++) {
+        const cap = (await page.locator('[data-testid="car-caption"]').innerText()).trim();
+        if (/contact for every site/i.test(cap)) break;
+        await page.keyboard.press("ArrowRight");
+        await page.waitForTimeout(700);
+      }
+      await page.waitForTimeout(1200); // past phone.in
+      const phoneMid = await page.evaluate(() => {
+        const phs = document.querySelector("[data-testid=car-phone]");
+        const dev = phs?.querySelector("[class*='dev']");
+        return {
+          opacity: dev ? Number(getComputedStyle(dev).opacity) : 0,
+          className: phs?.className || "",
+        };
+      });
+      await page.waitForTimeout(3500); // still on Connect; phone must stay (no early hide)
+      const phoneLate = await page.evaluate(() => {
+        const phs = document.querySelector("[data-testid=car-phone]");
+        const dev = phs?.querySelector("[class*='dev']");
+        return {
+          opacity: dev ? Number(getComputedStyle(dev).opacity) : 0,
+          className: phs?.className || "",
+        };
+      });
+      if (phoneMid.opacity > 0.5 && phoneLate.opacity > 0.5) {
+        ok("phone-stays-until-slide-change", JSON.stringify({ phoneMid, phoneLate }));
+      } else fail("phone-stays-until-slide-change", JSON.stringify({ phoneMid, phoneLate }));
 
       // Crossfade: active video opacity ~1, others ~0 (not translate)
       const fade = await page.evaluate(() => {

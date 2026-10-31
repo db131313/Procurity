@@ -12,6 +12,6 @@ Carousel background clips (no audio):
 
 Netlify serves `/home/*` with `Cache-Control: public,max-age=31536000,immutable`.
 
-Safari/iOS: carousel `<video>` lists the **MP4 `<source>` before WebM** (Safari can pick WebM, fail to decode, and never fall back). Videos also set `autoplay` + `muted` + `playsinline`. Native controls stay hidden (`pointer-events: none` + webkit media-control CSS); a 400ms interval restarts a paused active clip so no play button is ever shown.
+Safari/iOS: carousel `<video>` lists the **MP4 `<source>` before WebM** (Safari can pick WebM, fail to decode, and never fall back). Videos also set `autoplay` + `muted` + `playsinline`. Native controls stay hidden (`pointer-events: none` + webkit media-control CSS); a 400ms interval restarts a paused active clip so no play button is ever shown. If the active clip stays paused ~2s (e.g. iOS Low Power Mode), the carousel switches to looping animated WebP (`video.anim`). If a clip plays but never gets data (`readyState < 2` for ~3s), the mp4 is fetched as a blob and played via `URL.createObjectURL`.
 
 Other assets: `map.png`, `measure-quote.png`, `project-card.png`, `quote-pdf.png`.
