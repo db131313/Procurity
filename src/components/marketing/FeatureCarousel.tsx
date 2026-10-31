@@ -11,7 +11,7 @@ import {
   type RefObject,
 } from "react";
 import Link from "next/link";
-import { LAYOUT, SLIDES, uniqueVideos } from "@/content/carousel";
+import { SLIDES, uniqueVideos } from "@/content/carousel";
 import { PhoneScreen } from "./phone-screens";
 import { cn } from "@/lib/cn";
 import styles from "./FeatureCarousel.module.css";
@@ -30,58 +30,103 @@ type Props = {
 };
 
 /**
- * Full-bleed carousel hero with direction-aware horizontal slide transitions.
- * Progress bars are hidden; navigate via swipe / arrow keys.
- * LAYOUT 'split' | 'center'; mobile bleeds the phone off the bottom.
+ * Full-bleed carousel hero: stationary value header + per-slide caption,
+ * crossfading backgrounds, phone that only appears during the action window.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
+  const phsRef = useRef<HTMLDivElement | null>(null);
   const videoByKey = useRef<Map<string, HTMLVideoElement>>(new Map());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tinRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchX0 = useRef<number | null>(null);
   const curRef = useRef(-1);
   const [cur, setCur] = useState(0);
   const [vis, setVis] = useState(true);
   const [reduced, setReduced] = useState(true);
+  const [phoneShow, setPhoneShow] = useState(false);
   const [playKey, setPlayKey] = useState(0);
   const [capText, setCapText] = useState(SLIDES[0]!.caption);
-  const [devSwap, setDevSwap] = useState<"none" | "out" | "in">("none");
-  const [capSwap, setCapSwap] = useState<"none" | "out" | "in">("none");
+  const [capOpacity, setCapOpacity] = useState(1);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
-  const [dir, setDir] = useState(1);
   const iosUrl = process.env.NEXT_PUBLIC_IOS_APP_URL?.trim() || "";
 
   const videos = useMemo(() => uniqueVideos(SLIDES), []);
 
-  const focusByKey = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const s of SLIDES) {
-      if (!m.has(s.video.mp4)) m.set(s.video.mp4, s.focus);
-    }
-    return m;
-  }, []);
-
-  const clearTimer = useCallback(() => {
+  const clearArm = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
   }, []);
 
+  const clearPhoneTimers = useCallback(() => {
+    if (tinRef.current) clearTimeout(tinRef.current);
+    if (toutRef.current) clearTimeout(toutRef.current);
+    tinRef.current = null;
+    toutRef.current = null;
+  }, []);
+
+  const applyPlaybackRate = useCallback((el: HTMLElement | null, speed: number) => {
+    if (!el || !speed || speed === 1) return;
+    try {
+      el.getAnimations({ subtree: true }).forEach((a) => {
+        a.playbackRate = speed;
+      });
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const showPhone = useCallback(
+    (i: number) => {
+      const s = SLIDES[i]!;
+      setPlayKey((k) => k + 1);
+      setPhoneShow(true);
+      // After React paints .scPlay, bump WAAPI playbackRate
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const sc = phsRef.current?.querySelector(
+            `[data-screen="${s.screen}"].${styles.scPlay}, [data-screen="${s.screen}"]`,
+          ) as HTMLElement | null;
+          applyPlaybackRate(sc, s.speed);
+        });
+      });
+    },
+    [applyPlaybackRate],
+  );
+
+  const schedulePhone = useCallback(
+    (i: number) => {
+      clearPhoneTimers();
+      setPhoneShow(false);
+      const s = SLIDES[i]!;
+      const w = s.phone || { in: 0, out: s.duration };
+      if (reduced) {
+        showPhone(i);
+        return;
+      }
+      tinRef.current = setTimeout(() => showPhone(i), Math.max(w.in, 500));
+      toutRef.current = setTimeout(
+        () => setPhoneShow(false),
+        Math.max(w.in + 800, w.out - 300),
+      );
+    },
+    [clearPhoneTimers, reduced, showPhone],
+  );
+
+  const goRef = useRef<(i: number) => void>(() => {});
+
   const arm = useCallback(() => {
-    clearTimer();
+    clearArm();
     const i = curRef.current;
     if (i < 0) return;
     if (!reduced && vis && ready) {
       const dur = SLIDES[i]?.duration ?? INT;
-      timerRef.current = setTimeout(() => {
-        goRef.current((i + 1) % N);
-      }, dur);
+      timerRef.current = setTimeout(() => goRef.current(i + 1), dur);
     }
-  }, [clearTimer, reduced, vis, ready]);
-
-  const goRef = useRef<(i: number) => void>(() => {});
+  }, [clearArm, reduced, vis, ready]);
 
   const go = useCallback(
     (i: number) => {
@@ -89,22 +134,12 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       const prev = curRef.current;
       if (next === prev) return;
 
-      const first = prev < 0;
-      const fwd = first
-        ? 1
-        : (next - prev + N) % N <= N / 2
-          ? 1
-          : -1;
-      setDir(fwd);
-      carRef.current?.style.setProperty("--dir", String(fwd));
-
       const slide = SLIDES[next]!;
       const key = slide.video.mp4;
-      const prevKey = first ? null : SLIDES[prev]!.video.mp4;
-      const cv = videoByKey.current.get(key) ?? null;
-      const prevV = prevKey ? videoByKey.current.get(prevKey) ?? null : null;
+      const prevKey = prev >= 0 ? SLIDES[prev]!.video.mp4 : null;
 
-      if (cv && cv !== prevV && cv.currentTime > 0) {
+      const cv = videoByKey.current.get(key);
+      if (cv && key !== prevKey && cv.currentTime > 0) {
         try {
           cv.currentTime = 0;
         } catch {
@@ -113,31 +148,16 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       }
 
       for (const [k, v] of videoByKey.current) {
-        if (k === key) {
-          v.classList.remove(styles.bgvTr);
-          v.style.transform = first
-            ? "translate3d(0,0,0)"
-            : `translate3d(${fwd * 100}%,0,0)`;
-          void v.offsetWidth;
-          if (!first) {
-            v.classList.add(styles.bgvTr);
-            v.style.transform = "translate3d(0,0,0)";
-          }
-          v.classList.add(styles.bgvOn);
+        const on = k === key;
+        v.classList.toggle(styles.bgvOn, on);
+        if (on) {
           v.preload = "auto";
           v.style.objectPosition = slide.focus || "50% 50%";
           if (vis && !reduced) void v.play().catch(() => {});
-        } else if (prevV && v === prevV) {
-          v.classList.add(styles.bgvTr);
-          v.style.transform = `translate3d(${-fwd * 100}%,0,0)`;
-          v.classList.remove(styles.bgvOn);
+        } else {
           window.setTimeout(() => {
             if (!v.classList.contains(styles.bgvOn)) v.pause();
-          }, 800);
-        } else {
-          v.classList.remove(styles.bgvTr, styles.bgvOn);
-          v.style.transform = `translate3d(${fwd * 100}%,0,0)`;
-          v.pause();
+          }, 900);
         }
       }
 
@@ -147,35 +167,19 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       curRef.current = next;
       setCur(next);
 
-      if (swapTimerRef.current) {
-        clearTimeout(swapTimerRef.current);
-        swapTimerRef.current = null;
-      }
-
-      const applyScreen = () => {
+      setCapOpacity(0);
+      window.setTimeout(() => {
         setCapText(slide.caption);
-        setPlayKey((k) => k + 1);
-        if (!first && !reduced) {
-          setDevSwap("in");
-          setCapSwap("in");
-        } else {
-          setDevSwap("none");
-          setCapSwap("none");
-        }
-      };
+        setCapOpacity(1);
+      }, 200);
 
-      if (first || reduced) {
-        applyScreen();
-      } else {
-        setDevSwap("out");
-        setCapSwap("out");
-        swapTimerRef.current = setTimeout(applyScreen, 260);
-      }
+      clearPhoneTimers();
+      setPhoneShow(false);
+      if (ready) schedulePhone(next);
 
-      // re-arm after state settles
       window.setTimeout(() => arm(), 0);
     },
-    [vis, reduced, arm],
+    [vis, reduced, ready, clearPhoneTimers, schedulePhone, arm],
   );
 
   goRef.current = go;
@@ -195,38 +199,54 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     return () => io.disconnect();
   }, []);
 
-  // Initial go(0) once videos are mounted
   useEffect(() => {
     if (curRef.current >= 0) return;
-    const id = window.requestAnimationFrame(() => {
+    const id = requestAnimationFrame(() => {
       if (curRef.current < 0 && videoByKey.current.size > 0) go(0);
     });
-    return () => window.cancelAnimationFrame(id);
+    return () => cancelAnimationFrame(id);
   }, [go, videos.length]);
 
   useEffect(() => {
     if (vis && ready) arm();
-    else clearTimer();
+    else clearArm();
     if (vis && !reduced) {
-      const key = SLIDES[curRef.current >= 0 ? curRef.current : 0]!.video.mp4;
-      void videoByKey.current.get(key)?.play().catch(() => {});
+      const i = curRef.current >= 0 ? curRef.current : 0;
+      void videoByKey.current.get(SLIDES[i]!.video.mp4)?.play().catch(() => {});
     } else {
       for (const v of videoByKey.current.values()) v.pause();
     }
-    return () => clearTimer();
-  }, [vis, ready, reduced, arm, clearTimer]);
+    return () => clearArm();
+  }, [vis, ready, reduced, arm, clearArm]);
 
+  // intro-done: restart clip + phone window + arm
   useEffect(() => {
     if (!ready) return;
-    setPlayKey((k) => k + 1);
+    const i = curRef.current >= 0 ? curRef.current : 0;
+    const v = videoByKey.current.get(SLIDES[i]!.video.mp4);
+    if (v) {
+      try {
+        v.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
+      if (!reduced) void v.play().catch(() => {});
+    }
+    schedulePhone(i);
     arm();
-  }, [ready, arm]);
+  }, [ready, reduced, schedulePhone, arm]);
+
+  useEffect(() => {
+    return () => {
+      clearArm();
+      clearPhoneTimers();
+    };
+  }, [clearArm, clearPhoneTimers]);
 
   const tryPlay = useCallback(() => {
     if (reduced) return;
     const i = curRef.current >= 0 ? curRef.current : 0;
-    const key = SLIDES[i]!.video.mp4;
-    void videoByKey.current.get(key)?.play().catch(() => {});
+    void videoByKey.current.get(SLIDES[i]!.video.mp4)?.play().catch(() => {});
   }, [reduced]);
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -241,14 +261,13 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
 
   const activePoster = SLIDES[cur]!.video.poster;
   const activeKey = SLIDES[cur]!.video.mp4;
+  const activeScreen = SLIDES[cur]!.screen;
 
   return (
     <section
       ref={carRef}
       className={cn(styles.car, (!vis || !ready) && styles.paused)}
       id="car"
-      data-layout={LAYOUT}
-      style={{ ["--dir" as string]: dir } as CSSProperties}
       aria-roledescription="carousel"
       aria-label="App walkthrough"
       data-testid="feature-carousel"
@@ -275,7 +294,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
           alt=""
           style={{
             opacity: playingKey === activeKey ? 0 : 1,
-            transition: "opacity .7s",
+            transition: "opacity .8s",
           }}
           fetchPriority="high"
         />
@@ -285,17 +304,17 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             ref={(el) => {
               if (el) {
                 videoByKey.current.set(vid.mp4, el);
-                if (i === 0) {
-                  el.style.transform = "translate3d(0,0,0)";
-                  if (firstVideoRef) {
-                    (
-                      firstVideoRef as { current: HTMLVideoElement | null }
-                    ).current = el;
-                  }
+                if (i === 0 && firstVideoRef) {
+                  (
+                    firstVideoRef as { current: HTMLVideoElement | null }
+                  ).current = el;
                 }
               }
             }}
-            className={styles.bgv}
+            className={cn(
+              styles.bgv,
+              SLIDES[cur]!.video.mp4 === vid.mp4 && styles.bgvOn,
+            )}
             muted
             loop
             playsInline
@@ -303,25 +322,13 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             poster={vid.poster}
             style={
               {
-                objectPosition: focusByKey.get(vid.mp4) || "50% 50%",
+                objectPosition:
+                  SLIDES.find((s) => s.video.mp4 === vid.mp4)?.focus ||
+                  "50% 50%",
               } as CSSProperties
             }
             onPlaying={() => setPlayingKey(vid.mp4)}
           >
-            {vid.webm640 ? (
-              <source
-                src={vid.webm640}
-                type="video/webm"
-                media="(max-width:820px)"
-              />
-            ) : null}
-            {vid.mp4640 ? (
-              <source
-                src={vid.mp4640}
-                type="video/mp4"
-                media="(max-width:820px)"
-              />
-            ) : null}
             <source src={vid.webm} type="video/webm" />
             <source src={vid.mp4} type="video/mp4" />
           </video>
@@ -329,64 +336,65 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       </div>
 
       <div
-        className={cn(styles.phs, styles.reveal, ready && styles.revealOn)}
-        aria-hidden={false}
+        ref={phsRef}
+        className={cn(
+          styles.phs,
+          styles.reveal,
+          ready && styles.revealOn,
+          phoneShow && styles.phsShow,
+        )}
+        data-s={activeScreen}
+        data-testid="car-phone"
+        aria-hidden={!phoneShow}
       >
-        <div
-          className={cn(
-            styles.dev,
-            devSwap === "out" && styles.devSwapOut,
-            devSwap === "in" && styles.devSwapIn,
-          )}
-        >
+        <div className={styles.dev}>
           <i className={styles.sb1} />
           <i className={styles.sb2} />
           <i className={styles.sb3} />
           <div className={styles.scr}>
             <div className={styles.scale}>
-              {(
-                ["discover", "measure", "design", "quote", "invoice"] as const
-              ).map((id) => {
-                const slide = SLIDES.find((s) => s.screen === id);
-                const active = SLIDES[cur]?.screen === id;
-                return (
-                  <div
-                    key={`${id}-${active ? playKey : "x"}`}
-                    className={cn(
-                      styles.sc,
-                      active && styles.scOn,
-                      active && styles.scPlay,
-                    )}
-                    data-screen={id}
-                    data-testid={`car-screen-${id}`}
-                    aria-hidden={!active}
-                    inert={!active ? true : undefined}
-                  >
-                    <PhoneScreen
-                      id={id}
-                      screenshot={slide?.screenshot || undefined}
-                    />
-                  </div>
-                );
-              })}
+              {(["discover", "measure", "design", "quote"] as const).map(
+                (id) => {
+                  const slide = SLIDES.find((s) => s.screen === id);
+                  const active = activeScreen === id && phoneShow;
+                  return (
+                    <div
+                      key={`${id}-${active ? playKey : "x"}`}
+                      className={cn(
+                        styles.sc,
+                        active && styles.scOn,
+                        active && styles.scPlay,
+                      )}
+                      data-screen={id}
+                      data-testid={`car-screen-${id}`}
+                      aria-hidden={!active}
+                      inert={!active ? true : undefined}
+                    >
+                      <PhoneScreen
+                        id={id}
+                        screenshot={slide?.screenshot || undefined}
+                      />
+                    </div>
+                  );
+                },
+              )}
             </div>
           </div>
         </div>
       </div>
 
       <div
-        className={cn(styles.cap, styles.reveal, ready && styles.revealOn)}
-        aria-live="polite"
-        data-testid="car-caption"
+        className={cn(styles.hh, styles.reveal, ready && styles.revealOn)}
+        data-testid="car-header"
       >
-        <span
-          className={cn(
-            capSwap === "out" && styles.capSwapOut,
-            capSwap === "in" && styles.capSwapIn,
-          )}
-        >
-          {capText}
-        </span>
+        <h2>
+          Find the job.
+          <br />
+          Win the work.
+        </h2>
+        <div className={styles.cap} aria-live="polite" data-testid="car-caption">
+          <span style={{ opacity: capOpacity }}>{capText}</span>
+        </div>
       </div>
 
       <div

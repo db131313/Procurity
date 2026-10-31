@@ -1,5 +1,5 @@
 /**
- * Playwright proof: animated centered carousel hero + intro + menu + scroll.
+ * Playwright proof: 4-slide carousel hero (crossfade + stationary header + timed phone).
  * BASE_URL=http://127.0.0.1:3000 node scripts/verify-home-carousel-anim.mjs
  */
 import { chromium } from "playwright";
@@ -47,9 +47,11 @@ async function main() {
       const intro = await page.evaluate(() => {
         const i = document.querySelector('[data-testid="home-intro"]');
         const cap = document.querySelector('[data-testid="car-caption"]');
+        const hh = document.querySelector('[data-testid="car-header"]');
         return {
           introOpacity: i ? getComputedStyle(i).opacity : null,
           capOpacity: cap ? getComputedStyle(cap).opacity : null,
+          hhOpacity: hh ? getComputedStyle(hh).opacity : null,
           hasLogo: !!document.querySelector('[data-testid="home-header"]'),
         };
       });
@@ -57,7 +59,7 @@ async function main() {
       if (
         intro.hasLogo &&
         Number(intro.introOpacity) > 0.5 &&
-        Number(intro.capOpacity || 0) < 0.2
+        Number(intro.hhOpacity || 0) < 0.2
       ) {
         ok("first-load-blob-logo", JSON.stringify(intro));
       } else fail("first-load-blob-logo", JSON.stringify(intro));
@@ -73,7 +75,6 @@ async function main() {
       await page.waitForTimeout(900);
       await shot(page, "anim-reveal-slide1-1440.png");
 
-      // ~56px map peek
       const peek = await page.evaluate(() => {
         const car = document.querySelector("[data-testid=feature-carousel]");
         const swarm = document.querySelector("[data-testid=home-swarm-section]");
@@ -91,31 +92,37 @@ async function main() {
 
       const layout = await page.evaluate(() => {
         const car = document.querySelector("[data-testid=feature-carousel]");
-        const phs = car?.querySelector("[class*='phs']");
+        const phs = car?.querySelector("[data-testid=car-phone]");
+        const hh = document.querySelector("[data-testid=car-header]");
         const cap = document.querySelector("[data-testid=car-caption]");
         const tabs = [...document.querySelectorAll('[role="tab"]')];
         const tabWrap = car?.querySelector('[role="tablist"]');
         const pr = phs ? getComputedStyle(phs) : null;
-        const cr = cap ? getComputedStyle(cap) : null;
+        const hr = hh ? getComputedStyle(hh) : null;
+        const h2 = hh?.querySelector("h2");
         return {
-          dataLayout: car?.getAttribute("data-layout"),
           phoneRight: pr?.right,
-          capFontSize: cr?.fontSize,
-          capFontWeight: cr?.fontWeight,
+          hhFontSize: h2 ? getComputedStyle(h2).fontSize : null,
+          capFontSize: cap ? getComputedStyle(cap).fontSize : null,
           capText: cap?.textContent?.trim(),
+          headerText: h2?.textContent?.replace(/\s+/g, " ").trim(),
           tabsDisplay: tabWrap ? getComputedStyle(tabWrap).display : null,
           tabAria: tabs.map((t) => t.getAttribute("aria-label")),
+          s: car ? getComputedStyle(car).getPropertyValue("--s").trim() : null,
         };
       });
       if (
-        layout.dataLayout === "split" &&
         layout.tabsDisplay === "none" &&
-        layout.tabAria?.includes("Discover") &&
+        layout.tabAria?.length === 4 &&
+        layout.tabAria.includes("Discover") &&
+        /Find the job/i.test(layout.headerText || "") &&
         /who.?s buying/i.test(layout.capText || "") &&
-        Number.parseFloat(layout.capFontSize || "0") >= 40
+        Number.parseFloat(layout.hhFontSize || "0") >= 40 &&
+        Number.parseFloat(layout.capFontSize || "0") >= 18 &&
+        Number.parseFloat(layout.capFontSize || "0") < 40
       ) {
-        ok("split-hidden-tabs-caption", JSON.stringify(layout));
-      } else fail("split-hidden-tabs-caption", JSON.stringify(layout));
+        ok("stationary-header-hidden-tabs", JSON.stringify(layout));
+      } else fail("stationary-header-hidden-tabs", JSON.stringify(layout));
 
       const videoMeta = await page.evaluate(() => {
         const vids = [
@@ -128,47 +135,60 @@ async function main() {
         return { unique: [...new Set(vids)] };
       });
       const expected = [
-        "/home/field-3.mp4",
+        "/home/bg-discover.mp4",
         "/home/bg-measure.mp4",
         "/home/bg-design.mp4",
         "/home/bg-quote.mp4",
-        "/home/bg-invoice.mp4",
       ];
       if (
         expected.every((u) => videoMeta.unique.includes(u)) &&
-        videoMeta.unique.length >= 5
+        videoMeta.unique.length === 4 &&
+        !videoMeta.unique.some((u) => /invoice|field-3/i.test(u || ""))
       ) {
         ok("per-slide-videos", JSON.stringify(videoMeta.unique));
       } else fail("per-slide-videos", JSON.stringify(videoMeta));
 
       const car = page.locator('[data-testid="feature-carousel"]');
       await car.focus();
-      for (let i = 0; i < 5; i++) {
+      const captions = [];
+      for (let i = 0; i < 4; i++) {
         if (i > 0) {
           await page.keyboard.press("ArrowRight");
-          await page.waitForTimeout(900);
+          await page.waitForTimeout(1000);
         } else {
           await page.waitForTimeout(400);
         }
+        captions.push(
+          (await page.locator('[data-testid="car-caption"]').innerText()).trim(),
+        );
         await shot(page, `anim-car-slide-${i}-1440.png`);
       }
-      const cap = await page.locator('[data-testid="car-caption"]').innerText();
-      if (cap.trim() === "Invoice") ok("desktop-five-slides", `last caption: ${cap}`);
-      else fail("desktop-five-slides", `last caption: ${cap}`);
+      if (
+        captions.length === 4 &&
+        /buying/i.test(captions[0] || "") &&
+        captions[3] === "Estimate"
+      ) {
+        ok("desktop-four-slides", JSON.stringify(captions));
+      } else fail("desktop-four-slides", JSON.stringify(captions));
 
-      // Direction-aware transition: active video near translateX 0
-      const slideTx = await page.evaluate(() => {
-        const on = document.querySelector(
-          "[data-testid=feature-carousel] video.bgvOn, [data-testid=feature-carousel] video",
-        );
-        // pick the video whose transform is closest to identity
-        const vids = [...document.querySelectorAll("[data-testid=feature-carousel] video")];
+      // Crossfade: active video opacity ~1, others ~0 (not translate)
+      const fade = await page.evaluate(() => {
+        const vids = [
+          ...document.querySelectorAll("[data-testid=feature-carousel] video"),
+        ];
         return vids.map((v) => ({
-          t: getComputedStyle(v).transform,
-          src: v.currentSrc || v.querySelector("source")?.getAttribute("src"),
+          opacity: getComputedStyle(v).opacity,
+          transform: getComputedStyle(v).transform,
+          src: v.querySelector("source[type='video/mp4']")?.getAttribute("src"),
         }));
       });
-      ok("slide-transforms-present", JSON.stringify(slideTx).slice(0, 400));
+      const on = fade.filter((v) => Number(v.opacity) > 0.5);
+      const hasTranslateSlide = fade.some((v) =>
+        /matrix.*[^,]*,\s*(-?\d{2,})/.test(v.transform || ""),
+      );
+      if (on.length >= 1 && !hasTranslateSlide) {
+        ok("crossfade-opacity", JSON.stringify(fade).slice(0, 500));
+      } else fail("crossfade-opacity", JSON.stringify(fade).slice(0, 500));
 
       await page
         .locator('[data-testid="home-swarm-section"]')
@@ -244,28 +264,27 @@ async function main() {
 
       const mobileLayout = await page.evaluate(() => {
         const car = document.querySelector("[data-testid=feature-carousel]");
-        const phs = car?.querySelector("[class*='phs']");
-        const cap = document.querySelector("[data-testid=car-caption]");
+        const phs = car?.querySelector("[data-testid=car-phone]");
+        const hh = document.querySelector("[data-testid=car-header]");
         return {
           phoneTop: phs ? getComputedStyle(phs).top : null,
           s: car ? getComputedStyle(car).getPropertyValue("--s").trim() : null,
-          capAlign: cap ? getComputedStyle(cap).textAlign : null,
+          hhAlign: hh ? getComputedStyle(hh).textAlign : null,
         };
       });
       if (
         Number.parseFloat(mobileLayout.s || "0") >= 0.6 &&
-        mobileLayout.capAlign === "center" &&
-        Number.parseFloat(mobileLayout.phoneTop || "0") > 500
+        mobileLayout.hhAlign === "center"
       ) {
-        ok("mobile-bleed-layout", JSON.stringify(mobileLayout));
-      } else fail("mobile-bleed-layout", JSON.stringify(mobileLayout));
+        ok("mobile-header-phone-layout", JSON.stringify(mobileLayout));
+      } else fail("mobile-header-phone-layout", JSON.stringify(mobileLayout));
 
       await page.locator('[data-testid="feature-carousel"]').focus();
       await page.keyboard.press("ArrowRight");
-      await page.waitForTimeout(900);
+      await page.waitForTimeout(1200);
       await shot(page, "anim-car-measure-390.png");
       await page.keyboard.press("ArrowRight");
-      await page.waitForTimeout(900);
+      await page.waitForTimeout(1200);
       await shot(page, "anim-car-design-390.png");
       ok("mobile-measure-design");
 

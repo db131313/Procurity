@@ -9,13 +9,14 @@ const LINES = [
   { label: "Tax", amount: "$200" },
 ];
 
+/** Estimate screen (id stays `quote` in config). */
 export function QuoteScreen() {
   return (
     <div className={styles.qB}>
       <StatusBar light />
       <div className={styles.doc}>
         <div className={styles.dt}>
-          <b>Quote Q-1042</b>
+          <b>Estimate E-1042</b>
           <small>Alder &amp; Finch</small>
         </div>
         <div className={styles.st5}>
@@ -40,8 +41,10 @@ export function QuoteScreen() {
           <b>$4,820</b>
         </div>
       </div>
-      <div className={styles.toast}>Quote sent to Alder &amp; Finch</div>
-      <div className={`${styles.toast} ${styles.ap}`}>Approved by Alder &amp; Finch</div>
+      <div className={styles.toast}>Estimate sent to Alder &amp; Finch</div>
+      <div className={`${styles.toast} ${styles.ap}`}>
+        Approved by Alder &amp; Finch
+      </div>
       <div className={`${styles.cta2} ${styles.press}`}>Send to client</div>
     </div>
   );

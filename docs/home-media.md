@@ -1,28 +1,14 @@
-# Home page media slots
+# Homepage media (`public/home/`)
 
-## Feature carousel (hero)
-
-See [carousel.md](./carousel.md).
+Carousel background clips (portrait ~416×752, no audio, each under ~0.75MB):
 
 | Slide | Files | Notes |
 | --- | --- | --- |
-| Discover | `field-3.{mp4,webm,webp}` + `field-3-640.{mp4,webm}` | ~10s; 640px sources for mobile |
-| Measure | `bg-measure.{mp4,webm,jpg}` | ~5.8s, ~0.24MB mp4 |
-| Design | `bg-design.{mp4,webm,jpg}` | ~10s, ~0.57MB mp4 |
-| Quote | `bg-quote.{mp4,webm,jpg}` | ~10s, ~0.66MB mp4 |
-| Invoice | `bg-invoice.{mp4,webm,jpg}` | ~10s, ~0.74MB mp4 |
+| Discover | `bg-discover.{mp4,webm,jpg}` | Street-walk clip; phone in at 4.4s |
+| Measure | `bg-measure.{mp4,webm,jpg}` | ~5.8s |
+| Design | `bg-design.{mp4,webm,jpg}` | ~10s |
+| Estimate | `bg-quote.{mp4,webm,jpg}` | Screen id `quote` |
 
-`field-3.mp4` (~1.04MB) and `.webm` (~1.33MB) are under 1.5MB — no re-encode required. Poster is `field-3.webp` (~55KB).
+Netlify (or equivalent) should serve `/home/*` with `Cache-Control: public,max-age=31536000,immutable`.
 
-## Product screenshots
-
-| File | Content |
-| --- | --- |
-| `map.png` | Logged-in map |
-| `project-card.png` | Project detail |
-| `measure-quote.png` | Job measure / quote |
-| `quote-pdf.png` | Quote PDF preview |
-
-## iPhone app line
-
-Carousel shows “coming soon” unless `NEXT_PUBLIC_IOS_APP_URL` is set.
+Other assets: `map.png`, `measure-quote.png`, `project-card.png`, `quote-pdf.png`.
