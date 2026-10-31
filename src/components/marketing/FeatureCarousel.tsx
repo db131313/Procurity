@@ -400,7 +400,9 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 videoByKey.current.set(vid.mp4, el);
                 el.muted = true;
                 el.defaultMuted = true;
+                el.autoplay = true;
                 el.setAttribute("muted", "");
+                el.setAttribute("autoplay", "");
                 el.setAttribute("playsinline", "");
                 el.setAttribute("webkit-playsinline", "");
                 if (i === 0 && firstVideoRef) {
@@ -414,6 +416,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             }}
             className={cn(styles.bgv, fadeOnKey === vid.mp4 && styles.bgvOn)}
             muted
+            autoPlay
             loop
             playsInline
             preload={i < 2 ? "auto" : "metadata"}
@@ -434,22 +437,23 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
               }
             }}
           >
-            {vid.webm640 && vid.mp4640 ? (
+            {/* MP4 before WebM — Safari may pick WebM, fail decode, and never fall back */}
+            {vid.mp4640 && vid.webm640 ? (
               <>
-                <source
-                  src={vid.webm640}
-                  type="video/webm"
-                  media="(max-width:820px)"
-                />
                 <source
                   src={vid.mp4640}
                   type="video/mp4"
                   media="(max-width:820px)"
                 />
+                <source
+                  src={vid.webm640}
+                  type="video/webm"
+                  media="(max-width:820px)"
+                />
               </>
             ) : null}
-            <source src={vid.webm} type="video/webm" />
             <source src={vid.mp4} type="video/mp4" />
+            <source src={vid.webm} type="video/webm" />
           </video>
         ))}
       </div>
