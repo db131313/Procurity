@@ -1,9 +1,8 @@
 /**
  * Feature carousel content — edit ONLY this file to swap videos, captions, or screens.
  *
- * Stationary header ("Find the job. Win the work.") lives in FeatureCarousel JSX.
- *
  * - label:      accessible slide name
+ * - head:       big per-slide header (two short lines; use \n for the break)
  * - caption:    short line under the header that changes per slide
  * - video:      { webm, mp4, poster } — same mp4 → one shared <video>
  * - screen:     discover | contact | measure | design | quote (Estimate uses quote)
@@ -31,6 +30,8 @@ export type CarouselVideo = {
 
 export type CarouselSlide = {
   label: string;
+  /** Two short lines for the big header; use `\n` between lines. */
+  head: string;
   caption: string;
   screen: CarouselScreenId;
   screenshot?: string;
@@ -44,7 +45,8 @@ export type CarouselSlide = {
 export const SLIDES: CarouselSlide[] = [
   {
     label: "Discover",
-    caption: "Find who's buying",
+    head: "Find the job\nbefore they do.",
+    caption: "Projects ready to buy, near you",
     screen: "discover",
     duration: 10000,
     phone: { in: 4400, out: 10000 },
@@ -58,7 +60,8 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Connect",
-    caption: "Connect",
+    head: "Know exactly\nwho to call.",
+    caption: "The contact for every site",
     screen: "contact",
     duration: 10000,
     phone: { in: 900, out: 9600 },
@@ -74,7 +77,8 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Measure",
-    caption: "Measure",
+    head: "Measure it\nin seconds.",
+    caption: "Exact sizes, right on the wall",
     screen: "measure",
     duration: 5800,
     phone: { in: 1800, out: 5800 },
@@ -88,7 +92,8 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Design",
-    caption: "Design",
+    head: "Show them the\nfinished sign.",
+    caption: "Preview it before you build it",
     screen: "design",
     duration: 10000,
     phone: { in: 3000, out: 10000 },
@@ -102,7 +107,8 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Estimate",
-    caption: "Estimate",
+    head: "Send the estimate\nbefore you leave.",
+    caption: "Win the work on the spot",
     screen: "quote",
     duration: 10000,
     phone: { in: 800, out: 10000 },

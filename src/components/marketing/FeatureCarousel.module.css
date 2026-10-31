@@ -1,4 +1,4 @@
-/* Feature carousel — stationary header, crossfade backgrounds, timed phone */
+/* Feature carousel — per-slide header, crossfade backgrounds, timed phone */
 
 .car {
   --s: 0.92;
@@ -25,6 +25,18 @@
   transition: opacity 0.8s;
   will-change: opacity;
   transform: translateZ(0);
+  pointer-events: none;
+}
+
+.bgv::-webkit-media-controls,
+.bgv::-webkit-media-controls-panel,
+.bgv::-webkit-media-controls-play-button,
+.bgv::-webkit-media-controls-start-playback-button,
+.bgv::-webkit-media-controls-overlay-play-button,
+.bgv::-webkit-media-controls-enclosure {
+  display: none !important;
+  opacity: 0 !important;
+  -webkit-appearance: none;
 }
 
 .bgvOn {
@@ -84,24 +96,25 @@
   scale: 1;
 }
 
-/* Stationary value header + changing caption */
+/* Per-slide header + caption (both fade on slide change) */
 .hh {
   position: absolute;
   z-index: 4;
   left: max(40px, 12vw);
   top: 50%;
   transform: translateY(-50%);
-  max-width: 40vw;
+  max-width: 44vw;
   pointer-events: none;
 }
 
 .hh h2 {
   margin: 0;
-  font-size: clamp(44px, 5.6vw, 92px);
+  font-size: clamp(40px, 4.9vw, 80px);
   font-weight: 800;
   letter-spacing: -0.05em;
   line-height: 0.98;
   text-shadow: 0 2px 30px rgba(0, 0, 0, 0.45);
+  transition: opacity 0.25s;
 }
 
 .hh .cap {
@@ -378,7 +391,7 @@
     text-align: center;
   }
   .hh h2 {
-    font-size: 40px;
+    font-size: 36px;
   }
   .hh .cap {
     margin-top: 10px;
@@ -696,6 +709,73 @@
   animation:
     show 0.3s 5s forwards,
     uz 1.2s 5s cubic-bezier(0.3, 0.1, 0.2, 1) both;
+}
+
+/* Animated fire pin for the selected Discover site */
+.bgFire {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+}
+
+.bgFire i {
+  background: #fff;
+  border: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.bgFire::after {
+  display: none !important;
+}
+
+.bgFire svg {
+  width: 26px;
+  height: 26px;
+  transform-origin: 50% 92%;
+  animation: flick 1s ease-in-out infinite;
+}
+
+.bgFire::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: rgba(255, 110, 0, 0.4);
+  animation: heat 1.5s ease-out infinite;
+}
+
+@keyframes flick {
+  0%,
+  100% {
+    transform: scale(1, 1) rotate(-3deg);
+  }
+  25% {
+    transform: scale(1.1, 0.92) rotate(3deg);
+  }
+  50% {
+    transform: scale(0.92, 1.12) rotate(-2deg);
+  }
+  75% {
+    transform: scale(1.06, 0.98) rotate(2deg);
+  }
+}
+
+@keyframes heat {
+  from {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+
+.nbFl svg {
+  width: 28px;
+  height: 28px;
+  transform-origin: 50% 92%;
+  animation: flick 1s ease-in-out infinite;
 }
 
 @keyframes uz {
@@ -1669,240 +1749,363 @@
   animation: up 0.5s 5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* 4 Design: AR sign preview on the measured wall — assemble, sway, material, night */
-@property --side {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #6a6f77;
-}
-@property --face {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #101214;
-}
-@property --ez {
-  syntax: "<length>";
-  inherits: true;
-  initial-value: 0px;
-}
-
-.sc[data-screen="design"].scPlay .cam {
-  animation: night 1s 6.2s forwards;
-}
-
-@keyframes night {
-  to {
-    filter: brightness(0.26) saturate(0.6);
-  }
-}
-
-.ar {
+/* 4 Design: flat sign designer — type name, flip styles, night mode. No AR/3D */
+.dz {
   position: absolute;
-  left: 235px;
-  top: 362px;
-  width: 0;
-  height: 0;
-  perspective: 760px;
-  z-index: 3;
+  inset: 0;
+  background: #f2f2f0;
+  color: #0b0d0e;
 }
 
-.arg {
-  --ez: 0px;
+.dz .sbar,
+.dz .sbarLight {
+  color: #0b0d0e;
+}
+
+.dz .sbar span,
+.dz .sbarLight span {
+  background: #0b0d0e;
+}
+
+.dzt {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  transform-style: preserve-3d;
-  transform: rotateY(-16deg) rotateX(3deg);
+  top: 54px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.scPlay .arg {
-  animation:
-    sway 10s ease-in-out both,
-    extr 1.4s 3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
-    mat 0.6s 5s forwards,
-    litAnim 0.5s 6.2s forwards;
+.dzt b {
+  font-size: 17px;
+  letter-spacing: -0.02em;
 }
 
-@keyframes sway {
-  0%,
-  26% {
-    transform: rotateY(-16deg) rotateX(3deg);
-  }
-  44% {
-    transform: rotateY(-36deg) rotateX(4deg);
-  }
-  62% {
-    transform: rotateY(28deg) rotateX(3deg);
-  }
-  80% {
-    transform: rotateY(-10deg) rotateX(2deg);
-  }
-  100% {
-    transform: rotateY(-14deg) rotateX(3deg);
-  }
+.dzt i {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 16px;
+  box-shadow: 0 1px 0 #e4e6e8;
 }
 
-@keyframes extr {
-  to {
-    --ez: 1.9px;
-  }
-}
-@keyframes mat {
-  to {
-    --side: #b9bfc6;
-    --face: #e4e8ec;
-  }
-}
-@keyframes litAnim {
-  to {
-    --face: #ffffff;
-  }
-}
-
-.ext,
-.halo,
-.shd {
+.dzc {
   position: absolute;
-  left: -100px;
-  top: -40px;
-  width: 200px;
-  text-align: center;
-  white-space: nowrap;
-  font:
-    900 38px/40px Inter,
-    system-ui,
-    sans-serif;
-  letter-spacing: 0.02em;
+  top: 104px;
+  left: 16px;
+  right: 16px;
+  height: 352px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #e3ddd0;
+  opacity: 0;
+  transform: translateY(12px);
 }
 
-.ext {
-  transform: translateZ(calc(var(--k) * var(--ez)));
-  color: var(--side);
-  filter: brightness(calc(0.62 + var(--k) * 0.035));
+.scPlay .dzc {
+  animation: fadeUp 0.5s 0.1s forwards;
+}
+
+.dzc > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dzn {
+  position: absolute;
+  inset: 0;
+  background: #060a14;
   opacity: 0;
 }
 
-.ext.f {
-  color: var(--face);
-  filter: none;
+.scPlay .dzn {
+  animation: dzn 0.8s 6.2s forwards;
 }
 
-.scPlay .ext {
-  animation: vin 0.35s 3s forwards;
-}
-
-.shd {
-  color: rgba(0, 0, 0, 0.5);
-  filter: blur(4px);
-  transform: translate3d(12px, 16px, -3px);
-  opacity: 0;
-}
-
-.scPlay .shd {
-  animation:
-    shdIn 0.5s 3.2s forwards,
-    hide 0.5s 6.3s forwards;
-}
-
-@keyframes shdIn {
+@keyframes dzn {
   to {
     opacity: 0.7;
   }
 }
 
-.halo {
-  color: #fff;
-  filter: blur(9px);
-  opacity: 0;
-  transform: translateZ(-1px);
-}
-
-.scPlay .halo {
-  animation: vin 0.6s 6.3s forwards;
-}
-
-.sk {
+.dzlit {
   position: absolute;
-  left: -100px;
-  top: -62px;
-  width: 200px;
-  height: 124px;
-  border: 2px dashed #fff;
-  border-radius: 4px;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.3) 0 3px,
-    transparent 3px 9px
-  );
+  left: 36px;
+  top: 178px;
+  width: 168px;
+  height: 170px;
+  background: linear-gradient(#ffd98a, #ffb95a);
   opacity: 0;
+  border-radius: 4px;
 }
 
-.scPlay .sk {
-  animation:
-    show 0.4s 0.6s forwards,
-    hide 0.4s 3.6s forwards;
+.scPlay .dzlit {
+  animation: dzlit 0.8s 6.5s forwards;
 }
 
-.dp {
+@keyframes dzlit {
+  to {
+    opacity: 0.85;
+  }
+}
+
+.dzs {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: 300px;
+  top: 48px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+}
+
+.dzr {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 14px;
+  bottom: 14px;
+  border: 2px dashed rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
+  opacity: 0;
+}
+
+.scPlay .dzr {
+  animation:
+    show 0.3s 0.3s forwards,
+    hide 0.3s 2.6s forwards;
+}
+
+.dzr span {
+  position: absolute;
+  left: 50%;
+  bottom: -38px;
+  transform: translateX(-50%);
+  background: #0b0d0e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.vs {
+  position: absolute;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.vs1 {
+  font:
+    900 29px/1 Inter,
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.05em;
+  color: #fff;
+  clip-path: inset(0 100% 0 0);
+}
+
+.scPlay .vs1 {
+  animation:
+    dztype 1.3s 0.9s steps(13, end) forwards,
+    vout 0.25s 3s forwards;
+}
+
+@keyframes dztype {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.vs2 {
+  font:
+    italic 700 36px/1 Georgia,
+    "Times New Roman",
+    serif;
+  color: #e8c27a;
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.scPlay .vs2 {
+  animation:
+    fadeUp 0.5s 3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+    vout 0.25s 4.6s forwards;
+}
+
+.vs3 {
+  font:
+    300 33px/1 Inter,
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.2em;
+  color: #e4e7ea;
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.scPlay .vs3 {
+  animation:
+    fadeUp 0.5s 4.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+    glow 0.8s 6.2s forwards;
+}
+
+@keyframes glow {
+  to {
+    color: #fff;
+    text-shadow:
+      0 0 10px #fff,
+      0 0 26px rgba(255, 255, 255, 0.75),
+      0 0 54px rgba(180, 210, 255, 0.55);
+  }
+}
+
+.dzm {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
   background: #fff;
-  color: #0b0d0e;
+  border-radius: 999px;
+  padding: 3px;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.scPlay .dzm {
+  animation: pop 0.35s 5.2s forwards;
+}
+
+.dzm u {
+  position: relative;
+  z-index: 1;
+  text-decoration: none;
+  width: 54px;
+  text-align: center;
+  line-height: 28px;
+  color: #6b7178;
+}
+
+.dy {
+  color: #fff;
+}
+
+.scPlay .dzm .dy {
+  animation: dzc1 0.2s 6.2s forwards;
+}
+
+.scPlay .dzm .nt {
+  animation: dzc2 0.2s 6.2s forwards;
+}
+
+@keyframes dzc1 {
+  to {
+    color: #6b7178;
+  }
+}
+
+@keyframes dzc2 {
+  to {
+    color: #fff;
+  }
+}
+
+.dzm::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 54px;
+  height: 28px;
+  border-radius: 999px;
+  background: #0b0d0e;
+}
+
+.scPlay .dzm::before {
+  animation: dzth 0.3s 6.2s cubic-bezier(0.3, 0.1, 0.2, 1) forwards;
+}
+
+@keyframes dzth {
+  to {
+    transform: translateX(54px);
+  }
+}
+
+.dzp {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 472px;
+  bottom: 0;
+  background: #fff;
   border-radius: 32px 32px 0 0;
-  padding: 20px;
-  z-index: 4;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35);
+  padding: 22px 20px;
+  opacity: 0;
+  transform: translateY(40px);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.scPlay .dzp {
+  animation: fadeUp 0.5s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .tiles {
   position: relative;
   display: flex;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .tl {
   flex: 1;
   height: 70px;
   border-radius: 16px;
-  background: #f2f2f0;
+  background: #14171a;
   display: grid;
   place-content: center;
   text-align: center;
   font-size: 12px;
-  color: #6b7178;
+  color: #9aa0a6;
 }
 
 .tl b {
   display: block;
-  font-size: 17px;
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  color: #0b0d0e;
   line-height: 1.1;
-}
-
-.tlh {
-  background: #14171a;
-  color: #9aa0a6;
-}
-
-.tlh b {
   color: #fff;
-  text-shadow: 0 0 8px #fff;
+}
+
+.tla b {
+  font:
+    900 17px Inter,
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.tlb b {
+  font:
+    italic 700 20px Georgia,
+    serif;
+  color: #e8c27a;
 }
 
 .tlc b {
-  border: 2px solid #0b0d0e;
-  padding: 1px 6px;
-  border-radius: 5px;
-  font-size: 14px;
-  margin: 0 auto 2px;
+  font:
+    300 17px Inter,
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 8px #fff;
 }
 
 .tring {
@@ -1917,92 +2120,76 @@
 }
 
 .scPlay .tring {
-  animation: tring 10s both;
+  animation: dzring 10s both;
 }
 
-@keyframes tring {
+@keyframes dzring {
   0%,
-  60% {
+  29% {
     transform: none;
   }
-  66%,
-  100% {
+  33%,
+  45% {
     transform: translateX(120px);
   }
+  49%,
+  100% {
+    transform: translateX(240px);
+  }
 }
 
-.sw {
+.dzmn {
   position: relative;
   display: flex;
-  gap: 12px;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  font-size: 15px;
+  padding: 12px 0;
+  border-top: 1px solid #eceeef;
 }
 
-.sw b {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  border: 1px solid #d5d8db;
+.dzmn span {
+  color: #6b7178;
 }
 
-.sw .so {
-  position: absolute;
-  left: -3px;
-  top: -3px;
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  border: 2px solid #0b0d0e;
-}
-
-.scPlay .so {
-  animation: so 10s both;
-}
-
-@keyframes so {
-  0%,
-  46% {
-    transform: translateX(116px);
-  }
-  56%,
-  100% {
-    transform: none;
-  }
-}
-
-.mn {
+.dzmn b {
   position: relative;
-  height: 18px;
-  margin: 0 0 12px;
-  font-size: 14px;
-  font-weight: 600;
+  width: 170px;
+  height: 20px;
+  text-align: right;
 }
 
-.mn u {
+.dzmn u {
   position: absolute;
-  left: 0;
+  right: 0;
   top: 0;
   text-decoration: none;
-}
-
-.mn .mnb {
   opacity: 0;
 }
 
-.scPlay .mn .mna {
-  animation: vout 0.2s 5s forwards;
+.dzmn .m1 {
+  opacity: 1;
 }
 
-.scPlay .mn .mnb {
-  animation: vin 0.2s 5s forwards;
+.scPlay .dzmn .m1 {
+  animation: vout 0.2s 3s forwards;
+}
+
+.scPlay .dzmn .m2 {
+  animation:
+    vin 0.2s 3s forwards,
+    vout 0.2s 4.6s forwards;
+}
+
+.scPlay .dzmn .m3 {
+  animation: vin 0.2s 4.6s forwards;
 }
 
 .tot {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  border-top: 1px solid #e4e6e8;
-  padding-top: 12px;
+  border-top: 1px solid #eceeef;
+  padding: 12px 0 16px;
 }
 
 .tot span {
@@ -2014,7 +2201,7 @@
   position: relative;
   font-size: 30px;
   letter-spacing: -0.03em;
-  width: 110px;
+  width: 120px;
   height: 36px;
   text-align: right;
 }
@@ -2032,17 +2219,50 @@
 }
 
 .scPlay .tot .v1 {
-  animation: vout 0.2s 3.4s forwards;
+  animation: vout 0.2s 3s forwards;
 }
 
 .scPlay .tot .v2 {
   animation:
-    vin 0.2s 3.4s forwards,
-    vout 0.2s 6.2s forwards;
+    vin 0.2s 3s forwards,
+    vout 0.2s 4.6s forwards;
 }
 
 .scPlay .tot .v3 {
-  animation: vin 0.2s 6.2s forwards;
+  animation: vin 0.2s 4.6s forwards;
+}
+
+.dzb {
+  position: relative;
+  height: 54px;
+  border-radius: 18px;
+  background: #0b0d0e;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.dzb u {
+  position: absolute;
+  text-decoration: none;
+}
+
+.dzb .y {
+  opacity: 0;
+}
+
+.scPlay .dzb {
+  animation: tap 0.6s 8.2s;
+}
+
+.scPlay .dzb .n {
+  animation: vout 0.2s 8.3s forwards;
+}
+
+.scPlay .dzb .y {
+  animation: vin 0.2s 8.3s forwards;
 }
 
 /* 5 Estimate (screen id quote): built line by line, Draft → Ready, sent, approved */
