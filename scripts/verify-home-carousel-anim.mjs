@@ -150,6 +150,37 @@ async function main() {
         ok("per-slide-videos", JSON.stringify(videoMeta.unique));
       } else fail("per-slide-videos", JSON.stringify(videoMeta));
 
+      // Safari: first non-media source per video must be MP4, then WebM
+      const sourceOrder = await page.evaluate(() => {
+        return [...document.querySelectorAll("[data-testid=feature-carousel] video")].map(
+          (v) =>
+            [...v.querySelectorAll("source:not([media])")].map((s) => ({
+              type: s.getAttribute("type"),
+              src: s.getAttribute("src"),
+            })),
+        );
+      });
+      const orderOk = sourceOrder.every(
+        (srcs) =>
+          srcs.length >= 2 &&
+          srcs[0]?.type === "video/mp4" &&
+          srcs[1]?.type === "video/webm",
+      );
+      if (orderOk) ok("mp4-before-webm", JSON.stringify(sourceOrder).slice(0, 400));
+      else fail("mp4-before-webm", JSON.stringify(sourceOrder).slice(0, 400));
+
+      const autoplayAttrs = await page.evaluate(() => {
+        const v = document.querySelector("[data-testid=feature-carousel] video");
+        return {
+          hasAutoplay: v?.hasAttribute("autoplay") ?? false,
+          muted: v?.muted ?? null,
+          playsInline: v?.hasAttribute("playsinline") ?? false,
+        };
+      });
+      if (autoplayAttrs.hasAutoplay && autoplayAttrs.muted && autoplayAttrs.playsInline) {
+        ok("autoplay-muted-playsinline", JSON.stringify(autoplayAttrs));
+      } else fail("autoplay-muted-playsinline", JSON.stringify(autoplayAttrs));
+
       const car = page.locator('[data-testid="feature-carousel"]');
       await car.focus();
       const captions = [];
