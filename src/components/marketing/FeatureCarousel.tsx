@@ -31,8 +31,9 @@ type Props = {
 
 /**
  * Full-bleed carousel hero: per-slide header + caption (fade on change),
- * crossfading backgrounds (wait for paint). Phone pops in at phone.in and
- * stays until the next slide. Animated WebP fallback if autoplay is refused.
+ * crossfading backgrounds (wait for paint). Phone slides up at phone.in and
+ * down at phone.out (~0.9s before the slide ends). Clips play once and hold
+ * the last frame; animated WebP fallback if autoplay is refused.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
@@ -124,22 +125,25 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     }
   }, []);
 
-  const showPhone = useCallback(
-    (i: number) => {
-      const s = SLIDES[i]!;
-      setPlayKey((k) => k + 1);
-      setPhoneShow(true);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const sc = phsRef.current?.querySelector(
-            `[data-screen="${s.screen}"]`,
-          ) as HTMLElement | null;
-          applyPlaybackRate(sc, s.speed);
-        });
-      });
-    },
-    [applyPlaybackRate],
-  );
+  const showPhone = useCallback((i: number) => {
+    setPlayKey((k) => k + 1);
+    setPhoneShow(true);
+  }, []);
+
+  // Apply WAAPI playbackRate after the screen remounts with `.play`
+  useEffect(() => {
+    if (!phoneShow) return;
+    const i = curRef.current >= 0 ? curRef.current : 0;
+    const s = SLIDES[i]!;
+    const kick = () => {
+      const sc = phsRef.current?.querySelector(
+        `[data-screen="${s.screen}"]`,
+      ) as HTMLElement | null;
+      applyPlaybackRate(sc, s.speed);
+    };
+    const id = window.setTimeout(kick, 50);
+    return () => window.clearTimeout(id);
+  }, [phoneShow, playKey, applyPlaybackRate]);
 
   const schedulePhone = useCallback(
     (i: number) => {
@@ -151,11 +155,12 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         showPhone(i);
         return;
       }
-      // Slide up at phone.in; slide down ~0.9s before the slide ends
+      // Slide up at phone.in; slide down at phone.out (~0.9s before end)
       tinRef.current = setTimeout(() => showPhone(i), Math.max(w.in, 900));
+      const hideAt = w.out ?? (s.duration || 0) - 900;
       toutRef.current = setTimeout(
         () => setPhoneShow(false),
-        Math.max(w.in + 1500, (s.duration || 0) - 900),
+        Math.max(w.in + 1500, hideAt),
       );
     },
     [clearPhoneTimers, reduced, showPhone],

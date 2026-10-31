@@ -280,7 +280,7 @@ async function main() {
         ok("anim-webp-assets", JSON.stringify(animOk));
       } else fail("anim-webp-assets", JSON.stringify(animOk));
 
-      // Phone up/down: Measure (duration 7.3s, phone.in 1.8s, hide at duration-900 ≈ 6.4s)
+      // Phone up/down: Measure (duration 7.3s, phone.in 1.8s, phone.out 6.4s)
       for (let n = 0; n < 6; n++) {
         const cap = (await page.locator('[data-testid="car-caption"]').innerText()).trim();
         if (/Point your phone/i.test(cap)) break;

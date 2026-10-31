@@ -8,7 +8,7 @@
  *               anim = animated WebP fallback (play once, hold last frame)
  * - screen:     discover | contact | measure | design | quote (Estimate uses quote)
  * - duration:   ms this slide stays up (~clip length + 1.5s hold)
- * - phone:      { in, out } ms — pops in at `in`, slides out ~0.9s before `out`/end
+ * - phone:      { in, out } ms — up at `in`, down at `out` (~0.9s before slide end)
  * - speed:      Web Animations playbackRate for the CSS screen timeline
  * - focus:      CSS object-position for the video crop
  * - screenshot: optional image; replaces the animated screen when set
@@ -52,7 +52,7 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Find projects ready to buy, near you",
     screen: "discover",
     duration: 11500,
-    phone: { in: 4400, out: 10700 },
+    phone: { in: 4400, out: 10600 },
     speed: 1.55,
     focus: "50% 35%",
     video: {
@@ -68,7 +68,7 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Contacts for every site, one tap away",
     screen: "contact",
     duration: 11500,
-    phone: { in: 900, out: 10700 },
+    phone: { in: 900, out: 10600 },
     speed: 1.0,
     focus: "50% 40%",
     video: {
@@ -86,7 +86,7 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Point your phone, get exact sizes",
     screen: "measure",
     duration: 7300,
-    phone: { in: 1800, out: 6500 },
+    phone: { in: 1800, out: 6400 },
     speed: 1.25,
     focus: "50% 40%",
     video: {
@@ -102,7 +102,7 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Preview it on their storefront",
     screen: "design",
     duration: 11500,
-    phone: { in: 3000, out: 10700 },
+    phone: { in: 3000, out: 10600 },
     speed: 1.2,
     focus: "50% 45%",
     video: {
@@ -118,7 +118,7 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Price it and win the job on the spot",
     screen: "quote",
     duration: 11500,
-    phone: { in: 800, out: 10700 },
+    phone: { in: 800, out: 10600 },
     speed: 1.0,
     focus: "50% 45%",
     video: {
