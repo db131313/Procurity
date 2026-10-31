@@ -4,10 +4,11 @@
  * - label:      accessible slide name
  * - head:       big per-slide header (two short lines; use \n for the break)
  * - caption:    short line under the header that changes per slide
- * - video:      { webm, mp4, poster } — same mp4 → one shared <video>
+ * - video:      { webm, mp4, poster, anim } — same mp4 → one shared <video>
+ *               anim = looping animated WebP used if video autoplay is blocked
  * - screen:     discover | contact | measure | design | quote (Estimate uses quote)
  * - duration:   ms this slide stays up (match the clip length)
- * - phone:      { in, out } ms — phone only visible while the action happens
+ * - phone:      { in, out } ms — phone pops in at `in` and stays until slide change
  * - speed:      Web Animations playbackRate for the CSS screen timeline
  * - focus:      CSS object-position for the video crop
  * - screenshot: optional image; replaces the animated screen when set
@@ -26,6 +27,8 @@ export type CarouselVideo = {
   webm640?: string;
   mp4640?: string;
   poster: string;
+  /** Looping animated WebP fallback when video autoplay is refused. */
+  anim: string;
 };
 
 export type CarouselSlide = {
@@ -56,6 +59,7 @@ export const SLIDES: CarouselSlide[] = [
       webm: "/home/bg-discover.webm",
       mp4: "/home/bg-discover.mp4",
       poster: "/home/bg-discover.jpg",
+      anim: "/home/bg-discover.webp",
     },
   },
   {
@@ -73,6 +77,7 @@ export const SLIDES: CarouselSlide[] = [
       webm640: "/home/field-3-640.webm",
       mp4640: "/home/field-3-640.mp4",
       poster: "/home/field-3.jpg",
+      anim: "/home/field-3.webp",
     },
   },
   {
@@ -88,6 +93,7 @@ export const SLIDES: CarouselSlide[] = [
       webm: "/home/bg-measure.webm",
       mp4: "/home/bg-measure.mp4",
       poster: "/home/bg-measure.jpg",
+      anim: "/home/bg-measure.webp",
     },
   },
   {
@@ -103,6 +109,7 @@ export const SLIDES: CarouselSlide[] = [
       webm: "/home/bg-design.webm",
       mp4: "/home/bg-design.mp4",
       poster: "/home/bg-design.jpg",
+      anim: "/home/bg-design.webp",
     },
   },
   {
@@ -118,6 +125,7 @@ export const SLIDES: CarouselSlide[] = [
       webm: "/home/bg-quote.webm",
       mp4: "/home/bg-quote.mp4",
       poster: "/home/bg-quote.jpg",
+      anim: "/home/bg-quote.webp",
     },
   },
 ];
