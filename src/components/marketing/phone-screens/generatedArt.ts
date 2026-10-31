@@ -154,23 +154,28 @@ export function buildMap(svg: SVGSVGElement | null, filterId = "pcm-bsh") {
 }
 
 /**
- * Appends 16 stacked copies of the sign text to `sg`; each sits at `--k * --ez` in Z,
- * and the last one is the face. `sg` may hold static React children; they are left alone.
+ * Appends stacked `translateZ` layers (via --ez) of the sign text to `sg`.
+ * Pass `html` for multi-line copy (Design AR). Static React children are left alone.
  */
 export function buildSign(
   sg: HTMLElement | null,
   classes: { ext: string; f: string },
-  text = "ALDER & FINCH",
+  opts: { layers?: number; text?: string; html?: string } | string = {},
 ) {
   if (!sg || sg.dataset.done) return;
   sg.dataset.done = "1";
-  const N = 16;
+  const options =
+    typeof opts === "string" ? { text: opts } : opts || {};
+  const N = options.layers ?? 12;
+  const text = options.text ?? "ALDER & FINCH";
+  const html = options.html;
   for (let k = 0; k < N; k++) {
     const d = document.createElement("div");
     d.className = k === N - 1 ? `${classes.ext} ${classes.f}` : classes.ext;
     d.style.setProperty("--k", String(k));
     d.setAttribute("aria-hidden", "true");
-    d.textContent = text;
+    if (html) d.innerHTML = html;
+    else d.textContent = text;
     sg.appendChild(d);
   }
 }

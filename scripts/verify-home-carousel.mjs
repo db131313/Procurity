@@ -118,17 +118,17 @@ async function main() {
       if (afterY > beforeY + 40) ok("wheel-over-map-scrolls", `${beforeY} → ${afterY}`);
       else fail("wheel-over-map-scrolls", `${beforeY} → ${afterY}`);
 
-      // All 4 slides (tabs hidden — keyboard nav)
+      // All 5 slides (tabs hidden — keyboard nav)
       const carFocus = page.locator('[data-testid="feature-carousel"]');
       await carFocus.focus();
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         if (i > 0) {
           await page.keyboard.press("ArrowRight");
           await page.waitForTimeout(350);
         }
         await shot(page, `home-car-slide-${i}-1440.png`);
       }
-      ok("desktop-four-slides");
+      ok("desktop-five-slides");
 
       await page.close();
     }

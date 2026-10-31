@@ -6,7 +6,7 @@
  * - label:      accessible slide name
  * - caption:    short line under the header that changes per slide
  * - video:      { webm, mp4, poster } — same mp4 → one shared <video>
- * - screen:     discover | measure | design | quote (Estimate uses quote)
+ * - screen:     discover | contact | measure | design | quote (Estimate uses quote)
  * - duration:   ms this slide stays up (match the clip length)
  * - phone:      { in, out } ms — phone only visible while the action happens
  * - speed:      Web Animations playbackRate for the CSS screen timeline
@@ -14,7 +14,12 @@
  * - screenshot: optional image; replaces the animated screen when set
  */
 
-export type CarouselScreenId = "discover" | "measure" | "design" | "quote";
+export type CarouselScreenId =
+  | "discover"
+  | "contact"
+  | "measure"
+  | "design"
+  | "quote";
 
 export type CarouselVideo = {
   webm: string;
@@ -49,6 +54,22 @@ export const SLIDES: CarouselSlide[] = [
       webm: "/home/bg-discover.webm",
       mp4: "/home/bg-discover.mp4",
       poster: "/home/bg-discover.jpg",
+    },
+  },
+  {
+    label: "Connect",
+    caption: "Connect",
+    screen: "contact",
+    duration: 10000,
+    phone: { in: 900, out: 9600 },
+    speed: 1.1,
+    focus: "50% 40%",
+    video: {
+      webm: "/home/field-3.webm",
+      mp4: "/home/field-3.mp4",
+      webm640: "/home/field-3-640.webm",
+      mp4640: "/home/field-3-640.mp4",
+      poster: "/home/field-3.jpg",
     },
   },
   {

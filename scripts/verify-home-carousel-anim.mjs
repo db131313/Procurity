@@ -1,5 +1,5 @@
 /**
- * Playwright proof: 4-slide carousel hero (crossfade + stationary header + timed phone).
+ * Playwright proof: 5-slide carousel hero (crossfade + stationary header + timed phone).
  * BASE_URL=http://127.0.0.1:3000 node scripts/verify-home-carousel-anim.mjs
  */
 import { chromium } from "playwright";
@@ -113,8 +113,9 @@ async function main() {
       });
       if (
         layout.tabsDisplay === "none" &&
-        layout.tabAria?.length === 4 &&
+        layout.tabAria?.length === 5 &&
         layout.tabAria.includes("Discover") &&
+        layout.tabAria.includes("Connect") &&
         /Find the job/i.test(layout.headerText || "") &&
         /who.?s buying/i.test(layout.capText || "") &&
         Number.parseFloat(layout.hhFontSize || "0") >= 40 &&
@@ -127,7 +128,7 @@ async function main() {
       const videoMeta = await page.evaluate(() => {
         const vids = [
           ...document.querySelectorAll(
-            "[data-testid=feature-carousel] video source[type='video/mp4']",
+            "[data-testid=feature-carousel] video source[type='video/mp4']:not([media])",
           ),
         ]
           .map((s) => s.getAttribute("src"))
@@ -136,14 +137,15 @@ async function main() {
       });
       const expected = [
         "/home/bg-discover.mp4",
+        "/home/field-3.mp4",
         "/home/bg-measure.mp4",
         "/home/bg-design.mp4",
         "/home/bg-quote.mp4",
       ];
       if (
         expected.every((u) => videoMeta.unique.includes(u)) &&
-        videoMeta.unique.length === 4 &&
-        !videoMeta.unique.some((u) => /invoice|field-3/i.test(u || ""))
+        videoMeta.unique.length === 5 &&
+        !videoMeta.unique.some((u) => /invoice/i.test(u || ""))
       ) {
         ok("per-slide-videos", JSON.stringify(videoMeta.unique));
       } else fail("per-slide-videos", JSON.stringify(videoMeta));
@@ -151,7 +153,7 @@ async function main() {
       const car = page.locator('[data-testid="feature-carousel"]');
       await car.focus();
       const captions = [];
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         if (i > 0) {
           await page.keyboard.press("ArrowRight");
           await page.waitForTimeout(1000);
@@ -164,12 +166,13 @@ async function main() {
         await shot(page, `anim-car-slide-${i}-1440.png`);
       }
       if (
-        captions.length === 4 &&
+        captions.length === 5 &&
         /buying/i.test(captions[0] || "") &&
-        captions[3] === "Estimate"
+        captions[1] === "Connect" &&
+        captions[4] === "Estimate"
       ) {
-        ok("desktop-four-slides", JSON.stringify(captions));
-      } else fail("desktop-four-slides", JSON.stringify(captions));
+        ok("desktop-five-slides", JSON.stringify(captions));
+      } else fail("desktop-five-slides", JSON.stringify(captions));
 
       // Crossfade: active video opacity ~1, others ~0 (not translate)
       const fade = await page.evaluate(() => {
