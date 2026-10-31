@@ -30,8 +30,12 @@ export function DesignScreen() {
               <div className={styles.fas} />
               <div className={styles.win} />
             </div>
+            <div className={styles.cone} aria-hidden />
             <div ref={signRef} className={styles.sg}>
               <div className={styles.sk} />
+              <div className={styles.shd} aria-hidden>
+                ALDER &amp; FINCH
+              </div>
               <div className={styles.halo} aria-hidden>
                 ALDER &amp; FINCH
               </div>
@@ -43,15 +47,14 @@ export function DesignScreen() {
             </div>
           </div>
         </div>
+        <div className={styles.hint}>Drag to orbit</div>
       </div>
       <div className={styles.panel}>
-        <small>Type</small>
         <div className={styles.chips}>
           <i className={styles.chipOn}>Channel letters</i>
           <i>Cabinet</i>
           <i>Monument</i>
         </div>
-        <small>Material</small>
         <div className={styles.sw}>
           <b style={{ background: "#c9ccd0" }} />
           <b style={{ background: "#f3f3f1" }} />

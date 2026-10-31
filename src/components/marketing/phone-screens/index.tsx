@@ -5,7 +5,6 @@ import { DiscoverScreen } from "./DiscoverScreen";
 import { MeasureScreen } from "./MeasureScreen";
 import { DesignScreen } from "./DesignScreen";
 import { QuoteScreen } from "./QuoteScreen";
-import { InvoiceScreen } from "./InvoiceScreen";
 import styles from "../FeatureCarousel.module.css";
 
 export function PhoneScreen({
@@ -30,7 +29,5 @@ export function PhoneScreen({
       return <DesignScreen />;
     case "quote":
       return <QuoteScreen />;
-    case "invoice":
-      return <InvoiceScreen />;
   }
 }

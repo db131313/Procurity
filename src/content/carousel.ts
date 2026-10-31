@@ -1,27 +1,20 @@
 /**
  * Feature carousel content — edit ONLY this file to swap videos, captions, or screens.
  *
- * - label:      accessible name of the bottom progress bar (not shown as text)
- * - caption:    1–2 words shown as the big caption
- * - video:      { webm, mp4, poster, webm640?, mp4640? } — same mp4 → one <video>
- * - screen:     discover | measure | design | quote | invoice
- * - duration:   ms this slide stays up (match the clip length so the story finishes)
- * - focus:      CSS object-position for the video crop on wide screens
- * - screenshot: optional image path; replaces the animated phone screen when set
+ * Stationary header ("Find the job. Win the work.") lives in FeatureCarousel JSX.
  *
- * LAYOUT (FeatureCarousel): 'split' = phone right + big caption left (desktop);
- * 'center' = phone centered, caption under it. Mobile always centers the phone.
+ * - label:      accessible slide name
+ * - caption:    short line under the header that changes per slide
+ * - video:      { webm, mp4, poster } — same mp4 → one shared <video>
+ * - screen:     discover | measure | design | quote (Estimate uses quote)
+ * - duration:   ms this slide stays up (match the clip length)
+ * - phone:      { in, out } ms — phone only visible while the action happens
+ * - speed:      Web Animations playbackRate for the CSS screen timeline
+ * - focus:      CSS object-position for the video crop
+ * - screenshot: optional image; replaces the animated screen when set
  */
 
-/** Desktop layout: 'split' (default) or 'center'. */
-export const LAYOUT: "split" | "center" = "split";
-
-export type CarouselScreenId =
-  | "discover"
-  | "measure"
-  | "design"
-  | "quote"
-  | "invoice";
+export type CarouselScreenId = "discover" | "measure" | "design" | "quote";
 
 export type CarouselVideo = {
   webm: string;
@@ -36,9 +29,9 @@ export type CarouselSlide = {
   caption: string;
   screen: CarouselScreenId;
   screenshot?: string;
-  /** Milliseconds this slide stays up — tab progress uses the same value. */
   duration: number;
-  /** CSS object-position for cropping the background video. */
+  phone: { in: number; out: number };
+  speed: number;
   focus: string;
   video: CarouselVideo;
 };
@@ -49,13 +42,13 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Find who's buying",
     screen: "discover",
     duration: 10000,
-    focus: "50% 40%",
+    phone: { in: 4400, out: 10000 },
+    speed: 1.75,
+    focus: "50% 35%",
     video: {
-      webm: "/home/field-3.webm",
-      mp4: "/home/field-3.mp4",
-      webm640: "/home/field-3-640.webm",
-      mp4640: "/home/field-3-640.mp4",
-      poster: "/home/field-3.webp",
+      webm: "/home/bg-discover.webm",
+      mp4: "/home/bg-discover.mp4",
+      poster: "/home/bg-discover.jpg",
     },
   },
   {
@@ -63,6 +56,8 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Measure",
     screen: "measure",
     duration: 5800,
+    phone: { in: 1800, out: 5800 },
+    speed: 1.45,
     focus: "50% 40%",
     video: {
       webm: "/home/bg-measure.webm",
@@ -75,6 +70,8 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Design",
     screen: "design",
     duration: 10000,
+    phone: { in: 3000, out: 10000 },
+    speed: 1.4,
     focus: "50% 45%",
     video: {
       webm: "/home/bg-design.webm",
@@ -83,27 +80,17 @@ export const SLIDES: CarouselSlide[] = [
     },
   },
   {
-    label: "Quote",
-    caption: "Quote",
+    label: "Estimate",
+    caption: "Estimate",
     screen: "quote",
     duration: 10000,
+    phone: { in: 800, out: 10000 },
+    speed: 1.1,
     focus: "50% 45%",
     video: {
       webm: "/home/bg-quote.webm",
       mp4: "/home/bg-quote.mp4",
       poster: "/home/bg-quote.jpg",
-    },
-  },
-  {
-    label: "Invoice",
-    caption: "Invoice",
-    screen: "invoice",
-    duration: 10000,
-    focus: "50% 45%",
-    video: {
-      webm: "/home/bg-invoice.webm",
-      mp4: "/home/bg-invoice.mp4",
-      poster: "/home/bg-invoice.jpg",
     },
   },
 ];

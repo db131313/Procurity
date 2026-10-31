@@ -153,55 +153,9 @@ export function buildMap(svg: SVGSVGElement | null, filterId = "pcm-bsh") {
   tx(300, 260, "River North", 0, "#8A8F94");
 }
 
-/** Jittered triangle mesh for the AR scan; each triangle gets its own shimmer delay via --d. */
-export function buildScan(svg: SVGSVGElement | null) {
-  if (!svg || svg.dataset.done) return;
-  svg.dataset.done = "1";
-  const R = rng(5);
-  const C = 8;
-  const Rw = 11;
-  const x0 = 10;
-  const x1 = 380;
-  const y0 = 120;
-  const y1 = 700;
-  const P: Array<Array<[number, number]>> = [];
-  for (let j = 0; j <= Rw; j++) {
-    const row: Array<[number, number]> = [];
-    for (let i = 0; i <= C; i++) {
-      const e = i === 0 || j === 0 || i === C || j === Rw ? 0 : 1;
-      row.push([
-        x0 + ((x1 - x0) * i) / C + (R() - 0.5) * 26 * e,
-        y0 + ((y1 - y0) * j) / Rw + (R() - 0.5) * 26 * e,
-      ]);
-    }
-    P.push(row);
-  }
-  const poly = (a: [number, number], b: [number, number], c: [number, number]) => {
-    const p = document.createElementNS(NS, "polygon");
-    p.setAttribute(
-      "points",
-      [a, b, c].map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(" "),
-    );
-    const h = 190 + R() * 60;
-    const l = 55 + R() * 25;
-    p.setAttribute(
-      "fill",
-      `hsla(${h.toFixed(0)},90%,${l.toFixed(0)}%,${(0.04 + R() * 0.13).toFixed(2)})`,
-    );
-    p.style.setProperty("--d", `${(R() * 2).toFixed(2)}s`);
-    svg.appendChild(p);
-  };
-  for (let j = 0; j < Rw; j++) {
-    for (let i = 0; i < C; i++) {
-      poly(P[j]![i]!, P[j]![i + 1]!, P[j + 1]![i]!);
-      poly(P[j]![i + 1]!, P[j + 1]![i + 1]!, P[j + 1]![i]!);
-    }
-  }
-}
-
 /**
- * Appends 14 stacked `translateZ` copies of the sign text to `sg`, the last one
- * being the white face. `sg` may hold static React children; they are left alone.
+ * Appends 16 stacked copies of the sign text to `sg`; each sits at `--k * --ez` in Z,
+ * and the last one is the face. `sg` may hold static React children; they are left alone.
  */
 export function buildSign(
   sg: HTMLElement | null,
@@ -210,7 +164,7 @@ export function buildSign(
 ) {
   if (!sg || sg.dataset.done) return;
   sg.dataset.done = "1";
-  const N = 14;
+  const N = 16;
   for (let k = 0; k < N; k++) {
     const d = document.createElement("div");
     d.className = k === N - 1 ? `${classes.ext} ${classes.f}` : classes.ext;
