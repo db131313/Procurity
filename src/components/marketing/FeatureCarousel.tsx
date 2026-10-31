@@ -43,6 +43,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const blobified = useRef<WeakSet<HTMLVideoElement>>(new WeakSet());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tinRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tfadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchX0 = useRef<number | null>(null);
   const curRef = useRef(-1);
@@ -67,12 +68,36 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
 
   const playVideo = useCallback(
     (v: HTMLVideoElement | null | undefined) => {
-      if (reduced || !v || noVidRef.current) return;
+      if (reduced || !v || noVidRef.current || v.ended) return;
+      v.muted = true;
       const p = v.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (p && typeof p.catch === "function") {
+        p.catch((e: unknown) => {
+          const name =
+            e && typeof e === "object" && "name" in e
+              ? String((e as { name?: string }).name)
+              : "";
+          if (name === "NotAllowedError") {
+            window.setTimeout(() => {
+              if (
+                !noVidRef.current &&
+                v.paused &&
+                !v.ended &&
+                videoByKey.current.get(
+                  SLIDES[curRef.current >= 0 ? curRef.current : 0]!.video.mp4,
+                ) === v
+              ) {
+                switchToAnimRef.current();
+              }
+            }, 600);
+          }
+        });
+      }
     },
     [reduced],
   );
+
+  const switchToAnimRef = useRef<() => void>(() => {});
 
   const clearArm = useCallback(() => {
     if (timerRef.current) {
@@ -83,7 +108,9 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
 
   const clearPhoneTimers = useCallback(() => {
     if (tinRef.current) clearTimeout(tinRef.current);
+    if (toutRef.current) clearTimeout(toutRef.current);
     tinRef.current = null;
+    toutRef.current = null;
   }, []);
 
   const applyPlaybackRate = useCallback((el: HTMLElement | null, speed: number) => {
@@ -124,8 +151,12 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         showPhone(i);
         return;
       }
-      // Phone stays until the next slide; fade out only happens in go()
+      // Slide up at phone.in; slide down ~0.9s before the slide ends
       tinRef.current = setTimeout(() => showPhone(i), Math.max(w.in, 900));
+      toutRef.current = setTimeout(
+        () => setPhoneShow(false),
+        Math.max(w.in + 1500, (s.duration || 0) - 900),
+      );
     },
     [clearPhoneTimers, reduced, showPhone],
   );
@@ -167,15 +198,11 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       v.style.display = "none";
     }
     const i = curRef.current >= 0 ? curRef.current : 0;
-    const key = SLIDES[i]!.video.mp4;
-    const im = ensureAnimImg(key);
-    if (im) {
-      im.removeAttribute("src");
-      im.src = im.dataset.src || "";
-      setOnKey(`anim:${key}`);
-      setPlayingKey(`anim:${key}`);
-    }
-  }, [ensureAnimImg]);
+    revealRef.current(i, SLIDES[i]!.video.mp4);
+  }, []);
+
+  const revealRef = useRef<(i: number, key: string) => void>(() => {});
+  switchToAnimRef.current = switchToAnim;
 
   const blobify = useCallback(
     (v: HTMLVideoElement) => {
@@ -203,6 +230,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const reveal = useCallback(
     (i: number, key: string) => {
       if (tfadeRef.current) clearTimeout(tfadeRef.current);
+      const slide = SLIDES[i]!;
 
       if (noVidRef.current) {
         const im = ensureAnimImg(key);
@@ -210,21 +238,22 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
           setOnKey(`anim:${key}`);
           return;
         }
-        im.removeAttribute("src");
-        im.src = im.dataset.src || "";
-        const show = () => {
-          if (curRef.current !== i) return;
-          for (const [k, el] of imgByKey.current) {
-            el.classList.toggle(styles.bgvOn, k === key);
-          }
-          setOnKey(`anim:${key}`);
-          setPlayingKey(`anim:${key}`);
-        };
-        if (im.complete && im.naturalWidth) show();
-        else {
-          im.onload = show;
-          tfadeRef.current = setTimeout(show, 1500);
+        // Poster first, then swap to animated WebP once loaded; prefetch next
+        im.src = slide.video.poster;
+        for (const [k, el] of imgByKey.current) {
+          el.classList.toggle(styles.bgvOn, k === key);
         }
+        setOnKey(`anim:${key}`);
+        setPlayingKey(`anim:${key}`);
+        const a = new Image();
+        a.onload = () => {
+          if (curRef.current !== i) return;
+          im.removeAttribute("src");
+          im.src = slide.video.anim;
+        };
+        a.src = slide.video.anim;
+        const next = SLIDES[(i + 1) % N]!;
+        new Image().src = next.video.anim;
         return;
       }
 
@@ -260,6 +289,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     },
     [playVideo, ensureAnimImg],
   );
+  revealRef.current = reveal;
 
   const go = useCallback(
     (i: number) => {
@@ -393,14 +423,15 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       const i = curRef.current >= 0 ? curRef.current : 0;
       const v = videoByKey.current.get(SLIDES[i]!.video.mp4);
       if (!v) return;
+      if (v.ended) return;
       if (v.paused) {
         playVideo(v);
-        // ~2s of stubborn pause (5 × 400ms) → switch carousel to animated WebP
-        if (ready && ++stuckRef.current >= 5) switchToAnim();
+        // ~1.2s of stubborn pause (3 × 400ms) → animated WebP fallback
+        if (++stuckRef.current >= 3) switchToAnim();
       } else {
         stuckRef.current = 0;
         // playing but no data for ~3s (8 × 400ms) → fetch mp4 as blob
-        if (v.readyState < 2 && ready && ++stallRef.current >= 8) blobify(v);
+        if (v.readyState < 2 && ++stallRef.current >= 8) blobify(v);
         else if (v.readyState >= 2) stallRef.current = 0;
       }
     };
@@ -415,7 +446,8 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         visRef.current &&
         !reduced &&
         !document.hidden &&
-        !noVidRef.current
+        !noVidRef.current &&
+        !el.ended
       ) {
         window.setTimeout(() => playVideo(el), 50);
       }
@@ -532,8 +564,10 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 el.muted = true;
                 el.defaultMuted = true;
                 el.autoplay = true;
+                el.loop = false; // play once, hold last frame
                 el.controls = false;
                 el.removeAttribute("controls");
+                el.removeAttribute("loop");
                 el.setAttribute("muted", "");
                 el.setAttribute("autoplay", "");
                 el.setAttribute("playsinline", "");
@@ -554,8 +588,8 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             )}
             muted
             autoPlay
-            loop
             playsInline
+            loop={false}
             controls={false}
             preload={i < 2 ? "auto" : "metadata"}
             poster={vid.poster}
