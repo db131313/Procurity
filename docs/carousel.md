@@ -1,6 +1,6 @@
 # Feature carousel
 
-The homepage **hero** is `FeatureCarousel` at `calc(100svh - 56px)` so ~56px of the swarm map peeks below. An intro blob covers first paint; after reveal, the carousel auto-advances with **background crossfades** (incoming slide waits until the video is painting). Each slide has its own big header (`head`) and caption; both fade out/in (~0.25s) on slide change. The phone gently slides up at `phone.in` (min 0.9s) and slides down ~0.9s before the slide ends. Clips play **once** (`loop=false`) and hold the last frame; slide `duration` is ~1.5s longer than the clip. If video autoplay is refused (~1.2s paused / `NotAllowedError`), the carousel switches to animated WebP (`video.anim`, play once).
+The homepage **hero** is `FeatureCarousel` at `calc(100svh - 56px)` so ~56px of the swarm map peeks below. An intro blob covers first paint; after reveal, the carousel auto-advances with **background crossfades** (incoming slide waits until the video is painting). Each slide has its own big header (`head`) and caption; both fade out/in (~0.25s) on slide change. The phone gently slides up at `phone.in` (min 0.9s) and slides down at `phone.out` (~0.9s before the slide ends). Clips play **once** (`loop=false`) and hold the last frame; slide `duration` is ~1.5s longer than the clip. If video autoplay is refused (~1.2s paused / `NotAllowedError`), the carousel switches to animated WebP (`video.anim`, play once).
 
 ## Layout
 
@@ -23,7 +23,7 @@ Edit **only** [`src/content/carousel.ts`](../src/content/carousel.ts).
 | `caption` | Line under the header |
 | `screen` | `discover` \| `contact` \| `measure` \| `design` \| `quote` |
 | `duration` | ms the slide stays up (clip + hold) |
-| `phone` | `{ in, out }` — up at `in`, down ~0.9s before end |
+| `phone` | `{ in, out }` — up at `in`, down at `out` (~0.9s before end) |
 | `speed` | WAAPI `playbackRate` for the screen timeline |
 | `focus` | CSS `object-position` |
 | `video` | `{ webm, mp4, poster, anim, webm640?, mp4640? }` |
