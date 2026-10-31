@@ -408,7 +408,9 @@
     animation: none;
     transform: none;
   }
-  .sc * {
+  .sc *,
+  .sc *::before,
+  .sc *::after {
     animation-duration: 0.01s !important;
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
