@@ -303,14 +303,14 @@ async function main() {
         ok("anim-webp-assets", JSON.stringify(animOk));
       } else fail("anim-webp-assets", JSON.stringify(animOk));
 
-      // Phone up/down: Measure (duration 5.3s, phone.in 1.0s, phone.out 4.4s)
+      // Phone up/down: Measure (duration 5.0s, phone.in 0.8s, phone.out 4.1s)
       for (let n = 0; n < 6; n++) {
         const cap = (await page.locator('[data-testid="car-caption"]').innerText()).trim();
         if (/Point your phone/i.test(cap)) break;
         await page.keyboard.press("ArrowRight");
         await page.waitForTimeout(700);
       }
-      await page.waitForTimeout(1600); // past phone.in 1.0s
+      await page.waitForTimeout(1400); // past phone.in 0.8s
       const phoneMid = await page.evaluate(() => {
         const phs = document.querySelector("[data-testid=car-phone]");
         const dev = phs?.querySelector("[class*='dev']");
@@ -319,8 +319,8 @@ async function main() {
           show: phs?.className.includes("phsShow") || false,
         };
       });
-      // Wait until after phone.out 4.4s (still on Measure until 5.3s)
-      await page.waitForTimeout(3200);
+      // Wait until after phone.out 4.1s (still on Measure until 5.0s)
+      await page.waitForTimeout(3000);
       const phoneLate = await page.evaluate(() => {
         const phs = document.querySelector("[data-testid=car-phone]");
         const dev = phs?.querySelector("[class*='dev']");
@@ -337,6 +337,33 @@ async function main() {
       if (phoneMid.opacity > 0.5 && phoneLate.opacity < 0.5 && loopOff.loop === false) {
         ok("phone-up-down-and-no-freeze", JSON.stringify({ phoneMid, phoneLate, loopOff }));
       } else fail("phone-up-down-and-no-freeze", JSON.stringify({ phoneMid, phoneLate, loopOff }));
+
+      // Prime: from Discover, wait until ~duration-1.7s and assert next video is playing under opacity 0
+      for (let n = 0; n < 6; n++) {
+        const cap = (await page.locator('[data-testid="car-caption"]').innerText()).trim();
+        if (/Find projects ready to buy/i.test(cap)) break;
+        await page.keyboard.press("ArrowRight");
+        await page.waitForTimeout(400);
+      }
+      await page.waitForTimeout(7600); // 9.0s - 1.7s ≈ 7.3s into Discover
+      const primed = await page.evaluate(() => {
+        const vids = [...document.querySelectorAll("[data-testid=feature-carousel] video")];
+        const field = vids.find((v) =>
+          [...v.querySelectorAll("source")].some((s) => (s.getAttribute("src") || "").includes("field-3")),
+        );
+        return {
+          paused: field?.paused ?? null,
+          currentTime: field?.currentTime ?? null,
+          opacity: field ? Number(getComputedStyle(field).opacity) : null,
+        };
+      });
+      if (
+        primed.paused === false &&
+        Number(primed.currentTime) > 0.05 &&
+        Number(primed.opacity) < 0.2
+      ) {
+        ok("next-clip-primed", JSON.stringify(primed));
+      } else fail("next-clip-primed", JSON.stringify(primed));
 
       // Crossfade: active video opacity ~1, others ~0 (not translate)
       const fade = await page.evaluate(() => {

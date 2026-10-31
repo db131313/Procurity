@@ -1,6 +1,6 @@
 # Feature carousel
 
-The homepage **hero** is `FeatureCarousel` at `calc(100svh - 56px)` so ~56px of the swarm map peeks below. An intro blob (full-viewport soft radial mix-blend colors, ~4.6s) covers first paint; after reveal, the carousel auto-advances with **1s background crossfades** (incoming slide waits until the video is painting). Each slide has its own big header (`head`) and caption; both fade out/in (~0.25s) on slide change. Discover / Measure / Estimate use the phone mockup; Connect and Design use floating card stacks (no phone) so people in the clip stay visible. UI slides up at `phone.in` and down at `phone.out` (~0.9s before end). Slide `duration` is ~clip − 0.6s so the next crossfade starts while the old clip is still moving; `ended` also advances. If video autoplay is refused (~1.2s paused / `NotAllowedError`), the carousel switches to animated WebP (`video.anim`, play once).
+The homepage **hero** is `FeatureCarousel` at `calc(100svh - 56px)` so ~56px of the swarm map peeks below. An intro blob (full-viewport soft radial mix-blend colors, ~4.6s) covers first paint; after reveal, the carousel auto-advances with **1s background crossfades**. Each slide has its own big header (`head`) and caption; both fade out/in (~0.25s) on slide change. Discover / Measure / Estimate use the phone mockup; Connect and Design use floating card stacks (no phone) so people in the clip stay visible. UI slides up at `phone.in` and down at `phone.out` (~0.9s before end). Slide `duration` is clip − 1.0s; ~1.7s before the end the **next** clip is primed (playing at opacity 0) so the crossfade never waits on a cold start; `ended` also advances. If video autoplay is refused (~1.2s paused / `NotAllowedError`), the carousel switches to animated WebP (`video.anim`, play once).
 
 ## Layout
 
@@ -23,7 +23,7 @@ Edit **only** [`src/content/carousel.ts`](../src/content/carousel.ts).
 | `caption` | Line under the header |
 | `screen` | `discover` \| `contact` \| `measure` \| `design` \| `quote` |
 | `ui` | `phone` \| `cards` (Connect + Design) |
-| `duration` | ms the slide stays up (clip − ~0.6s) |
+| `duration` | ms the slide stays up (clip − 1.0s; next primes at duration − 1.7s) |
 | `phone` | `{ in, out }` — up at `in`, down at `out` |
 | `speed` | WAAPI `playbackRate` for phone screen timelines |
 | `focus` | CSS `object-position` |

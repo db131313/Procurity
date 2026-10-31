@@ -8,7 +8,7 @@
  *               anim = animated WebP fallback (play once, hold last frame)
  * - screen:     discover | contact | measure | design | quote (Estimate uses quote)
  * - ui:         phone mockup | floating cards (Connect/Design — no phone)
- * - duration:   ms this slide stays up (clip length − ~0.6s; no frozen last frame)
+ * - duration:   ms this slide stays up (clip length − 1.0s; next primes ~1.7s early)
  * - phone:      { in, out } ms — UI up at `in`, down at `out` (~0.9s before end)
  * - speed:      Web Animations playbackRate for the CSS screen timeline
  * - focus:      CSS object-position for the video crop
@@ -57,9 +57,9 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Find projects ready to buy, near you",
     screen: "discover",
     ui: "phone",
-    duration: 9400,
-    phone: { in: 2600, out: 8500 },
-    speed: 1.65,
+    duration: 9000,
+    phone: { in: 2600, out: 8100 },
+    speed: 1.8,
     focus: "50% 35%",
     video: {
       webm: "/home/bg-discover.webm",
@@ -74,8 +74,8 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Contacts for every site, one tap away",
     screen: "contact",
     ui: "cards",
-    duration: 9400,
-    phone: { in: 900, out: 8500 },
+    duration: 9000,
+    phone: { in: 900, out: 8100 },
     speed: 1.0,
     focus: "50% 40%",
     video: {
@@ -93,9 +93,9 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Point your phone, get exact sizes",
     screen: "measure",
     ui: "phone",
-    duration: 5300,
-    phone: { in: 1000, out: 4400 },
-    speed: 1.7,
+    duration: 5000,
+    phone: { in: 800, out: 4100 },
+    speed: 1.75,
     focus: "50% 40%",
     video: {
       webm: "/home/bg-measure.webm",
@@ -110,9 +110,9 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Preview it on their storefront",
     screen: "design",
     ui: "cards",
-    duration: 9400,
-    phone: { in: 1000, out: 8500 },
-    speed: 1.5,
+    duration: 9000,
+    phone: { in: 1000, out: 8100 },
+    speed: 1.0,
     focus: "50% 45%",
     video: {
       webm: "/home/bg-design.webm",
@@ -127,9 +127,9 @@ export const SLIDES: CarouselSlide[] = [
     caption: "Price it and win the job on the spot",
     screen: "quote",
     ui: "phone",
-    duration: 9400,
-    phone: { in: 800, out: 8500 },
-    speed: 1.3,
+    duration: 9000,
+    phone: { in: 800, out: 8100 },
+    speed: 1.4,
     focus: "50% 45%",
     video: {
       webm: "/home/bg-quote.webm",
