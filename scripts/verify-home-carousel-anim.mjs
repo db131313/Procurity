@@ -1,5 +1,5 @@
 /**
- * Playwright proof: 5-slide carousel hero (crossfade + stationary header + timed phone).
+ * Playwright proof: 5-slide carousel hero (crossfade + per-slide headers + timed phone).
  * BASE_URL=http://127.0.0.1:3000 node scripts/verify-home-carousel-anim.mjs
  */
 import { chromium } from "playwright";
@@ -117,13 +117,15 @@ async function main() {
         layout.tabAria.includes("Discover") &&
         layout.tabAria.includes("Connect") &&
         /Find the job/i.test(layout.headerText || "") &&
-        /who.?s buying/i.test(layout.capText || "") &&
-        Number.parseFloat(layout.hhFontSize || "0") >= 40 &&
+        /before they do/i.test(layout.headerText || "") &&
+        /Projects ready to buy/i.test(layout.capText || "") &&
+        Number.parseFloat(layout.hhFontSize || "0") >= 36 &&
+        Number.parseFloat(layout.hhFontSize || "0") <= 80 &&
         Number.parseFloat(layout.capFontSize || "0") >= 18 &&
         Number.parseFloat(layout.capFontSize || "0") < 40
       ) {
-        ok("stationary-header-hidden-tabs", JSON.stringify(layout));
-      } else fail("stationary-header-hidden-tabs", JSON.stringify(layout));
+        ok("per-slide-header-hidden-tabs", JSON.stringify(layout));
+      } else fail("per-slide-header-hidden-tabs", JSON.stringify(layout));
 
       const videoMeta = await page.evaluate(() => {
         const vids = [
@@ -181,9 +183,22 @@ async function main() {
         ok("autoplay-muted-playsinline", JSON.stringify(autoplayAttrs));
       } else fail("autoplay-muted-playsinline", JSON.stringify(autoplayAttrs));
 
+      const noControls = await page.evaluate(() => {
+        const vids = [...document.querySelectorAll("[data-testid=feature-carousel] video")];
+        return {
+          count: vids.length,
+          anyControls: vids.some((v) => v.hasAttribute("controls") || v.controls),
+          peNone: vids.every((v) => getComputedStyle(v).pointerEvents === "none"),
+        };
+      });
+      if (noControls.count >= 5 && !noControls.anyControls && noControls.peNone) {
+        ok("no-play-button", JSON.stringify(noControls));
+      } else fail("no-play-button", JSON.stringify(noControls));
+
       const car = page.locator('[data-testid="feature-carousel"]');
       await car.focus();
       const captions = [];
+      const heads = [];
       for (let i = 0; i < 5; i++) {
         if (i > 0) {
           await page.keyboard.press("ArrowRight");
@@ -194,16 +209,52 @@ async function main() {
         captions.push(
           (await page.locator('[data-testid="car-caption"]').innerText()).trim(),
         );
+        heads.push(
+          (await page.locator('[data-testid="car-header"] h2').innerText())
+            .replace(/\s+/g, " ")
+            .trim(),
+        );
         await shot(page, `anim-car-slide-${i}-1440.png`);
       }
+      const expectedCaps = [
+        /Projects ready to buy/i,
+        /contact for every site/i,
+        /Exact sizes/i,
+        /Preview it before/i,
+        /Win the work/i,
+      ];
+      const expectedHeads = [
+        /Find the job.*before they do/i,
+        /Know exactly.*who to call/i,
+        /Measure it.*in seconds/i,
+        /Show them the.*finished sign/i,
+        /Send the estimate.*before you leave/i,
+      ];
       if (
         captions.length === 5 &&
-        /buying/i.test(captions[0] || "") &&
-        captions[1] === "Connect" &&
-        captions[4] === "Estimate"
+        expectedCaps.every((re, i) => re.test(captions[i] || "")) &&
+        expectedHeads.every((re, i) => re.test(heads[i] || ""))
       ) {
-        ok("desktop-five-slides", JSON.stringify(captions));
-      } else fail("desktop-five-slides", JSON.stringify(captions));
+        ok("desktop-five-slides", JSON.stringify({ captions, heads }));
+      } else fail("desktop-five-slides", JSON.stringify({ captions, heads }));
+
+      // Discover fire pin + flat Design (no AR/3D layers)
+      const screenBits = await page.evaluate(() => {
+        const fire = document.querySelector('[data-testid="car-screen-discover"] [class*="bgFire"]');
+        const flameSvg = fire?.querySelector("svg");
+        const dz = document.querySelector('[data-testid="car-screen-design"] [class*="dz"]');
+        const vs = dz ? [...dz.querySelectorAll('[class*="vs"]')].length : 0;
+        const ar = document.querySelector('[data-testid="car-screen-design"] [class*="arg"], [data-testid="car-screen-design"] [class*="ext"]');
+        return {
+          hasFire: !!fire && !!flameSvg,
+          hasFlatDz: !!dz,
+          vsCount: vs,
+          hasArLayers: !!ar,
+        };
+      });
+      if (screenBits.hasFire && screenBits.hasFlatDz && screenBits.vsCount >= 3 && !screenBits.hasArLayers) {
+        ok("fire-pin-and-flat-design", JSON.stringify(screenBits));
+      } else fail("fire-pin-and-flat-design", JSON.stringify(screenBits));
 
       // Crossfade: active video opacity ~1, others ~0 (not translate)
       const fade = await page.evaluate(() => {
@@ -314,13 +365,23 @@ async function main() {
       } else fail("mobile-header-phone-layout", JSON.stringify(mobileLayout));
 
       await page.locator('[data-testid="feature-carousel"]').focus();
-      await page.keyboard.press("ArrowRight");
-      await page.waitForTimeout(1200);
+      // Discover → Connect → Measure → Design
+      for (let i = 0; i < 2; i++) {
+        await page.keyboard.press("ArrowRight");
+        await page.waitForTimeout(900);
+      }
       await shot(page, "anim-car-measure-390.png");
       await page.keyboard.press("ArrowRight");
       await page.waitForTimeout(1200);
       await shot(page, "anim-car-design-390.png");
-      ok("mobile-measure-design");
+      const mobileScreens = await page.evaluate(() => {
+        const cap = document.querySelector("[data-testid=car-caption]")?.textContent || "";
+        const head = document.querySelector("[data-testid=car-header] h2")?.textContent || "";
+        return { cap: cap.trim(), head: head.replace(/\s+/g, " ").trim() };
+      });
+      if (/Preview it before/i.test(mobileScreens.cap) && /finished sign/i.test(mobileScreens.head)) {
+        ok("mobile-measure-design", JSON.stringify(mobileScreens));
+      } else fail("mobile-measure-design", JSON.stringify(mobileScreens));
 
       await page
         .locator('[data-testid="home-swarm-section"]')

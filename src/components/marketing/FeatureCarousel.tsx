@@ -30,7 +30,7 @@ type Props = {
 };
 
 /**
- * Full-bleed carousel hero: stationary value header + per-slide caption,
+ * Full-bleed carousel hero: per-slide header + caption (fade on change),
  * crossfading backgrounds (wait for paint), phone only during action window.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
@@ -49,8 +49,9 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const [reduced, setReduced] = useState(true);
   const [phoneShow, setPhoneShow] = useState(false);
   const [playKey, setPlayKey] = useState(0);
+  const [headText, setHeadText] = useState(SLIDES[0]!.head);
   const [capText, setCapText] = useState(SLIDES[0]!.caption);
-  const [capOpacity, setCapOpacity] = useState(1);
+  const [copyOpacity, setCopyOpacity] = useState(1);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
   const [onKey, setOnKey] = useState<string | null>(null);
   const iosUrl = process.env.NEXT_PUBLIC_IOS_APP_URL?.trim() || "";
@@ -207,11 +208,12 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
 
       reveal(next, key);
 
-      setCapOpacity(0);
+      setCopyOpacity(0);
       window.setTimeout(() => {
+        setHeadText(slide.head);
         setCapText(slide.caption);
-        setCapOpacity(1);
-      }, 200);
+        setCopyOpacity(1);
+      }, 220);
 
       clearPhoneTimers();
       setPhoneShow(false);
@@ -299,6 +301,31 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [playVideo]);
+
+  // Keep trying: if Safari pauses the active video, restart (never show a play button)
+  useEffect(() => {
+    const kick = () => {
+      if (reduced || document.hidden || !visRef.current) return;
+      const i = curRef.current >= 0 ? curRef.current : 0;
+      const v = videoByKey.current.get(SLIDES[i]!.video.mp4);
+      if (v && v.paused) playVideo(v);
+    };
+    const id = window.setInterval(kick, 400);
+    const onPause = (e: Event) => {
+      const el = e.target as HTMLVideoElement | null;
+      const i = curRef.current >= 0 ? curRef.current : 0;
+      const active = videoByKey.current.get(SLIDES[i]!.video.mp4);
+      if (el && el === active && visRef.current && !reduced && !document.hidden) {
+        window.setTimeout(() => playVideo(el), 50);
+      }
+    };
+    const vids = [...videoByKey.current.values()];
+    for (const v of vids) v.addEventListener("pause", onPause);
+    return () => {
+      window.clearInterval(id);
+      for (const v of vids) v.removeEventListener("pause", onPause);
+    };
+  }, [playVideo, reduced, videos.length]);
 
   // intro-done: restart clip + phone + arm; later bump remaining preloads
   useEffect(() => {
@@ -401,6 +428,8 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 el.muted = true;
                 el.defaultMuted = true;
                 el.autoplay = true;
+                el.controls = false;
+                el.removeAttribute("controls");
                 el.setAttribute("muted", "");
                 el.setAttribute("autoplay", "");
                 el.setAttribute("playsinline", "");
@@ -419,6 +448,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             autoPlay
             loop
             playsInline
+            controls={false}
             preload={i < 2 ? "auto" : "metadata"}
             poster={vid.poster}
             disablePictureInPicture
@@ -432,6 +462,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
             onPlaying={() => setPlayingKey(vid.mp4)}
             onLoadedData={(e) => {
               const el = e.currentTarget;
+              el.removeAttribute("controls");
               if (el === videoByKey.current.get(SLIDES[curRef.current >= 0 ? curRef.current : 0]!.video.mp4)) {
                 playVideo(el);
               }
@@ -510,13 +541,16 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         className={cn(styles.hh, styles.reveal, ready && styles.revealOn)}
         data-testid="car-header"
       >
-        <h2>
-          Find the job.
-          <br />
-          Win the work.
+        <h2 style={{ opacity: copyOpacity }}>
+          {headText.split("\n").map((line, i, arr) => (
+            <span key={`${i}-${line}`}>
+              {line}
+              {i < arr.length - 1 ? <br /> : null}
+            </span>
+          ))}
         </h2>
         <div className={styles.cap} aria-live="polite" data-testid="car-caption">
-          <span style={{ opacity: capOpacity }}>{capText}</span>
+          <span style={{ opacity: copyOpacity }}>{capText}</span>
         </div>
       </div>
 

@@ -1,71 +1,109 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import styles from "../FeatureCarousel.module.css";
 import { StatusBar } from "./StatusBar";
-import { CameraPov } from "./CameraPov";
-import { buildSign } from "./generatedArt";
 
-/** AR sign preview on the same wall as Measure. */
+/** Flat sign designer — no AR, no 3D, no tilt. */
 export function DesignScreen() {
-  const signRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    buildSign(signRef.current, { ext: styles.ext!, f: styles.f! }, {
-      layers: 12,
-      html: "ALDER<br>&amp; FINCH",
-    });
-  }, []);
-
   return (
-    <>
-      <CameraPov uid="pcd" />
-      <div className={styles.vg} />
-      <StatusBar />
-      <div className={styles.tb}>
+    <div className={styles.dz}>
+      <StatusBar light />
+      <div className={styles.dzt}>
         <i>‹</i>
-        <div className={styles.hud}>
-          <em>Sign preview</em>
-        </div>
-        <i>⤴</i>
+        <b>Sign designer</b>
+        <i>✓</i>
       </div>
-      <div className={styles.ar}>
-        <div ref={signRef} className={styles.arg}>
-          <div className={styles.sk} />
-          <div className={styles.shd} aria-hidden>
-            ALDER
-            <br />
-            &amp; FINCH
+      <div className={styles.dzc}>
+        <svg
+          viewBox="0 0 358 352"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden
+        >
+          <defs>
+            <linearGradient id="dzg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#8FA9BA" />
+              <stop offset="1" stopColor="#C9D8E0" />
+            </linearGradient>
+          </defs>
+          <rect width="358" height="352" fill="#E3DDD0" />
+          <rect x="0" y="34" width="358" height="116" fill="#24262A" />
+          <rect x="0" y="34" width="358" height="4" fill="#3a3d42" />
+          <rect
+            x="36"
+            y="178"
+            width="168"
+            height="170"
+            rx="4"
+            fill="url(#dzg)"
+          />
+          <path d="M36 178H110L36 262Z" fill="#fff" opacity=".18" />
+          <rect
+            x="36"
+            y="178"
+            width="168"
+            height="170"
+            rx="4"
+            fill="none"
+            stroke="#1d1f22"
+            strokeWidth="5"
+          />
+          <path d="M120 178V348" stroke="#1d1f22" strokeWidth="3" />
+          <rect
+            x="226"
+            y="178"
+            width="96"
+            height="174"
+            rx="4"
+            fill="url(#dzg)"
+          />
+          <rect
+            x="226"
+            y="178"
+            width="96"
+            height="174"
+            rx="4"
+            fill="none"
+            stroke="#1d1f22"
+            strokeWidth="5"
+          />
+          <circle cx="240" cy="272" r="4" fill="#1d1f22" />
+          <rect x="0" y="348" width="358" height="4" fill="#b9b2a2" />
+        </svg>
+        <div className={styles.dzn} />
+        <div className={styles.dzlit} />
+        <div className={styles.dzs}>
+          <div className={styles.dzr}>
+            <span>Sign area · 12′ 2″ × 2′ 6″</span>
           </div>
-          <div className={styles.halo} aria-hidden>
-            ALDER
-            <br />
-            &amp; FINCH
-          </div>
+          <div className={`${styles.vs} ${styles.vs1}`}>ALDER & FINCH</div>
+          <div className={`${styles.vs} ${styles.vs2}`}>Alder & Finch</div>
+          <div className={`${styles.vs} ${styles.vs3}`}>ALDER & FINCH</div>
+        </div>
+        <div className={styles.dzm}>
+          <u className={styles.dy}>Day</u>
+          <u className={styles.nt}>Night</u>
         </div>
       </div>
-      <div className={styles.dp}>
+      <div className={styles.dzp}>
         <div className={styles.tiles}>
-          <div className={styles.tl}>
-            <b>ALDER</b>Channel
+          <div className={`${styles.tl} ${styles.tla}`}>
+            <b>ALDER</b>Bold
           </div>
-          <div className={`${styles.tl} ${styles.tlh}`}>
-            <b>ALDER</b>Halo-lit
+          <div className={`${styles.tl} ${styles.tlb}`}>
+            <b>Alder</b>Classic
           </div>
           <div className={`${styles.tl} ${styles.tlc}`}>
-            <b>ALDER</b>Cabinet
+            <b>ALDER</b>Halo-lit
           </div>
           <span className={styles.tring} />
         </div>
-        <div className={styles.sw}>
-          <b style={{ background: "#c9ccd0" }} />
-          <b style={{ background: "#f3f3f1" }} />
-          <b style={{ background: "#2b2d30" }} />
-          <span className={styles.so} />
-        </div>
-        <div className={styles.mn}>
-          <u className={styles.mna}>Matte black</u>
-          <u className={styles.mnb}>Brushed aluminum</u>
+        <div className={styles.dzmn}>
+          <span>Material</span>
+          <b>
+            <u className={styles.m1}>Painted aluminum</u>
+            <u className={styles.m2}>Brushed brass</u>
+            <u className={styles.m3}>Halo-lit aluminum</u>
+          </b>
         </div>
         <div className={styles.tot}>
           <span>From your price book</span>
@@ -75,7 +113,11 @@ export function DesignScreen() {
             <u className={styles.v3}>$4,820</u>
           </b>
         </div>
+        <div className={styles.dzb}>
+          <u className={styles.n}>Add to estimate</u>
+          <u className={styles.y}>Added to estimate</u>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
