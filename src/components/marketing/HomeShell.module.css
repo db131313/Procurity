@@ -205,69 +205,130 @@
 }
 
 .bl {
-  position: relative;
-  width: min(340px, 60vw);
-  aspect-ratio: 1;
-  filter: blur(34px) saturate(1.2);
-  animation: grow 3.2s cubic-bezier(0.3, 0.6, 0.3, 1) forwards;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 150vmax;
+  height: 150vmax;
+  margin: -75vmax 0 0 -75vmax;
+  animation: grow 4.6s cubic-bezier(0.25, 0.6, 0.25, 1) forwards;
 }
 
 @keyframes grow {
   from {
-    transform: scale(0.4);
+    transform: scale(0.09);
   }
   to {
-    transform: scale(1.25);
+    transform: scale(1);
   }
 }
 
 .bl i {
   position: absolute;
-  width: 62%;
-  height: 62%;
+  width: 84%;
+  height: 84%;
   border-radius: 50%;
-  opacity: 0.85;
-  animation: drift 11s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+  will-change: transform;
 }
 
 .bl i:nth-child(1) {
-  background: #5ee7ff;
-  left: 0;
-  top: 6%;
+  background: radial-gradient(
+    circle,
+    rgba(94, 231, 255, 0.95) 0,
+    rgba(94, 231, 255, 0.5) 28%,
+    rgba(94, 231, 255, 0.16) 52%,
+    rgba(94, 231, 255, 0) 74%
+  );
+  left: -10%;
+  top: -6%;
+  animation: iA 11s ease-in-out infinite alternate;
 }
 
 .bl i:nth-child(2) {
-  background: #a78bfa;
-  right: 0;
+  background: radial-gradient(
+    circle,
+    rgba(167, 139, 250, 0.95) 0,
+    rgba(167, 139, 250, 0.5) 28%,
+    rgba(167, 139, 250, 0.16) 52%,
+    rgba(167, 139, 250, 0) 74%
+  );
+  right: -10%;
   top: 0;
-  animation-delay: -3s;
-  animation-duration: 13s;
+  animation: iB 13s ease-in-out infinite alternate;
 }
 
 .bl i:nth-child(3) {
-  background: #ff7ac6;
-  left: 18%;
-  bottom: 0;
-  animation-delay: -6s;
-  animation-duration: 15s;
+  background: radial-gradient(
+    circle,
+    rgba(255, 122, 198, 0.95) 0,
+    rgba(255, 122, 198, 0.5) 28%,
+    rgba(255, 122, 198, 0.16) 52%,
+    rgba(255, 122, 198, 0) 74%
+  );
+  left: 2%;
+  bottom: -10%;
+  animation: iC 14s ease-in-out infinite alternate;
 }
 
 .bl i:nth-child(4) {
-  background: #ffc46b;
-  right: 6%;
-  bottom: 8%;
-  width: 42%;
-  height: 42%;
-  animation-delay: -9s;
-  animation-duration: 10s;
+  background: radial-gradient(
+    circle,
+    rgba(255, 196, 107, 0.95) 0,
+    rgba(255, 196, 107, 0.5) 28%,
+    rgba(255, 196, 107, 0.16) 52%,
+    rgba(255, 196, 107, 0) 74%
+  );
+  right: -2%;
+  bottom: -4%;
+  animation: iD 10s ease-in-out infinite alternate;
 }
 
-@keyframes drift {
-  from {
+@keyframes iA {
+  0% {
     transform: translate(0, 0) scale(1);
   }
-  to {
-    transform: translate(8%, -6%) scale(1.08);
+  50% {
+    transform: translate(26%, 14%) scale(1.1);
+  }
+  100% {
+    transform: translate(10%, 30%) scale(0.92);
+  }
+}
+
+@keyframes iB {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-24%, 16%) scale(0.92);
+  }
+  100% {
+    transform: translate(-8%, 32%) scale(1.12);
+  }
+}
+
+@keyframes iC {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(26%, -18%) scale(1.12);
+  }
+  100% {
+    transform: translate(8%, -30%) scale(0.92);
+  }
+}
+
+@keyframes iD {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-26%, -14%) scale(0.92);
+  }
+  100% {
+    transform: translate(-10%, -28%) scale(1.1);
   }
 }
 

@@ -13,6 +13,8 @@ import {
 import Link from "next/link";
 import { SLIDES, uniqueVideos } from "@/content/carousel";
 import { PhoneScreen } from "./phone-screens";
+import { ConnectOverlay } from "./ConnectOverlay";
+import { DesignOverlay } from "./DesignOverlay";
 import { cn } from "@/lib/cn";
 import styles from "./FeatureCarousel.module.css";
 
@@ -31,9 +33,9 @@ type Props = {
 
 /**
  * Full-bleed carousel hero: per-slide header + caption (fade on change),
- * crossfading backgrounds (wait for paint). Phone slides up at phone.in and
- * down at phone.out (~0.9s before the slide ends). Clips play once and hold
- * the last frame; animated WebP fallback if autoplay is refused.
+ * 1s crossfading backgrounds (wait for paint). Phone or floating cards slide
+ * up at phone.in and down at phone.out. Slides end with the clip (no frozen
+ * frame); `ended` advances as backup. Animated WebP if autoplay is refused.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
@@ -125,16 +127,17 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     }
   }, []);
 
-  const showPhone = useCallback((i: number) => {
+  const showUi = useCallback((_i: number) => {
     setPlayKey((k) => k + 1);
     setPhoneShow(true);
   }, []);
 
-  // Apply WAAPI playbackRate after the screen remounts with `.play`
+  // Apply WAAPI playbackRate after phone screens remount with `.play`
   useEffect(() => {
     if (!phoneShow) return;
     const i = curRef.current >= 0 ? curRef.current : 0;
     const s = SLIDES[i]!;
+    if (s.ui !== "phone") return;
     const kick = () => {
       const sc = phsRef.current?.querySelector(
         `[data-screen="${s.screen}"]`,
@@ -152,18 +155,18 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       const s = SLIDES[i]!;
       const w = s.phone || { in: 0, out: s.duration };
       if (reduced) {
-        showPhone(i);
+        showUi(i);
         return;
       }
-      // Slide up at phone.in; slide down at phone.out (~0.9s before end)
-      tinRef.current = setTimeout(() => showPhone(i), Math.max(w.in, 900));
+      // UI up at phone.in; down at phone.out (~0.9s before end)
+      tinRef.current = setTimeout(() => showUi(i), Math.max(w.in, 900));
       const hideAt = w.out ?? (s.duration || 0) - 900;
       toutRef.current = setTimeout(
         () => setPhoneShow(false),
         Math.max(w.in + 1500, hideAt),
       );
     },
-    [clearPhoneTimers, reduced, showPhone],
+    [clearPhoneTimers, reduced, showUi],
   );
 
   const goRef = useRef<(i: number) => void>(() => {});
@@ -457,11 +460,25 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         window.setTimeout(() => playVideo(el), 50);
       }
     };
+    const onEnded = (e: Event) => {
+      const el = e.target as HTMLVideoElement | null;
+      const i = curRef.current >= 0 ? curRef.current : 0;
+      const active = videoByKey.current.get(SLIDES[i]!.video.mp4);
+      if (el && el === active && visRef.current && !reduced && ready) {
+        goRef.current(i + 1);
+      }
+    };
     const vids = [...videoByKey.current.values()];
-    for (const v of vids) v.addEventListener("pause", onPause);
+    for (const v of vids) {
+      v.addEventListener("pause", onPause);
+      v.addEventListener("ended", onEnded);
+    }
     return () => {
       window.clearInterval(id);
-      for (const v of vids) v.removeEventListener("pause", onPause);
+      for (const v of vids) {
+        v.removeEventListener("pause", onPause);
+        v.removeEventListener("ended", onEnded);
+      }
     };
   }, [playVideo, reduced, videos.length, ready, switchToAnim, blobify]);
 
@@ -514,9 +531,14 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     }
   };
 
-  const activePoster = SLIDES[cur]!.video.poster;
-  const activeKey = SLIDES[cur]!.video.mp4;
-  const activeScreen = SLIDES[cur]!.screen;
+  const activeSlide = SLIDES[cur]!;
+  const activePoster = activeSlide.video.poster;
+  const activeKey = activeSlide.video.mp4;
+  const activeScreen = activeSlide.screen;
+  const phoneUi = activeSlide.ui === "phone";
+  const phoneVisible = phoneShow && phoneUi;
+  const connectVisible = phoneShow && activeScreen === "contact";
+  const designVisible = phoneShow && activeScreen === "design";
   const fadeOnKey = onKey ?? activeKey;
   const mediaPlaying =
     useAnim || playingKey === activeKey || playingKey === `anim:${activeKey}`;
@@ -643,11 +665,11 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
           styles.phs,
           styles.reveal,
           ready && styles.revealOn,
-          phoneShow && styles.phsShow,
+          phoneVisible && styles.phsShow,
         )}
         data-s={activeScreen}
         data-testid="car-phone"
-        aria-hidden={!phoneShow}
+        aria-hidden={!phoneVisible}
       >
         <div className={styles.dev}>
           <i className={styles.sb1} />
@@ -659,7 +681,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
                 ["discover", "contact", "measure", "design", "quote"] as const
               ).map((id) => {
                 const slide = SLIDES.find((s) => s.screen === id);
-                const active = activeScreen === id && phoneShow;
+                const active = activeScreen === id && phoneVisible;
                 return (
                   <div
                     key={`${id}-${active ? playKey : "x"}`}
@@ -684,6 +706,17 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
           </div>
         </div>
       </div>
+
+      <ConnectOverlay
+        key={`cx-${playKey}`}
+        show={connectVisible}
+        play={connectVisible}
+      />
+      <DesignOverlay
+        key={`dx-${playKey}`}
+        show={designVisible}
+        play={designVisible}
+      />
 
       <div
         className={cn(styles.hh, styles.reveal, ready && styles.revealOn)}

@@ -7,8 +7,9 @@
  * - video:      { webm, mp4, poster, anim } — same mp4 → one shared <video>
  *               anim = animated WebP fallback (play once, hold last frame)
  * - screen:     discover | contact | measure | design | quote (Estimate uses quote)
- * - duration:   ms this slide stays up (~clip length + 1.5s hold)
- * - phone:      { in, out } ms — up at `in`, down at `out` (~0.9s before slide end)
+ * - ui:         phone mockup | floating cards (Connect/Design — no phone)
+ * - duration:   ms this slide stays up (clip length − ~0.6s; no frozen last frame)
+ * - phone:      { in, out } ms — UI up at `in`, down at `out` (~0.9s before end)
  * - speed:      Web Animations playbackRate for the CSS screen timeline
  * - focus:      CSS object-position for the video crop
  * - screenshot: optional image; replaces the animated screen when set
@@ -20,6 +21,8 @@ export type CarouselScreenId =
   | "measure"
   | "design"
   | "quote";
+
+export type CarouselUi = "phone" | "cards";
 
 export type CarouselVideo = {
   webm: string;
@@ -37,6 +40,8 @@ export type CarouselSlide = {
   head: string;
   caption: string;
   screen: CarouselScreenId;
+  /** Phone mockup vs floating card stack (Connect + Design). */
+  ui: CarouselUi;
   screenshot?: string;
   duration: number;
   phone: { in: number; out: number };
@@ -51,9 +56,10 @@ export const SLIDES: CarouselSlide[] = [
     head: "Be first to\nthe job.",
     caption: "Find projects ready to buy, near you",
     screen: "discover",
-    duration: 11500,
-    phone: { in: 4400, out: 10600 },
-    speed: 1.55,
+    ui: "phone",
+    duration: 9400,
+    phone: { in: 2600, out: 8500 },
+    speed: 1.65,
     focus: "50% 35%",
     video: {
       webm: "/home/bg-discover.webm",
@@ -64,11 +70,12 @@ export const SLIDES: CarouselSlide[] = [
   },
   {
     label: "Connect",
-    head: "Reach the\nright person.",
+    head: "Capture the\nclient's info.",
     caption: "Contacts for every site, one tap away",
     screen: "contact",
-    duration: 11500,
-    phone: { in: 900, out: 10600 },
+    ui: "cards",
+    duration: 9400,
+    phone: { in: 900, out: 8500 },
     speed: 1.0,
     focus: "50% 40%",
     video: {
@@ -85,9 +92,10 @@ export const SLIDES: CarouselSlide[] = [
     head: "Measure it\non the spot.",
     caption: "Point your phone, get exact sizes",
     screen: "measure",
-    duration: 7300,
-    phone: { in: 1800, out: 6400 },
-    speed: 1.25,
+    ui: "phone",
+    duration: 5300,
+    phone: { in: 1000, out: 4400 },
+    speed: 1.7,
     focus: "50% 40%",
     video: {
       webm: "/home/bg-measure.webm",
@@ -101,9 +109,10 @@ export const SLIDES: CarouselSlide[] = [
     head: "Show it before\nyou build it.",
     caption: "Preview it on their storefront",
     screen: "design",
-    duration: 11500,
-    phone: { in: 3000, out: 10600 },
-    speed: 1.2,
+    ui: "cards",
+    duration: 9400,
+    phone: { in: 1000, out: 8500 },
+    speed: 1.5,
     focus: "50% 45%",
     video: {
       webm: "/home/bg-design.webm",
@@ -117,9 +126,10 @@ export const SLIDES: CarouselSlide[] = [
     head: "Send the estimate\nbefore you leave.",
     caption: "Price it and win the job on the spot",
     screen: "quote",
-    duration: 11500,
-    phone: { in: 800, out: 10600 },
-    speed: 1.0,
+    ui: "phone",
+    duration: 9400,
+    phone: { in: 800, out: 8500 },
+    speed: 1.3,
     focus: "50% 45%",
     video: {
       webm: "/home/bg-quote.webm",
