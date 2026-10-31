@@ -1,5 +1,5 @@
 /**
- * Playwright proof: 5-slide carousel hero (crossfade + per-slide headers + phone stay + anim fallback wiring).
+ * Playwright proof: 5-slide carousel hero (crossfade + per-slide heads + phone up/down + play-once hold).
  * BASE_URL=http://127.0.0.1:3000 node scripts/verify-home-carousel-anim.mjs
  */
 import { chromium } from "playwright";
@@ -116,9 +116,9 @@ async function main() {
         layout.tabAria?.length === 5 &&
         layout.tabAria.includes("Discover") &&
         layout.tabAria.includes("Connect") &&
-        /Find the job/i.test(layout.headerText || "") &&
-        /before they do/i.test(layout.headerText || "") &&
-        /Projects ready to buy/i.test(layout.capText || "") &&
+        /Be first to/i.test(layout.headerText || "") &&
+        /the job/i.test(layout.headerText || "") &&
+        /Find projects ready to buy/i.test(layout.capText || "") &&
         Number.parseFloat(layout.hhFontSize || "0") >= 36 &&
         Number.parseFloat(layout.hhFontSize || "0") <= 80 &&
         Number.parseFloat(layout.capFontSize || "0") >= 18 &&
@@ -217,17 +217,17 @@ async function main() {
         await shot(page, `anim-car-slide-${i}-1440.png`);
       }
       const expectedCaps = [
-        /Projects ready to buy/i,
-        /contact for every site/i,
-        /Exact sizes/i,
-        /Preview it before/i,
-        /Win the work/i,
+        /Find projects ready to buy/i,
+        /Contacts for every site/i,
+        /Point your phone/i,
+        /Preview it on their storefront/i,
+        /Price it and win the job/i,
       ];
       const expectedHeads = [
-        /Find the job.*before they do/i,
-        /Know exactly.*who to call/i,
-        /Measure it.*in seconds/i,
-        /Show them the.*finished sign/i,
+        /Be first to.*the job/i,
+        /Reach the.*right person/i,
+        /Measure it.*on the spot/i,
+        /Show it before.*you build it/i,
         /Send the estimate.*before you leave/i,
       ];
       if (
@@ -280,34 +280,40 @@ async function main() {
         ok("anim-webp-assets", JSON.stringify(animOk));
       } else fail("anim-webp-assets", JSON.stringify(animOk));
 
-      // Phone stays: land on Connect (phone.in 900), confirm phone remains visible well after old out-300 window
+      // Phone up/down: Measure (duration 7.3s, phone.in 1.8s, hide at duration-900 ≈ 6.4s)
       for (let n = 0; n < 6; n++) {
         const cap = (await page.locator('[data-testid="car-caption"]').innerText()).trim();
-        if (/contact for every site/i.test(cap)) break;
+        if (/Point your phone/i.test(cap)) break;
         await page.keyboard.press("ArrowRight");
         await page.waitForTimeout(700);
       }
-      await page.waitForTimeout(1200); // past phone.in
+      await page.waitForTimeout(2200); // past phone.in
       const phoneMid = await page.evaluate(() => {
         const phs = document.querySelector("[data-testid=car-phone]");
         const dev = phs?.querySelector("[class*='dev']");
         return {
           opacity: dev ? Number(getComputedStyle(dev).opacity) : 0,
-          className: phs?.className || "",
+          show: phs?.className.includes("phsShow") || false,
         };
       });
-      await page.waitForTimeout(3500); // still on Connect; phone must stay (no early hide)
+      // Wait until after hide (duration-900); slide still on Measure briefly
+      await page.waitForTimeout(4500);
       const phoneLate = await page.evaluate(() => {
         const phs = document.querySelector("[data-testid=car-phone]");
         const dev = phs?.querySelector("[class*='dev']");
         return {
           opacity: dev ? Number(getComputedStyle(dev).opacity) : 0,
-          className: phs?.className || "",
+          show: phs?.className.includes("phsShow") || false,
+          cap: document.querySelector("[data-testid=car-caption]")?.textContent?.trim(),
         };
       });
-      if (phoneMid.opacity > 0.5 && phoneLate.opacity > 0.5) {
-        ok("phone-stays-until-slide-change", JSON.stringify({ phoneMid, phoneLate }));
-      } else fail("phone-stays-until-slide-change", JSON.stringify({ phoneMid, phoneLate }));
+      const loopOff = await page.evaluate(() => {
+        const v = document.querySelector("[data-testid=feature-carousel] video");
+        return { loop: v?.loop ?? null, hasLoopAttr: v?.hasAttribute("loop") ?? null };
+      });
+      if (phoneMid.opacity > 0.5 && phoneLate.opacity < 0.5 && loopOff.loop === false) {
+        ok("phone-up-down-and-play-once", JSON.stringify({ phoneMid, phoneLate, loopOff }));
+      } else fail("phone-up-down-and-play-once", JSON.stringify({ phoneMid, phoneLate, loopOff }));
 
       // Crossfade: active video opacity ~1, others ~0 (not translate)
       const fade = await page.evaluate(() => {
@@ -432,7 +438,7 @@ async function main() {
         const head = document.querySelector("[data-testid=car-header] h2")?.textContent || "";
         return { cap: cap.trim(), head: head.replace(/\s+/g, " ").trim() };
       });
-      if (/Preview it before/i.test(mobileScreens.cap) && /finished sign/i.test(mobileScreens.head)) {
+      if (/Preview it on their storefront/i.test(mobileScreens.cap) && /build it/i.test(mobileScreens.head)) {
         ok("mobile-measure-design", JSON.stringify(mobileScreens));
       } else fail("mobile-measure-design", JSON.stringify(mobileScreens));
 
