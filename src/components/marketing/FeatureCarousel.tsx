@@ -33,9 +33,9 @@ type Props = {
 
 /**
  * Full-bleed carousel hero: per-slide header + caption (fade on change),
- * 1s crossfading backgrounds (wait for paint). Phone or floating cards slide
- * up at phone.in and down at phone.out. Slides end with the clip (no frozen
- * frame); `ended` advances as backup. Animated WebP if autoplay is refused.
+ * 1s crossfades. Next clip primes ~1.7s early (opacity 0) so the fade never
+ * waits on a cold start. Phone or floating cards use phone.in/out. `ended`
+ * advances as backup. Animated WebP if autoplay is refused.
  */
 export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const carRef = useRef<HTMLElement | null>(null);
@@ -48,6 +48,8 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
   const tinRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tfadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tprimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const primedAt = useRef(new WeakMap<object, number>());
   const touchX0 = useRef<number | null>(null);
   const curRef = useRef(-1);
   const visRef = useRef(true);
@@ -234,7 +236,44 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     [playVideo],
   );
 
-  /** Fade in only once the clip is painting (or after 1.5s fallback). */
+  const isPrimed = useCallback((el: object | null | undefined) => {
+    if (!el) return false;
+    const t = primedAt.current.get(el);
+    return t != null && performance.now() - t < 5000;
+  }, []);
+
+  /** ~1.7s before end: start next clip underneath (opacity 0) so crossfade is live. */
+  const prime = useCallback(() => {
+    if (tprimeRef.current) clearTimeout(tprimeRef.current);
+    if (reduced) return;
+    const i = curRef.current;
+    if (i < 0) return;
+    const dur = SLIDES[i]?.duration ?? INT;
+    tprimeRef.current = setTimeout(() => {
+      const j = (curRef.current + 1) % N;
+      if (noVidRef.current) {
+        const sj = SLIDES[j]!;
+        const im = ensureAnimImg(sj.video.mp4);
+        if (!im) return;
+        primedAt.current.set(im, performance.now());
+        im.removeAttribute("src");
+        im.src = sj.video.anim;
+        return;
+      }
+      const nv = videoByKey.current.get(SLIDES[j]!.video.mp4);
+      const curV = videoByKey.current.get(SLIDES[curRef.current]!.video.mp4);
+      if (!nv || nv === curV) return;
+      primedAt.current.set(nv, performance.now());
+      try {
+        nv.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
+      playVideo(nv);
+    }, Math.max(0, dur - 1700));
+  }, [reduced, ensureAnimImg, playVideo]);
+
+  /** Fade in once painting — or immediately if the clip was primed. */
   const reveal = useCallback(
     (i: number, key: string) => {
       if (tfadeRef.current) clearTimeout(tfadeRef.current);
@@ -244,6 +283,14 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         const im = ensureAnimImg(key);
         if (!im) {
           setOnKey(`anim:${key}`);
+          return;
+        }
+        if (isPrimed(im)) {
+          for (const [k, el] of imgByKey.current) {
+            el.classList.toggle(styles.bgvOn, k === key);
+          }
+          setOnKey(`anim:${key}`);
+          setPlayingKey(`anim:${key}`);
           return;
         }
         // Poster first, then swap to animated WebP once loaded; prefetch next
@@ -279,12 +326,13 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
           if (k !== key) {
             window.setTimeout(() => {
               if (!v.classList.contains(styles.bgvOn)) v.pause();
-            }, 950);
+            }, 1200);
           }
         }
       };
       playVideo(cv);
-      if (cv.readyState >= 3) {
+      // Primed clips are already moving — never wait on canplay
+      if (isPrimed(cv) || cv.readyState >= 3) {
         tfadeRef.current = setTimeout(fin, 60);
       } else {
         const h = () => {
@@ -295,7 +343,7 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
         tfadeRef.current = setTimeout(fin, 1500);
       }
     },
-    [playVideo, ensureAnimImg],
+    [playVideo, ensureAnimImg, isPrimed],
   );
   revealRef.current = reveal;
 
@@ -310,7 +358,8 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       const prevKey = prev >= 0 ? SLIDES[prev]!.video.mp4 : null;
 
       const cv = videoByKey.current.get(key);
-      if (cv && key !== prevKey) {
+      // Skip restart when this clip was primed under the previous slide
+      if (cv && key !== prevKey && !isPrimed(cv)) {
         try {
           cv.currentTime = 0;
         } catch {
@@ -341,9 +390,12 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
       setPhoneShow(false);
       if (ready) schedulePhone(next);
 
-      window.setTimeout(() => arm(), 0);
+      window.setTimeout(() => {
+        arm();
+        prime();
+      }, 0);
     },
-    [ready, clearPhoneTimers, schedulePhone, arm, reveal],
+    [ready, clearPhoneTimers, schedulePhone, arm, reveal, isPrimed, prime],
   );
 
   goRef.current = go;
@@ -497,19 +549,21 @@ export function FeatureCarousel({ ready, firstVideoRef }: Props) {
     }
     schedulePhone(i);
     arm();
+    prime();
     const t = window.setTimeout(() => {
       for (const x of videoByKey.current.values()) {
         if (x.preload !== "auto") x.preload = "auto";
       }
     }, 1200);
     return () => clearTimeout(t);
-  }, [ready, playVideo, schedulePhone, arm]);
+  }, [ready, playVideo, schedulePhone, arm, prime]);
 
   useEffect(() => {
     return () => {
       clearArm();
       clearPhoneTimers();
       if (tfadeRef.current) clearTimeout(tfadeRef.current);
+      if (tprimeRef.current) clearTimeout(tprimeRef.current);
     };
   }, [clearArm, clearPhoneTimers]);
 
