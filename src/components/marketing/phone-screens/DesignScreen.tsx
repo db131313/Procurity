@@ -3,57 +3,59 @@
 import { useEffect, useRef } from "react";
 import styles from "../FeatureCarousel.module.css";
 import { StatusBar } from "./StatusBar";
+import { CameraPov } from "./CameraPov";
 import { buildSign } from "./generatedArt";
 
+/** AR sign preview on the same wall as Measure. */
 export function DesignScreen() {
   const signRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    buildSign(signRef.current, { ext: styles.ext!, f: styles.f! });
+    buildSign(signRef.current, { ext: styles.ext!, f: styles.f! }, {
+      layers: 12,
+      html: "ALDER<br>&amp; FINCH",
+    });
   }, []);
 
   return (
     <>
+      <CameraPov uid="pcd" />
+      <div className={styles.vg} />
       <StatusBar />
-      <div className={styles.dh}>
-        <b>Design</b>
-        <div className={styles.seg}>
-          <span className={styles.s2d}>2D</span>
-          <span className={styles.s3d}>3D</span>
+      <div className={styles.tb}>
+        <i>‹</i>
+        <div className={styles.hud}>
+          <em>Sign preview</em>
         </div>
+        <i>⤴</i>
       </div>
-      <div className={styles.vp}>
-        <div className={styles.cam3d}>
-          <div className={styles.world}>
-            <div className={styles.gnd} />
-            <div className={styles.wall}>
-              <div className={styles.fas} />
-              <div className={styles.win} />
-            </div>
-            <div className={styles.cone} aria-hidden />
-            <div ref={signRef} className={styles.sg}>
-              <div className={styles.sk} />
-              <div className={styles.shd} aria-hidden>
-                ALDER &amp; FINCH
-              </div>
-              <div className={styles.halo} aria-hidden>
-                ALDER &amp; FINCH
-              </div>
-            </div>
-            <div className={styles.dimx}>
-              <i />
-              <i />
-              <b>12′ 2″</b>
-            </div>
+      <div className={styles.ar}>
+        <div ref={signRef} className={styles.arg}>
+          <div className={styles.sk} />
+          <div className={styles.shd} aria-hidden>
+            ALDER
+            <br />
+            &amp; FINCH
+          </div>
+          <div className={styles.halo} aria-hidden>
+            ALDER
+            <br />
+            &amp; FINCH
           </div>
         </div>
-        <div className={styles.hint}>Drag to orbit</div>
       </div>
-      <div className={styles.panel}>
-        <div className={styles.chips}>
-          <i className={styles.chipOn}>Channel letters</i>
-          <i>Cabinet</i>
-          <i>Monument</i>
+      <div className={styles.dp}>
+        <div className={styles.tiles}>
+          <div className={styles.tl}>
+            <b>ALDER</b>Channel
+          </div>
+          <div className={`${styles.tl} ${styles.tlh}`}>
+            <b>ALDER</b>Halo-lit
+          </div>
+          <div className={`${styles.tl} ${styles.tlc}`}>
+            <b>ALDER</b>Cabinet
+          </div>
+          <span className={styles.tring} />
         </div>
         <div className={styles.sw}>
           <b style={{ background: "#c9ccd0" }} />
@@ -64,10 +66,6 @@ export function DesignScreen() {
         <div className={styles.mn}>
           <u className={styles.mna}>Matte black</u>
           <u className={styles.mnb}>Brushed aluminum</u>
-        </div>
-        <div className={styles.lit}>
-          <span>Illuminated</span>
-          <i />
         </div>
         <div className={styles.tot}>
           <span>From your price book</span>

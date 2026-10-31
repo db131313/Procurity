@@ -2,6 +2,7 @@
 
 import type { CarouselScreenId } from "@/content/carousel";
 import { DiscoverScreen } from "./DiscoverScreen";
+import { ConnectScreen } from "./ConnectScreen";
 import { MeasureScreen } from "./MeasureScreen";
 import { DesignScreen } from "./DesignScreen";
 import { QuoteScreen } from "./QuoteScreen";
@@ -23,6 +24,8 @@ export function PhoneScreen({
   switch (id) {
     case "discover":
       return <DiscoverScreen />;
+    case "contact":
+      return <ConnectScreen />;
     case "measure":
       return <MeasureScreen />;
     case "design":

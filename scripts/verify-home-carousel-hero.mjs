@@ -86,10 +86,10 @@ async function main() {
       await shot(page, "hero-reveal-slide1-1440.png");
       ok("reveal-slide-1");
 
-      // Four slides (tabs are display:none — use keyboard)
+      // Five slides (tabs are display:none — use keyboard)
       const carEl = page.locator('[data-testid="feature-carousel"]');
       await carEl.focus();
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         if (i > 0) {
           await page.keyboard.press("ArrowRight");
           await page.waitForTimeout(900);
@@ -99,8 +99,8 @@ async function main() {
       const lastCap = (
         await page.locator('[data-testid="car-caption"]').innerText()
       ).trim();
-      if (lastCap === "Estimate") ok("desktop-four-slides", lastCap);
-      else fail("desktop-four-slides", lastCap);
+      if (lastCap === "Estimate") ok("desktop-five-slides", lastCap);
+      else fail("desktop-five-slides", lastCap);
 
       // Scroll to map; wheel over canvas
       await page.locator('[data-testid="home-swarm-section"]').scrollIntoViewIfNeeded();

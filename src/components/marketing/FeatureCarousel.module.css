@@ -23,6 +23,8 @@
   object-fit: cover;
   opacity: 0;
   transition: opacity 0.8s;
+  will-change: opacity;
+  transform: translateZ(0);
 }
 
 .bgvOn {
@@ -57,15 +59,16 @@
   pointer-events: none;
   position: absolute;
   z-index: 4;
-  right: max(40px, 9vw);
+  right: max(40px, 22vw);
   top: var(--phone-top);
   width: 346px;
   height: 724px;
-  transform: translateY(-50%) scale(calc(var(--s) * var(--sd, 1)));
+  transform: translateY(-50%) scale(var(--s));
   transform-origin: 100% 50%;
 }
 
 .phs .dev {
+  will-change: transform, opacity;
   opacity: 0;
   translate: 0 56px;
   scale: 0.9;
@@ -81,25 +84,14 @@
   scale: 1;
 }
 
-.phs[data-s="design"] {
-  --sd: 1.1;
-}
-
-.phs[data-s="design"] .dev {
-  transform: perspective(1500px) rotateY(-11deg) rotateX(4deg);
-  filter:
-    drop-shadow(0 0 46px rgba(255, 255, 255, 0.26))
-    drop-shadow(0 40px 50px rgba(0, 0, 0, 0.55));
-}
-
 /* Stationary value header + changing caption */
 .hh {
   position: absolute;
   z-index: 4;
-  left: max(40px, 6vw);
+  left: max(40px, 12vw);
   top: 50%;
   transform: translateY(-50%);
-  max-width: 46vw;
+  max-width: 40vw;
   pointer-events: none;
 }
 
@@ -374,7 +366,7 @@
   .car .phs {
     right: auto;
     left: 50%;
-    transform: translate(-50%, -50%) scale(calc(var(--s) * var(--sd, 1)));
+    transform: translate(-50%, -50%) scale(var(--s));
     transform-origin: 50% 50%;
   }
   .hh {
@@ -391,9 +383,6 @@
   .hh .cap {
     margin-top: 10px;
     font-size: 18px;
-  }
-  .phs[data-s="design"] .dev {
-    transform: perspective(1500px) rotateY(-7deg) rotateX(3deg);
   }
 }
 
@@ -989,7 +978,226 @@
   animation: fadeUp 0.4s 8.9s both;
 }
 
-/* 2 Measure: AR dimensions. Corner brackets lock onto the wall, then width/height measured */
+
+/* 2 Connect: site business contact card */
+.cw {
+  position: absolute;
+  inset: 0;
+  background: #f2f2f0;
+  color: #0b0d0e;
+}
+
+.cw .sbar {
+  color: #0b0d0e;
+}
+.cw .sbar span {
+  background: #0b0d0e;
+}
+
+.cc {
+  position: absolute;
+  top: 68px;
+  left: 16px;
+  right: 16px;
+  background: #fff;
+  border-radius: 26px;
+  padding: 20px 22px 8px;
+  box-shadow: 0 1px 0 #e4e6e8;
+}
+
+.ch {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.cm {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  border-radius: 17px;
+  background: #0b0d0e;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.cn b {
+  display: block;
+  font-size: 21px;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.cn small {
+  color: #6b7178;
+  font-size: 14px;
+}
+
+.vf {
+  position: absolute;
+  right: 0;
+  top: -6px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #0b0d0e;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 999px;
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.scPlay .vf {
+  animation: pop 0.35s 0.5s forwards;
+}
+
+.cr {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid #eceeef;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.scPlay .cr {
+  animation: fadeUp 0.45s calc(0.9s + var(--i) * 0.55s) both;
+}
+
+.cr i {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: #f2f2f0;
+  display: grid;
+  place-items: center;
+}
+
+.cr svg {
+  width: 22px;
+  height: 22px;
+}
+
+.cr small {
+  display: block;
+  color: #6b7178;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.cr b {
+  display: block;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.pj {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 482px;
+  background: #fff;
+  border-radius: 22px;
+  padding: 16px 18px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.scPlay .pj {
+  animation: fadeUp 0.5s 3.3s both;
+}
+
+.pjb {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: #0b0d0e;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.pj b {
+  display: block;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.pj small {
+  color: #6b7178;
+  font-size: 13px;
+}
+
+.cbar {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 44px;
+  display: flex;
+  gap: 10px;
+}
+
+.cb {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  text-align: center;
+  padding: 16px 0;
+  border-radius: 18px;
+  font-weight: 600;
+  font-size: 16px;
+  background: #fff;
+  border: 1px solid #e1ddd2;
+  color: #0b0d0e;
+}
+
+.cbp {
+  background: #0b0d0e;
+  color: #fff;
+  border-color: #0b0d0e;
+  flex: 1.5;
+}
+
+.cbp::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--aurora);
+  opacity: 0;
+}
+
+.scPlay .cbp::after {
+  animation: flash 0.7s 5.4s both;
+}
+
+.scPlay .cbp {
+  animation: tap 0.7s 5.4s both;
+}
+
+.cw .toast {
+  bottom: 112px;
+}
+
+.scPlay .cw .toast {
+  animation: fadeUp 0.4s 5.8s both;
+}
+
+/* 3 Measure: AR dimensions. Corner brackets lock onto the wall, then width/height measured */
 .cam {
   position: absolute;
   inset: 0;
@@ -1461,7 +1669,7 @@
   animation: up 0.5s 5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* 3 Design: CSS 3D scene — extrude via --ez, orbit, dusk + illuminated */
+/* 4 Design: AR sign preview on the measured wall — assemble, sway, material, night */
 @property --side {
   syntax: "<color>";
   inherits: true;
@@ -1478,257 +1686,67 @@
   initial-value: 0px;
 }
 
-.dh {
+.sc[data-screen="design"].scPlay .cam {
+  animation: night 1s 6.2s forwards;
+}
+
+@keyframes night {
+  to {
+    filter: brightness(0.26) saturate(0.6);
+  }
+}
+
+.ar {
   position: absolute;
-  top: 60px;
-  left: 20px;
-  right: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  left: 235px;
+  top: 362px;
+  width: 0;
+  height: 0;
+  perspective: 760px;
   z-index: 3;
 }
 
-.dh b {
-  font-size: 28px;
-  letter-spacing: -0.03em;
-}
-
-.seg {
-  display: flex;
-  background: #1c1f22;
-  border-radius: 999px;
-  padding: 3px;
-}
-
-.seg span {
-  padding: 6px 16px;
-  border-radius: 999px;
-  font-size: 14px;
-  color: #9aa0a6;
-}
-
-.seg .s2d {
-  background: #fff;
-  color: #0b0d0e;
-  font-weight: 600;
-}
-
-.scPlay .seg .s2d {
-  animation: off 1s 2s both;
-}
-.scPlay .seg .s3d {
-  animation: onn 1s 2s both;
-}
-
-@keyframes off {
-  to {
-    background: transparent;
-    color: #9aa0a6;
-    font-weight: 400;
-  }
-}
-@keyframes onn {
-  to {
-    background: #fff;
-    color: #0b0d0e;
-    font-weight: 600;
-  }
-}
-
-.vp {
+.arg {
+  --ez: 0px;
   position: absolute;
   left: 0;
-  right: 0;
-  top: 100px;
-  height: 462px;
-  overflow: hidden;
-  background: linear-gradient(#aeb9c3, #d9d5cb 62%, #8f8a7f);
-}
-
-.vp::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(#070a14, #161c2e 55%, #08090b);
-  opacity: 0;
-  z-index: 0;
-}
-
-.scPlay .vp::after {
-  animation: vin 1s 6s forwards;
-}
-
-.vp::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.45);
-}
-
-.cam3d {
-  position: absolute;
-  inset: 0;
-  perspective: 640px;
-  perspective-origin: 50% 38%;
-  z-index: 1;
-}
-
-.world {
-  position: absolute;
-  left: 50%;
-  top: 47%;
+  top: 0;
   width: 0;
   height: 0;
   transform-style: preserve-3d;
-  transform: scale(1.3);
+  transform: rotateY(-16deg) rotateX(3deg);
 }
 
-.scPlay .world {
-  animation: orbit 10s ease-in-out both;
+.scPlay .arg {
+  animation:
+    sway 10s ease-in-out both,
+    extr 1.4s 3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+    mat 0.6s 5s forwards,
+    litAnim 0.5s 6.2s forwards;
 }
 
-@keyframes orbit {
+@keyframes sway {
   0%,
-  28% {
-    transform: scale(1.3) rotateX(0) rotateY(0);
+  26% {
+    transform: rotateY(-16deg) rotateX(3deg);
   }
-  46% {
-    transform: scale(1.2) rotateX(-14deg) rotateY(-50deg);
+  44% {
+    transform: rotateY(-36deg) rotateX(4deg);
   }
-  68% {
-    transform: scale(1.2) rotateX(-17deg) rotateY(44deg);
+  62% {
+    transform: rotateY(28deg) rotateX(3deg);
   }
-  88% {
-    transform: scale(1.25) rotateX(-8deg) rotateY(-12deg);
+  80% {
+    transform: rotateY(-10deg) rotateX(2deg);
   }
   100% {
-    transform: scale(1.3) rotateX(-4deg) rotateY(0);
+    transform: rotateY(-14deg) rotateX(3deg);
   }
-}
-
-.wall {
-  position: absolute;
-  left: -190px;
-  top: -110px;
-  width: 380px;
-  height: 230px;
-  background: linear-gradient(#ddd7ca, #cfc8b9);
-  border: 1px solid #b6af9f;
-  box-shadow: 0 0 0 2px #a9a292;
-}
-
-.scPlay .wall,
-.scPlay .gnd {
-  animation: dusk 1s 6s forwards;
-}
-
-@keyframes dusk {
-  to {
-    filter: brightness(0.2) saturate(0.7);
-  }
-}
-
-.fas {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 90px;
-  background: linear-gradient(#e4dfd3, #d2ccbd);
-  border-bottom: 3px solid #9e978a;
-}
-
-.win {
-  position: absolute;
-  left: 22px;
-  right: 22px;
-  top: 108px;
-  bottom: 0;
-  background: linear-gradient(155deg, #3c4953, #10161b 60%);
-  border: 3px solid #6a6f74;
-  border-bottom: 0;
-}
-
-.win::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 33%,
-    #6a6f74 33% 34%,
-    transparent 34% 66%,
-    #6a6f74 66% 67%,
-    transparent 67%
-  );
-}
-
-.win::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(115deg, rgba(255, 255, 255, 0.18), transparent 55%);
-}
-
-.cone {
-  position: absolute;
-  left: -190px;
-  top: -110px;
-  width: 380px;
-  height: 230px;
-  transform: translateZ(1px);
-  background: radial-gradient(62% 55% at 50% 22%, rgba(255, 243, 210, 0.6), transparent 72%);
-  mix-blend-mode: screen;
-  opacity: 0;
-}
-
-.scPlay .cone {
-  animation: vin 0.8s 6.2s forwards;
-}
-
-.gnd {
-  position: absolute;
-  left: -420px;
-  top: 120px;
-  width: 840px;
-  height: 600px;
-  transform-origin: 50% 0;
-  transform: rotateX(90deg);
-  background:
-    repeating-linear-gradient(90deg, #8d887c 0 1px, transparent 1px 38px),
-    repeating-linear-gradient(0deg, #8d887c 0 1px, transparent 1px 38px),
-    #bdb7a9;
-  -webkit-mask: radial-gradient(closest-side, #000 30%, transparent 100%);
-  mask: radial-gradient(closest-side, #000 30%, transparent 100%);
-}
-
-.sg {
-  --ez: 0px;
-  position: absolute;
-  left: -140px;
-  top: -95px;
-  width: 280px;
-  height: 50px;
-  transform-style: preserve-3d;
-  transform: translateZ(4px);
-}
-
-.scPlay .sg {
-  animation:
-    extr 1.5s 3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
-    mat 0.6s 5s forwards,
-    litAnim 0.5s 6s forwards;
 }
 
 @keyframes extr {
   to {
-    --ez: 3.4px;
+    --ez: 1.9px;
   }
 }
 @keyframes mat {
@@ -1747,22 +1765,22 @@
 .halo,
 .shd {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 280px;
+  left: -100px;
+  top: -40px;
+  width: 200px;
   text-align: center;
   white-space: nowrap;
   font:
-    900 30px/50px Inter,
+    900 38px/40px Inter,
     system-ui,
     sans-serif;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 
 .ext {
   transform: translateZ(calc(var(--k) * var(--ez)));
   color: var(--side);
-  filter: brightness(calc(0.5 + var(--k) * 0.034));
+  filter: brightness(calc(0.62 + var(--k) * 0.035));
   opacity: 0;
 }
 
@@ -1777,157 +1795,140 @@
 
 .shd {
   color: rgba(0, 0, 0, 0.5);
-  filter: blur(5px);
-  transform: translate3d(14px, 20px, -2px);
+  filter: blur(4px);
+  transform: translate3d(12px, 16px, -3px);
   opacity: 0;
 }
 
 .scPlay .shd {
   animation:
     shdIn 0.5s 3.2s forwards,
-    hide 0.6s 6.1s forwards;
+    hide 0.5s 6.3s forwards;
 }
 
 @keyframes shdIn {
   to {
-    opacity: 0.8;
+    opacity: 0.7;
   }
 }
 
 .halo {
   color: #fff;
-  filter: blur(10px);
+  filter: blur(9px);
   opacity: 0;
   transform: translateZ(-1px);
 }
 
 .scPlay .halo {
-  animation: vin 0.6s 6.2s forwards;
+  animation: vin 0.6s 6.3s forwards;
 }
 
 .sk {
   position: absolute;
-  left: -8px;
-  top: -4px;
-  right: -8px;
-  bottom: -4px;
-  border: 1.5px dashed #6b7178;
+  left: -100px;
+  top: -62px;
+  width: 200px;
+  height: 124px;
+  border: 2px dashed #fff;
   border-radius: 4px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.3) 0 3px,
+    transparent 3px 9px
+  );
   opacity: 0;
 }
 
 .scPlay .sk {
   animation:
-    show 0.4s 2.3s forwards,
-    hide 0.4s 3.8s forwards;
+    show 0.4s 0.6s forwards,
+    hide 0.4s 3.6s forwards;
 }
 
-.dimx {
-  position: absolute;
-  left: -140px;
-  top: -136px;
-  width: 280px;
-  height: 12px;
-  transform: translateZ(30px);
-  opacity: 0;
-}
-
-.scPlay .dimx {
-  animation: show 0.4s 4.6s forwards;
-}
-
-.dimx::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 6px;
-  border-top: 1.5px solid #0b0d0e;
-}
-
-.dimx i {
-  position: absolute;
-  top: 0;
-  width: 0;
-  height: 12px;
-  border-left: 1.5px solid #0b0d0e;
-}
-
-.dimx i:first-child {
-  left: 0;
-}
-
-.dimx i:nth-child(2) {
-  right: 0;
-}
-
-.dimx b {
-  position: absolute;
-  left: 50%;
-  top: -26px;
-  transform: translateX(-50%);
-  background: #0b0d0e;
-  color: #fff;
-  font:
-    700 12px/1 Inter,
-    system-ui,
-    sans-serif;
-  padding: 5px 9px;
-  border-radius: 999px;
-}
-
-.hint {
-  position: absolute;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  z-index: 6;
-  background: rgba(11, 13, 14, 0.82);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 999px;
-  opacity: 0;
-}
-
-.scPlay .hint {
-  animation:
-    vin 0.4s 3.4s forwards,
-    hide 0.4s 6.4s forwards;
-}
-
-.panel {
+.dp {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 290px;
+  height: 300px;
   background: #fff;
   color: #0b0d0e;
   border-radius: 32px 32px 0 0;
-  padding: 20px 24px;
-  z-index: 3;
+  padding: 20px;
+  z-index: 4;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35);
 }
 
-.chips {
+.tiles {
+  position: relative;
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-.chips i {
-  font-style: normal;
-  padding: 9px 14px;
-  border-radius: 999px;
-  background: #eceeef;
-  font-size: 14px;
+.tl {
+  flex: 1;
+  height: 70px;
+  border-radius: 16px;
+  background: #f2f2f0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7178;
 }
 
-.chips .chipOn {
-  background: #0b0d0e;
+.tl b {
+  display: block;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #0b0d0e;
+  line-height: 1.1;
+}
+
+.tlh {
+  background: #14171a;
+  color: #9aa0a6;
+}
+
+.tlh b {
   color: #fff;
+  text-shadow: 0 0 8px #fff;
+}
+
+.tlc b {
+  border: 2px solid #0b0d0e;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 14px;
+  margin: 0 auto 2px;
+}
+
+.tring {
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 116px;
+  height: 76px;
+  border-radius: 19px;
+  border: 2.5px solid #0b0d0e;
+  pointer-events: none;
+}
+
+.scPlay .tring {
+  animation: tring 10s both;
+}
+
+@keyframes tring {
+  0%,
+  60% {
+    transform: none;
+  }
+  66%,
+  100% {
+    transform: translateX(120px);
+  }
 }
 
 .sw {
@@ -1974,7 +1975,6 @@
   height: 18px;
   margin: 0 0 12px;
   font-size: 14px;
-  color: #0b0d0e;
   font-weight: 600;
 }
 
@@ -1992,54 +1992,9 @@
 .scPlay .mn .mna {
   animation: vout 0.2s 5s forwards;
 }
+
 .scPlay .mn .mnb {
   animation: vin 0.2s 5s forwards;
-}
-
-.lit {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0 0 14px;
-  font-size: 16px;
-}
-
-.lit i {
-  width: 50px;
-  height: 30px;
-  border-radius: 15px;
-  background: #d5d8db;
-  position: relative;
-}
-
-.lit i::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 3px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-}
-
-.scPlay .lit i {
-  animation: tgl 0.3s 6s forwards;
-}
-.scPlay .lit i::after {
-  animation: knob 0.3s 6s forwards;
-}
-
-@keyframes tgl {
-  to {
-    background: #0b0d0e;
-  }
-}
-@keyframes knob {
-  to {
-    left: 23px;
-  }
 }
 
 .tot {
@@ -2079,16 +2034,18 @@
 .scPlay .tot .v1 {
   animation: vout 0.2s 3.4s forwards;
 }
+
 .scPlay .tot .v2 {
   animation:
     vin 0.2s 3.4s forwards,
-    vout 0.2s 5.8s forwards;
-}
-.scPlay .tot .v3 {
-  animation: vin 0.2s 5.8s forwards;
+    vout 0.2s 6.2s forwards;
 }
 
-/* 4 Estimate (screen id quote): built line by line, Draft → Ready, sent, approved */
+.scPlay .tot .v3 {
+  animation: vin 0.2s 6.2s forwards;
+}
+
+/* 5 Estimate (screen id quote): built line by line, Draft → Ready, sent, approved */
 .qB {
   position: absolute;
   inset: 0;
