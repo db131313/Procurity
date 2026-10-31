@@ -63,7 +63,7 @@ export function HomeExperience({ initialCityId }: Props) {
     setMapLoad(true);
   }, []);
 
-  // Intro: blob grows ≥3s (or 300ms if reduced-motion), wait up to +2s for video
+  // Intro: blob fills screen ~4.6s (or 300ms if reduced-motion), wait up to +2s for video
   useEffect(() => {
     const t0 = performance.now();
     const rm = prefersReducedMotion();
@@ -82,7 +82,7 @@ export function HomeExperience({ initialCityId }: Props) {
       const elapsed = performance.now() - t0;
       const v = firstVideoRef.current;
       const videoReady = !v || v.readyState >= 3 || v.currentTime > 0;
-      const min = rm ? 300 : 3000;
+      const min = rm ? 300 : 4600;
       if (elapsed >= min && (videoReady || elapsed > 5000)) {
         finish();
       } else {

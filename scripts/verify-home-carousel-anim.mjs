@@ -225,7 +225,7 @@ async function main() {
       ];
       const expectedHeads = [
         /Be first to.*the job/i,
-        /Reach the.*right person/i,
+        /Capture the.*client.?s info/i,
         /Measure it.*on the spot/i,
         /Show it before.*you build it/i,
         /Send the estimate.*before you leave/i,
@@ -238,32 +238,55 @@ async function main() {
         ok("desktop-five-slides", JSON.stringify({ captions, heads }));
       } else fail("desktop-five-slides", JSON.stringify({ captions, heads }));
 
-      // Discover fire pin + Design card UI (Connect/Estimate style, no AR/3D)
+      // Discover fire pin (phone) + Design floating cards (no phone) + Connect cards
+      // Navigate to Discover then Design so overlays are mounted
+      for (let n = 0; n < 6; n++) {
+        const cap = (await page.locator('[data-testid="car-caption"]').innerText()).trim();
+        if (/Find projects ready to buy/i.test(cap)) break;
+        await page.keyboard.press("ArrowRight");
+        await page.waitForTimeout(500);
+      }
+      await page.waitForTimeout(3200); // past Discover phone.in 2.6s
       const screenBits = await page.evaluate(() => {
         const fire = document.querySelector('[data-testid="car-screen-discover"] [class*="bgFire"]');
         const flameSvg = fire?.querySelector("svg");
-        const dzd = document.querySelector('[data-testid="car-screen-design"] [class*="dzd"]');
-        const title = dzd?.querySelector("b")?.textContent?.trim();
-        const pills = dzd ? [...dzd.querySelectorAll('[class*="dzp"] u')].map((u) => u.textContent?.trim()) : [];
-        const ar = document.querySelector('[data-testid="car-screen-design"] [class*="arg"], [data-testid="car-screen-design"] [class*="ext"]');
+        return { hasFire: !!fire && !!flameSvg };
+      });
+      // Jump to Design and wait for cards
+      for (let n = 0; n < 6; n++) {
+        const cap = (await page.locator('[data-testid="car-caption"]').innerText()).trim();
+        if (/Preview it on their storefront/i.test(cap)) break;
+        await page.keyboard.press("ArrowRight");
+        await page.waitForTimeout(500);
+      }
+      await page.waitForTimeout(1600); // past Design phone.in 1.0s
+      const designBits = await page.evaluate(() => {
+        const dx = document.querySelector('[data-testid="car-design-cards"]');
+        const title = dx?.querySelector("[class*='dxtt']")?.textContent?.trim();
+        const pills = dx
+          ? [...dx.querySelectorAll("[class*='dxb'] u")].map((u) => u.textContent?.trim())
+          : [];
+        const phone = document.querySelector("[data-testid=car-phone]");
+        const phoneShow = phone?.className.includes("phsShow") || false;
+        const cx = document.querySelector('[data-testid="car-connect-cards"]');
         return {
-          hasFire: !!fire && !!flameSvg,
-          hasCard: !!dzd,
+          hasDesignCards: !!dx && (dx.className.includes("dxShow") || getComputedStyle(dx).opacity !== "0"),
           title,
           pills,
-          hasArLayers: !!ar,
+          phoneHidden: !phoneShow,
+          hasConnectMount: !!cx,
         };
       });
       if (
         screenBits.hasFire &&
-        screenBits.hasCard &&
-        /Sign design/i.test(screenBits.title || "") &&
-        screenBits.pills?.includes("Bold") &&
-        screenBits.pills?.includes("Halo-lit") &&
-        !screenBits.hasArLayers
+        designBits.hasDesignCards &&
+        /Sign design/i.test(designBits.title || "") &&
+        designBits.pills?.includes("Bold") &&
+        designBits.pills?.includes("Halo-lit") &&
+        designBits.phoneHidden
       ) {
-        ok("fire-pin-and-design-card", JSON.stringify(screenBits));
-      } else fail("fire-pin-and-design-card", JSON.stringify(screenBits));
+        ok("fire-pin-and-design-card", JSON.stringify({ screenBits, designBits }));
+      } else fail("fire-pin-and-design-card", JSON.stringify({ screenBits, designBits }));
       const animUrls = [
         "/home/bg-discover.webp",
         "/home/field-3.webp",
@@ -280,14 +303,14 @@ async function main() {
         ok("anim-webp-assets", JSON.stringify(animOk));
       } else fail("anim-webp-assets", JSON.stringify(animOk));
 
-      // Phone up/down: Measure (duration 7.3s, phone.in 1.8s, phone.out 6.4s)
+      // Phone up/down: Measure (duration 5.3s, phone.in 1.0s, phone.out 4.4s)
       for (let n = 0; n < 6; n++) {
         const cap = (await page.locator('[data-testid="car-caption"]').innerText()).trim();
         if (/Point your phone/i.test(cap)) break;
         await page.keyboard.press("ArrowRight");
         await page.waitForTimeout(700);
       }
-      await page.waitForTimeout(2200); // past phone.in
+      await page.waitForTimeout(1600); // past phone.in 1.0s
       const phoneMid = await page.evaluate(() => {
         const phs = document.querySelector("[data-testid=car-phone]");
         const dev = phs?.querySelector("[class*='dev']");
@@ -296,8 +319,8 @@ async function main() {
           show: phs?.className.includes("phsShow") || false,
         };
       });
-      // Wait until after hide (duration-900); slide still on Measure briefly
-      await page.waitForTimeout(4500);
+      // Wait until after phone.out 4.4s (still on Measure until 5.3s)
+      await page.waitForTimeout(3200);
       const phoneLate = await page.evaluate(() => {
         const phs = document.querySelector("[data-testid=car-phone]");
         const dev = phs?.querySelector("[class*='dev']");
@@ -312,8 +335,8 @@ async function main() {
         return { loop: v?.loop ?? null, hasLoopAttr: v?.hasAttribute("loop") ?? null };
       });
       if (phoneMid.opacity > 0.5 && phoneLate.opacity < 0.5 && loopOff.loop === false) {
-        ok("phone-up-down-and-play-once", JSON.stringify({ phoneMid, phoneLate, loopOff }));
-      } else fail("phone-up-down-and-play-once", JSON.stringify({ phoneMid, phoneLate, loopOff }));
+        ok("phone-up-down-and-no-freeze", JSON.stringify({ phoneMid, phoneLate, loopOff }));
+      } else fail("phone-up-down-and-no-freeze", JSON.stringify({ phoneMid, phoneLate, loopOff }));
 
       // Crossfade: active video opacity ~1, others ~0 (not translate)
       const fade = await page.evaluate(() => {
